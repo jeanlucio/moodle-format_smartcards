@@ -41,9 +41,9 @@
     {{#hasreason}}
         <div class="sc-sheet-row">
             <span class="sc-sheet-label">{{statusreasonlabel}}</span>
-            {{! reason is core-generated availability markup (\core_availability\info::format_info()),
-                the same trusted content core itself renders with {{{text}}} in
-                course/format/templates/local/content/cm/availability.mustache — never raw user input. }}
+            {{! reason is core-generated availability markup (core_availability info::format_info),
+                the same trusted content core itself renders with a triple-brace tag in
+                course format templates local content cm availability.mustache — never raw user input. }}
             <div class="sc-sheet-reason">{{{reason}}}</div>
         </div>
     {{/hasreason}}
