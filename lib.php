@@ -1,0 +1,244 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Main class for the SmartCards course format.
+ *
+ * @package    format_smartcards
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->dirroot . '/course/format/lib.php');
+
+use core\output\inplace_editable;
+
+/**
+ * SmartCards course format class.
+ *
+ * Renders each section as a grid of activity cards/buttons, reusing
+ * cm_info availability data instead of the stealth-activity workaround.
+ *
+ * @package    format_smartcards
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class format_smartcards extends core_courseformat\base {
+    /**
+     * Returns true because this format uses sections.
+     *
+     * @return bool
+     */
+    public function uses_sections(): bool {
+        return true;
+    }
+
+    /**
+     * Returns true to show the course index sidebar.
+     *
+     * @return bool
+     */
+    public function uses_course_index(): bool {
+        return true;
+    }
+
+    /**
+     * Returns false — activity cards are laid out in a grid, not indented.
+     *
+     * @return bool
+     */
+    public function uses_indentation(): bool {
+        return false;
+    }
+
+    /**
+     * Supports the Moodle 4+ reactive component system (drag-and-drop editing).
+     *
+     * @return bool
+     */
+    public function supports_components(): bool {
+        return true;
+    }
+
+    /**
+     * Returns the page title for this format.
+     *
+     * @return string
+     */
+    public function page_title(): string {
+        return get_string('sectionoutline');
+    }
+
+    /**
+     * Returns the display name of the given section.
+     *
+     * Uses the section name set by the teacher, or falls back to the default.
+     *
+     * @param int|stdClass $section Section object or section number.
+     * @return string
+     */
+    public function get_section_name($section): string {
+        $section = $this->get_section($section);
+        if ((string)$section->name !== '') {
+            return format_string(
+                $section->name,
+                true,
+                ['context' => context_course::instance($this->courseid)]
+            );
+        }
+        return $this->get_default_section_name($section);
+    }
+
+    /**
+     * Returns the default section name for the SmartCards format.
+     *
+     * Section 0 uses the key 'section0name'; all others use 'sectionname'.
+     *
+     * @param int|stdClass $section Section object or section number.
+     * @return string
+     */
+    public function get_default_section_name($section): string {
+        $section = $this->get_section($section);
+        if ($section->sectionnum == 0) {
+            return get_string('section0name', 'format_smartcards');
+        }
+        return get_string('sectionname', 'format_smartcards') . ' ' . $section->sectionnum;
+    }
+
+    /**
+     * Returns the URL to view the specified section.
+     *
+     * @param int|stdClass $section Section object or number.
+     * @param array $options Optional parameters (navigation, sr).
+     * @return moodle_url
+     */
+    public function get_view_url($section, $options = []): moodle_url {
+        $course = $this->get_course();
+
+        if (array_key_exists('sr', $options) && !is_null($options['sr'])) {
+            $sectionno = $options['sr'];
+        } else if (is_object($section)) {
+            $sectionno = $section->section;
+        } else {
+            $sectionno = $section;
+        }
+
+        if (
+            (!empty($options['navigation']) || array_key_exists('sr', $options))
+            && $sectionno !== null
+        ) {
+            $sectioninfo = $this->get_section($sectionno);
+            return new moodle_url('/course/section.php', ['id' => $sectioninfo->id]);
+        }
+
+        return new moodle_url('/course/view.php', ['id' => $course->id]);
+    }
+
+    /**
+     * Returns AJAX support details.
+     *
+     * @return stdClass
+     */
+    public function supports_ajax(): stdClass {
+        $ajaxsupport = new stdClass();
+        $ajaxsupport->capable = true;
+        return $ajaxsupport;
+    }
+
+    /**
+     * Allows deletion of sections.
+     *
+     * @param int|stdClass|section_info $section Section to evaluate.
+     * @return bool
+     */
+    public function can_delete_section($section): bool {
+        return true;
+    }
+
+    /**
+     * Returns whether this format supports the creation of a news forum.
+     *
+     * @return bool
+     */
+    public function supports_news(): bool {
+        return true;
+    }
+
+    /**
+     * Disallows stealth module visibility.
+     *
+     * SmartCards replaces the "available but not shown" (stealth) workaround
+     * with native availability badges, so stealth activities are never needed.
+     *
+     * @param stdClass|cm_info $cm Course module.
+     * @param stdClass|section_info $section Section where the module resides.
+     * @return bool
+     */
+    public function allow_stealth_module_visibility($cm, $section): bool {
+        return false;
+    }
+
+    /**
+     * Loads course sections into the navigation tree.
+     *
+     * @param global_navigation $navigation Navigation object.
+     * @param navigation_node $node The course navigation node.
+     * @return void
+     */
+    public function extend_course_navigation($navigation, navigation_node $node): void {
+        global $PAGE;
+        if ($navigation->includesectionnum === false) {
+            $selectedsection = optional_param('section', null, PARAM_INT);
+            if (
+                $selectedsection !== null
+                && (!defined('AJAX_SCRIPT') || AJAX_SCRIPT == '0')
+                && $PAGE->url->compare(new moodle_url('/course/view.php'), URL_MATCH_BASE)
+            ) {
+                $navigation->includesectionnum = $selectedsection;
+            }
+        }
+        parent::extend_course_navigation($navigation, $node);
+    }
+}
+
+/**
+ * Implements callback inplace_editable() allowing section names to be edited in-place.
+ *
+ * @param string $itemtype The item type being edited.
+ * @param int $itemid The item ID.
+ * @param mixed $newvalue The new value.
+ * @return inplace_editable
+ */
+function format_smartcards_inplace_editable(string $itemtype, int $itemid, mixed $newvalue): inplace_editable {
+    global $DB, $CFG;
+    require_once($CFG->dirroot . '/course/lib.php');
+    if ($itemtype === 'sectionname' || $itemtype === 'sectionnamenl') {
+        $section = $DB->get_record_sql(
+            'SELECT s.* FROM {course_sections} s JOIN {course} c ON s.course = c.id
+              WHERE s.id = ? AND c.format = ?',
+            [$itemid, 'smartcards'],
+            MUST_EXIST
+        );
+        return course_get_format($section->course)->inplace_editable_update_section_name(
+            $section,
+            $itemtype,
+            $newvalue
+        );
+    }
+    throw new coding_exception('Unknown inplace editable itemtype: ' . $itemtype);
+}

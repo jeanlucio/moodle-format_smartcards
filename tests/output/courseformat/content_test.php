@@ -1,0 +1,100 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+namespace format_smartcards\output\courseformat;
+
+use availability_date\condition;
+use core_availability\tree;
+
+/**
+ * Full-pipeline render tests for the SmartCards content output class.
+ *
+ * These exercise the real course_get_format() + renderer + Mustache template
+ * pipeline (not just status_resolver in isolation), to catch mistakes that
+ * only surface when cm_info methods are actually called during export.
+ *
+ * @package    format_smartcards
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @coversDefaultClass \format_smartcards\output\courseformat\content
+ */
+final class content_test extends \advanced_testcase {
+    /**
+     * Renders a SmartCards course page for a student with one activity of each
+     * kind (free, restricted, with an expected completion date, hidden) and
+     * asserts each renders exactly as its badge state requires.
+     *
+     * @covers ::export_for_template
+     * @covers ::build_cards_data
+     */
+    public function test_grid_renders_one_card_per_visible_activity(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+
+        $free = $generator->create_module('page', ['course' => $course->id]);
+
+        $restricted = $generator->create_module('page', ['course' => $course->id]);
+        $condition  = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $restricted->cmid]);
+
+        $timed = $generator->create_module('page', ['course' => $course->id]);
+        $DB->set_field('course_modules', 'completionexpected', time() + WEEKSECS, ['id' => $timed->cmid]);
+
+        $hidden = $generator->create_module('page', ['course' => $course->id]);
+        set_coursemodule_visible($hidden->cmid, 0);
+
+        rebuild_course_cache($course->id, true);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        // The free activity links directly, with no badge.
+        $this->assertMatchesRegularExpression(
+            '~<a\s[^>]*href="[^"]*mod/page/view\.php\?id=' . $free->cmid . '"[^>]*class="sc-card"~',
+            $html
+        );
+
+        // The restricted activity is a badged button with a non-empty reason, and no direct URL.
+        $this->assertMatchesRegularExpression(
+            '~data-cmid="' . $restricted->cmid . '"[^>]*data-badgelabel="Restricted"[^>]*data-reason="[^"]+"[^>]*data-hasurl="0"~',
+            $html
+        );
+
+        // The timed activity is a badged button that still carries a direct URL and a due date.
+        $this->assertMatchesRegularExpression(
+            '~data-cmid="' . $timed->cmid . '"[^>]*data-badgelabel="Has a deadline"[^>]*data-reason=""[^>]*data-hasurl="1"~',
+            $html
+        );
+
+        // The hidden activity leaves no trace for the student.
+        $this->assertStringNotContainsString((string)$hidden->cmid, $html);
+    }
+}

@@ -1,0 +1,132 @@
+/**
+ * This file is part of Moodle - https://moodle.org/
+ *
+ * Moodle is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Moodle is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+ */
+/**
+ * Styles for the SmartCards course format.
+ *
+ * @package    format_smartcards
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+.format-smartcards .sc-course {
+    --sc-card-size: 6.5rem;
+    --sc-card-gap: 1rem;
+    --sc-card-radius: 0.75rem;
+    --sc-dimmed-opacity: 0.5;
+}
+
+.format-smartcards .sc-section {
+    margin-block-end: 2rem;
+}
+
+.format-smartcards .sc-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-block-end: 0.75rem;
+}
+
+.format-smartcards .sc-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-card-gap);
+}
+
+.format-smartcards .sc-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    inline-size: var(--sc-card-size);
+    min-block-size: 44px;
+    padding: 0.75rem 0.5rem;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--sc-card-radius);
+    background-color: var(--card-bg, #fff);
+    color: var(--body-color, #212529);
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}
+
+.format-smartcards a.sc-card:hover,
+.format-smartcards button.sc-card:hover {
+    border-color: var(--primary, #0f6cbf);
+}
+
+.format-smartcards .sc-card-static {
+    cursor: default;
+}
+
+.format-smartcards .sc-card-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+}
+
+.format-smartcards .sc-card-iconimg {
+    max-inline-size: 100%;
+    max-block-size: 100%;
+}
+
+.format-smartcards .sc-card-badgeicon {
+    position: absolute;
+    inset-block-end: -0.25rem;
+    inset-inline-end: -0.25rem;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.format-smartcards .sc-card-title {
+    font-size: 0.85rem;
+    overflow-wrap: break-word;
+}
+
+.format-smartcards .sc-card-dimmedlabel {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--secondary, #6c757d);
+    text-transform: uppercase;
+}
+
+.format-smartcards .sc-card-dimmed {
+    opacity: var(--sc-dimmed-opacity);
+}
+
+.format-smartcards .sc-sheet-badgelabel {
+    font-weight: 600;
+}
+
+.format-smartcards .sc-sheet-row {
+    margin-block-end: 0.75rem;
+}
+
+.format-smartcards .sc-sheet-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--secondary, #6c757d);
+    text-transform: uppercase;
+}
+
+.format-smartcards .sc-sheet-access {
+    display: inline-block;
+    margin-block-start: 0.5rem;
+}

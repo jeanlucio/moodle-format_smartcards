@@ -1,0 +1,22 @@
+SCOPE.md
+.claude/
+.docs/
+
+# Node / Grunt
+node_modules/
+.grunt/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Local lint config (conflicts with Moodle CI Grunt)
+.stylelintrc.json
+.eslintrc
+.eslintrc.json
+.eslintignore
