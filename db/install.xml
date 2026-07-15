@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="course/format/smartcards/db" VERSION="20260715" COMMENT="XMLDB file for Moodle course/format/smartcards"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="format_smartcards_appearance" COMMENT="Custom card appearance (image/emoji/icon and colours) per activity or section">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="contextlevel" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="activity" SEQUENCE="false" COMMENT="'activity' or 'section'"/>
+        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="cmid when contextlevel=activity, sectionid when contextlevel=section"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="icon" SEQUENCE="false" COMMENT="'image', 'emoji' or 'icon'"/>
+        <FIELD NAME="value" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="fileid, single emoji, or library icon name, depending on type"/>
+        <FIELD NAME="bgcolor" TYPE="char" LENGTH="7" NOTNULL="false" SEQUENCE="false" COMMENT="#RRGGBB background colour of the card circle"/>
+        <FIELD NAME="labelcolor" TYPE="char" LENGTH="7" NOTNULL="false" SEQUENCE="false" COMMENT="#RRGGBB title colour, restricted to the curated palette"/>
+        <FIELD NAME="labelfont" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="Slug of the curated bundled font, null = system font"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="contextlevel_itemid" TYPE="unique" FIELDS="contextlevel, itemid"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

@@ -15,23 +15,18 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Strings de idioma em português do Brasil para o formato de curso SmartCards.
+ * Hook listener callbacks for format_smartcards.
  *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-// phpcs:disable moodle.Files.LineLength
+
 defined('MOODLE_INTERNAL') || die();
 
-$string['accessactivity'] = 'Acessar atividade';
-$string['hiddenactivity'] = 'Oculto';
-$string['pluginname'] = 'SmartCards';
-$string['privacy:metadata'] = 'O formato de curso SmartCards não armazena nenhum dado pessoal. Ele apenas exibe informação de disponibilidade de atividade já calculada pelo núcleo do Moodle.';
-$string['section0name'] = 'Geral';
-$string['sectionname'] = 'Tópico';
-$string['smartcards:manageappearance'] = 'Personalizar aparência dos cards de atividade e seção';
-$string['status_due'] = 'Prazo';
-$string['status_locked'] = 'Restrito';
-$string['status_reason'] = 'Motivo';
-$string['status_timed'] = 'Com prazo';
+$callbacks = [
+    [
+        'hook'     => \core_course\hook\before_course_deleted::class,
+        'callback' => \format_smartcards\hook_listener::class . '::before_course_deleted',
+    ],
+];

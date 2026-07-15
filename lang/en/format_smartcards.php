@@ -30,6 +30,7 @@ $string['pluginname'] = 'SmartCards';
 $string['privacy:metadata'] = 'The SmartCards course format does not store any personal data. It only displays activity availability information that is already computed by Moodle core.';
 $string['section0name'] = 'General';
 $string['sectionname'] = 'Topic';
+$string['smartcards:manageappearance'] = 'Customise activity and section card appearance';
 $string['status_due'] = 'Due date';
 $string['status_locked'] = 'Restricted';
 $string['status_reason'] = 'Reason';
