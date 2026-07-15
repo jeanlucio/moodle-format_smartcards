@@ -97,4 +97,47 @@ final class content_test extends \advanced_testcase {
         // The hidden activity leaves no trace for the student.
         $this->assertStringNotContainsString((string)$hidden->cmid, $html);
     }
+
+    /**
+     * A teacher who can bypass the restriction must still see the 'locked' badge on a
+     * restricted activity (the transparency the plugin exists to provide, instead of
+     * hiding restriction status like the stealth-activity workaround), while still
+     * being able to follow the link — data-hasurl="1" alongside the badge, a combination
+     * that previously only happened for the 'timed' badge.
+     *
+     * @covers ::export_for_template
+     * @covers ::build_cards_data
+     */
+    public function test_teacher_sees_locked_badge_with_working_link(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+
+        $restricted = $generator->create_module('page', ['course' => $course->id]);
+        $condition  = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $restricted->cmid]);
+        rebuild_course_cache($course->id, true);
+
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression(
+            '~data-cmid="' . $restricted->cmid . '"[^>]*data-badgelabel="Restricted"[^>]*data-reason="[^"]+"[^>]*data-hasurl="1"~',
+            $html
+        );
+    }
 }

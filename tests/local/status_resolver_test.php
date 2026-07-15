@@ -163,4 +163,68 @@ final class status_resolver_test extends \advanced_testcase {
         $this->assertTrue($status->isvisible);
         $this->assertTrue($status->dimmed);
     }
+
+    /**
+     * A teacher able to bypass availability restrictions (moodle/course:
+     * ignoreavailabilityrestrictions) must still see the 'locked' badge and reason on a
+     * restricted activity — cm_info::$uservisible alone would hide this from them, since
+     * it already folds in their bypass capability, defeating the point of surfacing
+     * restriction status instead of hiding it like the stealth-activity workaround does.
+     * Unlike a student in the same situation, the teacher must still be able to follow
+     * the link (canaccess true).
+     *
+     * @covers ::resolve
+     */
+    public function test_teacher_who_can_bypass_restriction_still_sees_locked_badge(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+
+        $condition = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $page->cmid]);
+        rebuild_course_cache($course->id, true);
+
+        $modinfo = get_fast_modinfo($course, $teacher->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        $status = status_resolver::resolve($cm);
+
+        $this->assertTrue($status->isvisible);
+        $this->assertSame(status_resolver::BADGE_LOCKED, $status->badge);
+        $this->assertNotSame('', $status->reason);
+        $this->assertTrue($status->canaccess);
+    }
+
+    /**
+     * A student who genuinely cannot bypass a restriction must still be blocked from
+     * accessing the activity, even though the badge/reason computation now shares the
+     * same cm_info::$available check as the teacher-bypass case above.
+     *
+     * @covers ::resolve
+     */
+    public function test_student_cannot_access_restricted_activity(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $condition = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $page->cmid]);
+        rebuild_course_cache($course->id, true);
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        $status = status_resolver::resolve($cm);
+
+        $this->assertSame(status_resolver::BADGE_LOCKED, $status->badge);
+        $this->assertFalse($status->canaccess);
+    }
 }

@@ -23,9 +23,19 @@ use cm_info;
  *
  * This class never recomputes availability rules. It only reads properties already
  * calculated by the core availability system ({@see cm_info::$uservisible},
- * {@see cm_info::is_visible_on_course_page()}, {@see cm_info::$visible},
- * {@see cm_info::$availableinfo}, {@see cm_info::$completionexpected}), so behaviour
- * always stays consistent with core.
+ * {@see cm_info::$available}, {@see cm_info::is_visible_on_course_page()},
+ * {@see cm_info::$visible}, {@see cm_info::$availableinfo},
+ * {@see cm_info::$completionexpected}), so behaviour always stays consistent with core.
+ *
+ * The badge is derived from {@see cm_info::$available}, not {@see cm_info::$uservisible}.
+ * Core computes $available purely from the restriction condition, with no regard for
+ * whether the viewer can bypass it; $uservisible additionally folds in
+ * moodle/course:ignoreavailabilityrestrictions (true for a teacher even when the
+ * condition is unmet — see cm_info::update_user_visible()). Using $uservisible for the
+ * badge would make a teacher who can bypass a restriction never see the 'locked' badge
+ * at all, defeating the plugin's whole point of surfacing restriction status instead of
+ * hiding it like the stealth-activity workaround does. $uservisible is still what
+ * decides {@see cm_status::$canaccess} — whether the card's link actually works.
  *
  * Note: core only ever populates {@see cm_info::$availableinfo} while the module is
  * unavailable ({@see \core_availability\info::is_available()} clears it to an empty
@@ -53,19 +63,20 @@ class status_resolver {
      */
     public static function resolve(cm_info $cm): cm_status {
         if (!$cm->is_visible_on_course_page()) {
-            return new cm_status(isvisible: false, badge: null, reason: '', duedate: 0, dimmed: false);
+            return new cm_status(isvisible: false, badge: null, reason: '', duedate: 0, dimmed: false, canaccess: false);
         }
 
         $dimmed  = !$cm->visible;
         $duedate = (int)$cm->completionexpected;
 
-        if (!$cm->uservisible) {
+        if (!$cm->available) {
             return new cm_status(
                 isvisible: true,
                 badge: self::BADGE_LOCKED,
                 reason: (string)$cm->availableinfo,
                 duedate: $duedate,
                 dimmed: $dimmed,
+                canaccess: $cm->uservisible,
             );
         }
 
@@ -76,9 +87,10 @@ class status_resolver {
                 reason: '',
                 duedate: $duedate,
                 dimmed: $dimmed,
+                canaccess: true,
             );
         }
 
-        return new cm_status(isvisible: true, badge: null, reason: '', duedate: 0, dimmed: $dimmed);
+        return new cm_status(isvisible: true, badge: null, reason: '', duedate: 0, dimmed: $dimmed, canaccess: true);
     }
 }

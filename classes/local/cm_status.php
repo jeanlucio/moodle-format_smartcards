@@ -44,6 +44,15 @@ final class cm_status {
     public readonly bool $dimmed;
 
     /**
+     * @var bool Whether the current user can actually follow the card's link right now.
+     *           A teacher who can bypass a restriction (moodle/course:
+     *           ignoreavailabilityrestrictions) still sees the 'locked' badge as a
+     *           transparency indicator, but this stays true for them; for a student who
+     *           cannot bypass it, this is false whenever the badge is 'locked'.
+     */
+    public readonly bool $canaccess;
+
+    /**
      * Constructor.
      *
      * @param bool $isvisible Whether the card should be rendered at all.
@@ -51,12 +60,21 @@ final class cm_status {
      * @param string $reason Availability info text.
      * @param int $duedate Unix timestamp of the expected completion date, or 0.
      * @param bool $dimmed Whether the item should be rendered dimmed for editing users.
+     * @param bool $canaccess Whether the current user can actually follow the card's link.
      */
-    public function __construct(bool $isvisible, ?string $badge, string $reason, int $duedate, bool $dimmed) {
+    public function __construct(
+        bool $isvisible,
+        ?string $badge,
+        string $reason,
+        int $duedate,
+        bool $dimmed,
+        bool $canaccess,
+    ) {
         $this->isvisible = $isvisible;
         $this->badge     = $badge;
         $this->reason    = $reason;
         $this->duedate   = $duedate;
         $this->dimmed    = $dimmed;
+        $this->canaccess = $canaccess;
     }
 }

@@ -61,7 +61,7 @@ class card_builder {
             ? userdate($duedate, get_string('strftimedatefullshort', 'langconfig'))
             : '';
 
-        $hasurl = !empty($cm->url) && $status->badge !== status_resolver::BADGE_LOCKED;
+        $hasurl = !empty($cm->url) && $status->canaccess;
 
         $badgelabel = match ($status->badge) {
             status_resolver::BADGE_LOCKED => get_string('status_locked', 'format_smartcards'),
