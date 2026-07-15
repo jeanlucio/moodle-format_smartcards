@@ -1,0 +1,162 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle. If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template format_smartcards/local/appearance_editor
+
+    Body of the "Card appearance" modal opened from the native per-activity edit menu.
+    Lets the teacher choose an emoji or a library icon, a circle background colour, and
+    a title colour/font from the curated palettes. Rendered client-side by
+    appearance_picker.js via Templates.renderForPromise(), so all labels go through the
+    str Mustache helper instead of being pre-resolved server-side.
+
+    Example context (json):
+    {
+        "cmid": 5,
+        "colors": [
+            {"slug": "blue", "hex": "#1565c0"}
+        ],
+        "fonts": [
+            {"slug": "nunito", "name": "Nunito"}
+        ],
+        "icons": [
+            {"slug": "book"}
+        ]
+    }
+}}
+<form class="sc-appearance-form" data-region="smartcards-appearance-form" data-cmid="{{cmid}}">
+    <fieldset class="sc-appearance-field">
+        <legend class="sc-appearance-legend">{{#str}} appearance_type, format_smartcards {{/str}}</legend>
+        <div class="form-check">
+            <input
+                type="radio"
+                class="form-check-input"
+                name="sc-appearance-type"
+                id="sc-appearance-type-emoji"
+                value="emoji"
+                data-region="smartcards-type-radio"
+                checked
+            >
+            <label class="form-check-label" for="sc-appearance-type-emoji">
+                {{#str}} appearance_emoji, format_smartcards {{/str}}
+            </label>
+        </div>
+        <div class="form-check">
+            <input
+                type="radio"
+                class="form-check-input"
+                name="sc-appearance-type"
+                id="sc-appearance-type-icon"
+                value="icon"
+                data-region="smartcards-type-radio"
+            >
+            <label class="form-check-label" for="sc-appearance-type-icon">
+                {{#str}} appearance_icon, format_smartcards {{/str}}
+            </label>
+        </div>
+    </fieldset>
+
+    <div class="sc-appearance-field" data-region="smartcards-emoji-field">
+        <label class="sc-appearance-label" for="sc-appearance-emoji-input">
+            {{#str}} appearance_emoji, format_smartcards {{/str}}
+        </label>
+        <input
+            type="text"
+            class="form-control sc-appearance-emoji-input"
+            id="sc-appearance-emoji-input"
+            data-region="smartcards-emoji-input"
+            placeholder="{{#str}} appearance_emoji_placeholder, format_smartcards {{/str}}"
+            maxlength="8"
+        >
+    </div>
+
+    <div class="sc-appearance-field" data-region="smartcards-icon-field" hidden>
+        <label class="sc-appearance-label" for="sc-appearance-icon-select">
+            {{#str}} appearance_icon, format_smartcards {{/str}}
+        </label>
+        <select class="form-control" id="sc-appearance-icon-select" data-region="smartcards-icon-select">
+            {{#icons}}
+            <option value="{{slug}}">{{slug}}</option>
+            {{/icons}}
+        </select>
+    </div>
+
+    <div class="sc-appearance-field">
+        <label class="sc-appearance-label" for="sc-appearance-bgcolor-input">
+            {{#str}} appearance_bgcolor, format_smartcards {{/str}}
+        </label>
+        <div class="sc-appearance-bgcolor-row">
+            <input
+                type="color"
+                class="form-control form-control-color"
+                id="sc-appearance-bgcolor-input"
+                data-region="smartcards-bgcolor-input"
+                value="#f8f9fa"
+            >
+            <button
+                type="button"
+                class="btn btn-link sc-appearance-clear"
+                data-region="smartcards-bgcolor-clear"
+            >
+                {{#str}} appearance_defaultcolor, format_smartcards {{/str}}
+            </button>
+        </div>
+    </div>
+
+    <div class="sc-appearance-field">
+        <span class="sc-appearance-label" id="sc-appearance-labelcolor-legend">
+            {{#str}} appearance_labelcolor, format_smartcards {{/str}}
+        </span>
+        <div
+            class="sc-appearance-swatches"
+            data-region="smartcards-labelcolor-swatches"
+            role="group"
+            aria-labelledby="sc-appearance-labelcolor-legend"
+        >
+            <button
+                type="button"
+                class="sc-appearance-swatch sc-appearance-swatch-default"
+                data-region="smartcards-labelcolor-swatch"
+                data-value=""
+                aria-pressed="true"
+                aria-label="{{#str}} appearance_defaultcolor, format_smartcards {{/str}}"
+            ></button>
+            {{#colors}}
+            <button
+                type="button"
+                class="sc-appearance-swatch"
+                data-region="smartcards-labelcolor-swatch"
+                data-value="{{hex}}"
+                style="background-color: {{hex}}"
+                aria-pressed="false"
+                aria-label="{{slug}}"
+            ></button>
+            {{/colors}}
+        </div>
+    </div>
+
+    <div class="sc-appearance-field">
+        <label class="sc-appearance-label" for="sc-appearance-labelfont-select">
+            {{#str}} appearance_labelfont, format_smartcards {{/str}}
+        </label>
+        <select class="form-control" id="sc-appearance-labelfont-select" data-region="smartcards-labelfont-select">
+            <option value="">{{#str}} appearance_labelfont_system, format_smartcards {{/str}}</option>
+            {{#fonts}}
+            <option value="{{slug}}">{{name}}</option>
+            {{/fonts}}
+        </select>
+    </div>
+</form>

@@ -137,3 +137,49 @@
     display: inline-block;
     margin-block-start: 0.5rem;
 }
+
+.format-smartcards .sc-appearance-field {
+    margin-block-end: 1rem;
+    border: 0;
+    padding: 0;
+}
+
+.format-smartcards .sc-appearance-legend,
+.format-smartcards .sc-appearance-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--secondary, #6c757d);
+    text-transform: uppercase;
+    margin-block-end: 0.35rem;
+}
+
+.format-smartcards .sc-appearance-bgcolor-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.format-smartcards .sc-appearance-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.format-smartcards .sc-appearance-swatch {
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 50%;
+    border: 2px solid var(--border-color, #dee2e6);
+    cursor: pointer;
+    padding: 0;
+}
+
+.format-smartcards .sc-appearance-swatch-default {
+    background-color: var(--light, #f8f9fa);
+}
+
+.format-smartcards .sc-appearance-swatch[aria-pressed="true"] {
+    border-color: var(--primary, #0f6cbf);
+    box-shadow: 0 0 0 2px var(--primary, #0f6cbf);
+}

@@ -58,6 +58,7 @@ class controlmenu extends controlmenu_base {
                 'class' => 'sc-edit-appearance-action',
                 'data-action' => 'smartcardsEditAppearance',
                 'data-cmid' => (string)$this->mod->id,
+                'data-name' => $this->mod->get_formatted_name(),
             ],
         );
 
