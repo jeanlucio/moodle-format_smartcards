@@ -25,6 +25,16 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['accessactivity'] = 'Access activity';
+$string['appearance_bgcolor'] = 'Circle background colour';
+$string['appearance_defaultcolor'] = 'Default';
+$string['appearance_emoji'] = 'Emoji';
+$string['appearance_emoji_placeholder'] = 'Paste or type a single emoji';
+$string['appearance_icon'] = 'Library icon';
+$string['appearance_labelcolor'] = 'Title colour';
+$string['appearance_labelfont'] = 'Title font';
+$string['appearance_labelfont_system'] = 'Default (system font)';
+$string['appearance_type'] = 'Appearance type';
+$string['editappearance'] = 'Card appearance';
 $string['hiddenactivity'] = 'Hidden';
 $string['pluginname'] = 'SmartCards';
 $string['privacy:metadata'] = 'The SmartCards course format does not store any personal data. It only displays activity availability information that is already computed by Moodle core.';

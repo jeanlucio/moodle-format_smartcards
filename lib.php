@@ -214,6 +214,26 @@ class format_smartcards extends core_courseformat\base {
         }
         parent::extend_course_navigation($navigation, $node);
     }
+
+    /**
+     * Loads the appearance picker AMD module whenever the user can manage card
+     * appearance, so its "Card appearance" entry in the per-activity edit menu
+     * (added by content\cm\controlmenu, only rendered while editing) is functional.
+     *
+     * Called on every course page for this format (moodle_page::set_course()), unlike
+     * content::export_for_template(), which only runs its custom logic outside edit
+     * mode — this is the one hook shared by both modes.
+     *
+     * @param moodle_page $page Instance of page calling set_course.
+     * @return void
+     */
+    public function page_set_course($page): void {
+        parent::page_set_course($page);
+
+        if (has_capability('format/smartcards:manageappearance', $this->get_context())) {
+            $page->requires->js_call_amd('format_smartcards/appearance_picker', 'init');
+        }
+    }
 }
 
 /**

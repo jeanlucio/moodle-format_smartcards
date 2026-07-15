@@ -18,12 +18,10 @@ namespace format_smartcards\output\courseformat;
 
 use cm_info;
 use context_course;
-use core_availability\info;
 use core_courseformat\output\local\content as content_base;
 use format_smartcards\local\appearance;
-use format_smartcards\local\appearance_palette;
 use format_smartcards\local\appearance_repository;
-use format_smartcards\local\status_resolver;
+use format_smartcards\local\card_builder;
 use renderer_base;
 use section_info;
 use stdClass;
@@ -135,94 +133,13 @@ class content extends content_base {
         $cards = [];
 
         foreach ($this->get_section_cms($modinfo, $sectioninfo) as $cm) {
-            $status = status_resolver::resolve($cm);
-            if (!$status->isvisible) {
-                continue;
+            $card = card_builder::build($cm, $course, $output, $appearances[$cm->id] ?? null);
+            if ($card !== null) {
+                $cards[] = $card;
             }
-
-            $reason = $status->reason !== ''
-                ? info::format_info($status->reason, $course)
-                : '';
-
-            $duedate          = $status->duedate;
-            $hasduedate       = $duedate > 0;
-            $duedateformatted = $hasduedate
-                ? userdate($duedate, get_string('strftimedatefullshort', 'langconfig'))
-                : '';
-
-            $hasurl = !empty($cm->url) && $status->badge !== status_resolver::BADGE_LOCKED;
-
-            $badgelabel = match ($status->badge) {
-                status_resolver::BADGE_LOCKED => get_string('status_locked', 'format_smartcards'),
-                status_resolver::BADGE_TIMED  => get_string('status_timed', 'format_smartcards'),
-                default => '',
-            };
-
-            [$isemoji, $emoji, $iconstyle, $titlestyle] = $this->build_appearance_styles($appearances[$cm->id] ?? null);
-
-            $cards[] = [
-                'cmid'             => $cm->id,
-                'name'             => format_string($cm->name, true, ['context' => $cm->context]),
-                'iconurl'          => $output->image_url('icon', $cm->modname)->out(false),
-                'modtypelabel'     => get_string('modulename', $cm->modname),
-                'url'              => $hasurl ? $cm->url->out(false) : '',
-                'hasurl'           => $hasurl,
-                'badge'            => $status->badge,
-                'badgelabel'       => $badgelabel,
-                'islocked'         => ($status->badge === status_resolver::BADGE_LOCKED),
-                'istimed'          => ($status->badge === status_resolver::BADGE_TIMED),
-                'hasbadge'         => ($status->badge !== null),
-                'reason'           => $reason,
-                'hasreason'        => ($reason !== ''),
-                'duedate'          => $duedate,
-                'hasduedate'       => $hasduedate,
-                'duedateformatted' => $duedateformatted,
-                'dimmed'           => $status->dimmed,
-                'hiddenlabel'      => $status->dimmed ? get_string('hiddenactivity', 'format_smartcards') : '',
-                'isemoji'          => $isemoji,
-                'emoji'            => $emoji,
-                'hasiconstyle'     => ($iconstyle !== ''),
-                'iconstyle'        => $iconstyle,
-                'hastitlestyle'    => ($titlestyle !== ''),
-                'titlestyle'       => $titlestyle,
-            ];
         }
 
         return $cards;
-    }
-
-    /**
-     * Derives the inline style declarations for one card's icon circle and title from
-     * its custom appearance, if any.
-     *
-     * Image and icon appearance types are not rendered yet (uploaded images need the
-     * File API wiring added together with the appearance editor UI; icon names need the
-     * bundled icon library), so only the emoji type and the two colour/font fields are
-     * wired up so far.
-     *
-     * @param appearance|null $item The activity's custom appearance, or null.
-     * @return array{0: bool, 1: string, 2: string, 3: string} isemoji, emoji, iconstyle, titlestyle.
-     */
-    private function build_appearance_styles(?appearance $item): array {
-        if ($item === null) {
-            return [false, '', '', ''];
-        }
-
-        $isemoji = ($item->type === appearance_repository::TYPE_EMOJI);
-        $emoji   = $isemoji ? $item->value : '';
-
-        $iconstyle = $item->bgcolor !== null ? 'background-color: ' . $item->bgcolor : '';
-
-        $titlestyleparts = [];
-        if ($item->labelcolor !== null) {
-            $titlestyleparts[] = 'color: ' . $item->labelcolor;
-        }
-        if ($item->labelfont !== null && array_key_exists($item->labelfont, appearance_palette::LABEL_FONTS)) {
-            $titlestyleparts[] = "font-family: '" . appearance_palette::LABEL_FONTS[$item->labelfont] . "', sans-serif";
-        }
-        $titlestyle = implode('; ', $titlestyleparts);
-
-        return [$isemoji, $emoji, $iconstyle, $titlestyle];
     }
 
     /**
