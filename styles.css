@@ -79,11 +79,18 @@
     justify-content: center;
     inline-size: 3rem;
     block-size: 3rem;
+    border-radius: 50%;
+    background-color: var(--light, #f8f9fa);
 }
 
 .format-smartcards .sc-card-iconimg {
-    max-inline-size: 100%;
-    max-block-size: 100%;
+    max-inline-size: 70%;
+    max-block-size: 70%;
+}
+
+.format-smartcards .sc-card-emoji {
+    font-size: 1.75rem;
+    line-height: 1;
 }
 
 .format-smartcards .sc-card-badgeicon {

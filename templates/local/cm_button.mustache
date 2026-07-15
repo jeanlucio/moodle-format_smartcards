@@ -37,7 +37,13 @@
         "reason": "Not available unless you complete Forum introduction",
         "duedateformatted": "",
         "dimmed": false,
-        "hiddenlabel": ""
+        "hiddenlabel": "",
+        "isemoji": false,
+        "emoji": "",
+        "hasiconstyle": true,
+        "iconstyle": "background-color: #1565c0",
+        "hastitlestyle": true,
+        "titlestyle": "color: #1565c0; font-family: 'Nunito', sans-serif"
     }
 }}
 {{#hasbadge}}
@@ -54,11 +60,11 @@
     data-duedateformatted="{{duedateformatted}}"
     aria-label="{{name}} — {{badgelabel}}"
 >
-    <span class="sc-card-icon" aria-hidden="true">
-        <img src="{{iconurl}}" alt="" class="sc-card-iconimg">
+    <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
+        {{> format_smartcards/local/cm_icon }}
         <span class="sc-card-badgeicon">{{#islocked}}🔒{{/islocked}}{{#istimed}}🕒{{/istimed}}</span>
     </span>
-    <span class="sc-card-title">{{name}}</span>
+    <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
     {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
 </button>
 {{/hasbadge}}
@@ -70,10 +76,10 @@
         data-region="smartcards-card"
         data-cmid="{{cmid}}"
     >
-        <span class="sc-card-icon" aria-hidden="true">
-            <img src="{{iconurl}}" alt="" class="sc-card-iconimg">
+        <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
+            {{> format_smartcards/local/cm_icon }}
         </span>
-        <span class="sc-card-title">{{name}}</span>
+        <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
         {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
     </a>
     {{/hasurl}}
@@ -83,10 +89,10 @@
         data-region="smartcards-card"
         data-cmid="{{cmid}}"
     >
-        <span class="sc-card-icon" aria-hidden="true">
-            <img src="{{iconurl}}" alt="" class="sc-card-iconimg">
+        <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
+            {{> format_smartcards/local/cm_icon }}
         </span>
-        <span class="sc-card-title">{{name}}</span>
+        <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
         {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
     </div>
     {{/hasurl}}

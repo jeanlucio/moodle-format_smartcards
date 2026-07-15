@@ -20,6 +20,9 @@ use cm_info;
 use context_course;
 use core_availability\info;
 use core_courseformat\output\local\content as content_base;
+use format_smartcards\local\appearance;
+use format_smartcards\local\appearance_palette;
+use format_smartcards\local\appearance_repository;
 use format_smartcards\local\status_resolver;
 use renderer_base;
 use section_info;
@@ -80,13 +83,15 @@ class content extends content_base {
 
         $canedit = has_capability('moodle/course:manageactivities', $context);
 
+        $appearances = (new appearance_repository())->get_many_for_activities(array_keys($modinfo->get_cms()));
+
         $sectionsdata = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
             if (!$sectioninfo->uservisible && $sectioninfo->section > 0) {
                 continue;
             }
 
-            $cards = $this->build_cards_data($modinfo, $sectioninfo, $course, $output);
+            $cards = $this->build_cards_data($modinfo, $sectioninfo, $course, $output, $appearances);
             if (empty($cards) && $sectioninfo->section > 0 && (string)$sectioninfo->summary === '') {
                 continue;
             }
@@ -117,13 +122,15 @@ class content extends content_base {
      * @param section_info $sectioninfo Section to render.
      * @param stdClass $course Course record.
      * @param renderer_base $output Renderer used to resolve module icon URLs.
+     * @param appearance[] $appearances Custom appearance keyed by cmid, from get_many_for_activities().
      * @return array<int, array<string, mixed>> Card data, one entry per visible module.
      */
     private function build_cards_data(
         \course_modinfo $modinfo,
         section_info $sectioninfo,
         stdClass $course,
-        renderer_base $output
+        renderer_base $output,
+        array $appearances
     ): array {
         $cards = [];
 
@@ -151,6 +158,8 @@ class content extends content_base {
                 default => '',
             };
 
+            [$isemoji, $emoji, $iconstyle, $titlestyle] = $this->build_appearance_styles($appearances[$cm->id] ?? null);
+
             $cards[] = [
                 'cmid'             => $cm->id,
                 'name'             => format_string($cm->name, true, ['context' => $cm->context]),
@@ -170,10 +179,50 @@ class content extends content_base {
                 'duedateformatted' => $duedateformatted,
                 'dimmed'           => $status->dimmed,
                 'hiddenlabel'      => $status->dimmed ? get_string('hiddenactivity', 'format_smartcards') : '',
+                'isemoji'          => $isemoji,
+                'emoji'            => $emoji,
+                'hasiconstyle'     => ($iconstyle !== ''),
+                'iconstyle'        => $iconstyle,
+                'hastitlestyle'    => ($titlestyle !== ''),
+                'titlestyle'       => $titlestyle,
             ];
         }
 
         return $cards;
+    }
+
+    /**
+     * Derives the inline style declarations for one card's icon circle and title from
+     * its custom appearance, if any.
+     *
+     * Image and icon appearance types are not rendered yet (uploaded images need the
+     * File API wiring added together with the appearance editor UI; icon names need the
+     * bundled icon library), so only the emoji type and the two colour/font fields are
+     * wired up so far.
+     *
+     * @param appearance|null $item The activity's custom appearance, or null.
+     * @return array{0: bool, 1: string, 2: string, 3: string} isemoji, emoji, iconstyle, titlestyle.
+     */
+    private function build_appearance_styles(?appearance $item): array {
+        if ($item === null) {
+            return [false, '', '', ''];
+        }
+
+        $isemoji = ($item->type === appearance_repository::TYPE_EMOJI);
+        $emoji   = $isemoji ? $item->value : '';
+
+        $iconstyle = $item->bgcolor !== null ? 'background-color: ' . $item->bgcolor : '';
+
+        $titlestyleparts = [];
+        if ($item->labelcolor !== null) {
+            $titlestyleparts[] = 'color: ' . $item->labelcolor;
+        }
+        if ($item->labelfont !== null && array_key_exists($item->labelfont, appearance_palette::LABEL_FONTS)) {
+            $titlestyleparts[] = "font-family: '" . appearance_palette::LABEL_FONTS[$item->labelfont] . "', sans-serif";
+        }
+        $titlestyle = implode('; ', $titlestyleparts);
+
+        return [$isemoji, $emoji, $iconstyle, $titlestyle];
     }
 
     /**
