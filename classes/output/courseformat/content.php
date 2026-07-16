@@ -20,6 +20,7 @@ use cm_info;
 use completion_info;
 use context_course;
 use core_courseformat\output\local\content as content_base;
+use format_smartcards\external\toggle_section;
 use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
@@ -89,24 +90,25 @@ class content extends content_base {
 
         $isaccordion = ($formatoptions['navstyle'] ?? 'default') === 'accordion';
         $completioninfo = null;
-        $sectionpreferences = [];
-        $hastouchedaccordion = false;
+        $collapsedids = [];
+        $expandedids = [];
         if ($isaccordion) {
             // Loads theme_boost/bootstrap/collapse (as a side effect of its own import
             // chain) to activate Bootstrap's [data-bs-toggle="collapse"] click handling,
-            // and persists each manual toggle via the same core_courseformat_update_course
-            // web service and section preference core's own default view already uses
-            // (course_format::get_sections_preferences()), so a student's choice survives
-            // reloads exactly like it would on a standard Moodle course page.
+            // and persists each manual toggle via format_smartcards_toggle_section, so a
+            // student's choice survives reloads.
             $PAGE->requires->js_call_amd('format_smartcards/accordion', 'init');
-            $completioninfo      = new completion_info($course);
-            $sectionpreferences  = $format->get_sections_preferences();
-            $collapsedpreference = $format->get_sections_preferences_by_preference()['contentcollapsed'] ?? [];
-            $hastouchedaccordion = !empty($collapsedpreference);
+            $completioninfo = new completion_info($course);
+            $preferences    = $format->get_sections_preferences_by_preference();
+            // Cast to int: section_info::$id comes back as a string from the DB, but
+            // in_array() below is intentionally strict, so an uncast list here would
+            // never match any section id (the exact bug a real course hit).
+            $collapsedids   = array_map('intval', $preferences[toggle_section::PREFERENCE_COLLAPSED] ?? []);
+            $expandedids    = array_map('intval', $preferences[toggle_section::PREFERENCE_EXPANDED] ?? []);
         }
 
         $sectionsdata = [];
-        $progressbyindex = [];
+        $untouchedbyindex = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
             if (!$sectioninfo->uservisible && $sectioninfo->section > 0) {
                 continue;
@@ -119,7 +121,18 @@ class content extends content_base {
 
             $iscollapsible = $isaccordion && $sectioninfo->section > 0;
             $progress = $iscollapsible ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
-            $explicitcollapsed = !empty($sectionpreferences[$sectioninfo->id]->contentcollapsed ?? false);
+
+            // A section is either explicitly collapsed, explicitly expanded, or genuinely
+            // untouched (null) — tracking both directions (see toggle_section's docblock)
+            // means an explicit expand of a section the accordion had closed by its own
+            // default is never confused with a section the student never touched.
+            if (in_array((int)$sectioninfo->id, $collapsedids, true)) {
+                $explicitopen = false;
+            } else if (in_array((int)$sectioninfo->id, $expandedids, true)) {
+                $explicitopen = true;
+            } else {
+                $explicitopen = null;
+            }
 
             $sectionsdata[] = [
                 'id'            => $sectioninfo->id,
@@ -129,7 +142,7 @@ class content extends content_base {
                 'cards'         => $cards,
                 'hascards'      => !empty($cards),
                 'iscollapsible' => $iscollapsible,
-                'isopen'        => $iscollapsible && !$explicitcollapsed,
+                'isopen'        => $iscollapsible && ($explicitopen ?? false),
                 'hasprogress'   => $progress !== null && $progress->has_tracking(),
                 'progresslabel' => ($progress !== null && $progress->has_tracking())
                     ? get_string('progresstotal', 'completion', (object)[
@@ -139,21 +152,18 @@ class content extends content_base {
                     : '',
             ];
 
-            if ($iscollapsible) {
-                $progressbyindex[array_key_last($sectionsdata)] = $progress;
+            if ($iscollapsible && $explicitopen === null) {
+                $untouchedbyindex[array_key_last($sectionsdata)] = $progress;
             }
         }
 
-        if ($isaccordion && !$hastouchedaccordion) {
-            // The student has never manually toggled any section of this course before:
-            // let the pending activity pick the one section that opens, instead of
-            // core's own "everything expanded" default — every other case (the student
-            // has touched at least one section) keeps the per-section value already set
-            // above, exactly matching core's own "expanded unless explicitly collapsed"
-            // rule, so a manual choice is never overridden by this logic again.
-            $openindex = $this->find_default_open_section_index($progressbyindex);
-            foreach (array_keys($progressbyindex) as $index) {
-                $sectionsdata[$index]['isopen'] = ($index === $openindex);
+        if ($isaccordion) {
+            // Among the sections the student has never touched, let the pending
+            // activity pick the one that opens by default — a section already
+            // explicitly collapsed or expanded above always keeps that choice.
+            $openindex = $this->find_default_open_section_index($untouchedbyindex);
+            if ($openindex !== null) {
+                $sectionsdata[$openindex]['isopen'] = true;
             }
         }
 
@@ -164,7 +174,6 @@ class content extends content_base {
 
         return (object)[
             'uniqid'         => 'sc' . uniqid(),
-            'courseid'       => $course->id,
             'sections'       => $sectionsdata,
             'hassections'    => !empty($sectionsdata),
             'canedit'        => $canedit,
@@ -176,20 +185,22 @@ class content extends content_base {
     }
 
     /**
-     * Picks which collapsible section the accordion opens by default: the first one
-     * (in course order) with at least one completion-tracked activity the user has not
-     * finished yet, so a returning student lands where they left off. Falls back to the
-     * first collapsible section when nothing is pending (completion disabled entirely,
-     * or everything already complete) rather than leaving the whole accordion collapsed.
+     * Picks which never-manually-toggled section the accordion opens by default: the
+     * first one (in course order) with at least one completion-tracked activity the user
+     * has not finished yet, so a returning student lands where they left off. Falls back
+     * to the first untouched section when nothing is pending (completion disabled
+     * entirely, or everything already complete) rather than leaving it collapsed.
      *
-     * @param section_progress[] $progressbyindex Progress keyed by the section's index
-     *                                             in $sectionsdata, in course order.
-     * @return int|null Index into $sectionsdata to mark open, or null when there are no
-     *                   collapsible sections at all.
+     * @param section_progress[] $untouchedbyindex Progress of sections with no explicit
+     *                                              collapse/expand preference yet, keyed
+     *                                              by the section's index in
+     *                                              $sectionsdata, in course order.
+     * @return int|null Index into $sectionsdata to mark open, or null when every
+     *                   collapsible section already has an explicit preference.
      */
-    private function find_default_open_section_index(array $progressbyindex): ?int {
+    private function find_default_open_section_index(array $untouchedbyindex): ?int {
         $firstindex = null;
-        foreach ($progressbyindex as $index => $progress) {
+        foreach ($untouchedbyindex as $index => $progress) {
             $firstindex ??= $index;
             if ($progress->has_pending()) {
                 return $index;

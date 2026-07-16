@@ -23,7 +23,6 @@
     Example context (json):
     {
         "uniqid": "sc63a1b2",
-        "courseid": 7,
         "hassections": true,
         "canedit": false,
         "editmodeactive": false,
@@ -67,12 +66,7 @@
         ]
     }
 }}
-<div
-    id="{{uniqid}}"
-    class="sc-course {{cardsizeclass}} {{noframeclass}}"
-    data-region="smartcards-content"
-    data-courseid="{{courseid}}"
->
+<div id="{{uniqid}}" class="sc-course {{cardsizeclass}} {{noframeclass}}" data-region="smartcards-content">
     {{#hassections}}
         {{#sections}}
             <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">

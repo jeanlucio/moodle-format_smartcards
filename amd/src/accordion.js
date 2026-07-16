@@ -16,18 +16,19 @@
 /**
  * Persists the accordion navstyle's manual expand/collapse choices, so a student's own
  * decision survives a page reload instead of always resetting to the "resume where you
- * left off" default content.php computes on a first-ever visit (see its
+ * left off" default content.php computes for sections nobody has touched yet (see its
  * find_default_open_section_index()).
  *
  * The toggle click itself needs no code here: importing theme_boost/bootstrap/collapse
  * activates Bootstrap's own [data-bs-toggle="collapse"] handling for the whole page (a
  * side effect of its own module-load-time data-api registration).
  *
- * Persistence reuses core_courseformat_update_course, the exact web service and section
- * preference (course_format::get_sections_preferences(), 'contentcollapsed') the
- * standard Moodle course page already uses for its own collapsible sections — not a
- * bespoke storage mechanism — so content.php's read side and this write side agree with
- * core's own semantics.
+ * Persistence calls format_smartcards_toggle_section rather than core's own
+ * core_courseformat_update_course: core's single 'contentcollapsed' preference only
+ * records explicit collapses, so an explicit *expand* of a section this accordion had
+ * closed by its own default would be a no-op on that list — indistinguishable from a
+ * section never touched at all, and silently reverting on the next reload. See
+ * toggle_section.php's docblock for the two-preference fix.
  *
  * @module     format_smartcards/accordion
  * @copyright  2026 Jean Lúcio
@@ -38,24 +39,21 @@ import Ajax from 'core/ajax';
 import 'theme_boost/bootstrap/collapse';
 
 const SELECTORS = {
-    CONTENT: '[data-region="smartcards-content"]',
     ACCORDION_BODY: '[data-region="smartcards-accordion-body"]',
 };
 
 /**
  * Persists one section's collapsed/expanded state for the current user.
  *
- * @param {string} courseid Course id, from the content root's dataset.
  * @param {string} sectionid Section id, from the toggled element's dataset.
- * @param {boolean} collapsed Whether the section was just collapsed (true) or expanded (false).
+ * @param {boolean} open Whether the section was just expanded (true) or collapsed (false).
  * @returns {Promise<void>}
  */
-const persistToggle = (courseid, sectionid, collapsed) => Ajax.call([{
-    methodname: 'core_courseformat_update_course',
+const persistToggle = (sectionid, open) => Ajax.call([{
+    methodname: 'format_smartcards_toggle_section',
     args: {
-        action: collapsed ? 'section_content_collapsed' : 'section_content_expanded',
-        courseid: Number(courseid),
-        ids: [Number(sectionid)],
+        sectionid: Number(sectionid),
+        open,
     },
 }])[0];
 
@@ -63,18 +61,14 @@ const persistToggle = (courseid, sectionid, collapsed) => Ajax.call([{
  * Handles a Bootstrap collapse lifecycle event on one accordion section body.
  *
  * @param {Event} event The shown.bs.collapse or hidden.bs.collapse event.
- * @param {boolean} collapsed Whether this handler is for the collapsed (true) or shown (false) event.
+ * @param {boolean} open Whether this handler is for the shown (true) or hidden (false) event.
  * @returns {void}
  */
-const handleToggle = (event, collapsed) => {
+const handleToggle = (event, open) => {
     if (!event.target.matches(SELECTORS.ACCORDION_BODY)) {
         return;
     }
-    const content = event.target.closest(SELECTORS.CONTENT);
-    if (!content) {
-        return;
-    }
-    persistToggle(content.dataset.courseid, event.target.dataset.sectionid, collapsed);
+    persistToggle(event.target.dataset.sectionid, open);
 };
 
 /**
@@ -83,6 +77,6 @@ const handleToggle = (event, collapsed) => {
  * @returns {void}
  */
 export const init = () => {
-    document.addEventListener('hidden.bs.collapse', (event) => handleToggle(event, true));
-    document.addEventListener('shown.bs.collapse', (event) => handleToggle(event, false));
+    document.addEventListener('shown.bs.collapse', (event) => handleToggle(event, true));
+    document.addEventListener('hidden.bs.collapse', (event) => handleToggle(event, false));
 };

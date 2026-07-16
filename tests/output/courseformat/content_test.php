@@ -322,11 +322,10 @@ final class content_test extends \advanced_testcase {
     }
 
     /**
-     * Once the student has manually collapsed at least one section in this course, the
-     * "open the pending section" default must stop applying: every section reverts to
-     * core's own "expanded unless explicitly collapsed" rule, so a section the student
-     * deliberately closed never reopens itself just because it still has a pending
-     * activity — the student's own choice always wins over the smart default.
+     * A section the student has explicitly collapsed must stay collapsed even though it
+     * still has a pending activity — the student's own choice always wins over the
+     * "open the pending section" smart default, which only applies to sections nobody
+     * has touched yet.
      *
      * @covers ::export_for_template
      * @covers ::find_default_open_section_index
@@ -362,8 +361,8 @@ final class content_test extends \advanced_testcase {
         $section2id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 2]);
 
         // The student manually collapses section 1, even though it still has a pending
-        // activity — this is the same preference core's own default view persists.
-        $format->add_section_preference_ids('contentcollapsed', [$section1id]);
+        // activity — the same preference format_smartcards_toggle_section writes.
+        $format->add_section_preference_ids(\format_smartcards\external\toggle_section::PREFERENCE_COLLAPSED, [$section1id]);
 
         $PAGE->set_url('/course/view.php', ['id' => $course->id]);
         $PAGE->set_course($course);
@@ -380,6 +379,92 @@ final class content_test extends \advanced_testcase {
         );
         $this->assertMatchesRegularExpression(
             '~aria-expanded="true"[^>]*aria-controls="sc-accordion-body-' . $section2id . '"~',
+            $html
+        );
+    }
+
+    /**
+     * A section the accordion closed by its own "resume where you left off" default
+     * (not because it was ever explicitly collapsed) must stay OPEN after the student
+     * manually expands it and the page reloads. This is the exact bug a real course
+     * hit: expanding a section the accordion had closed by default was a no-op against
+     * course_format's own 'contentcollapsed' list (the section was never in it to begin
+     * with), so the expand silently reverted on the next render — fixed by tracking
+     * explicit expands in their own preference (toggle_section::PREFERENCE_EXPANDED)
+     * instead of only tracking explicit collapses.
+     *
+     * @covers ::export_for_template
+     * @covers ::find_default_open_section_index
+     */
+    public function test_accordion_keeps_a_manually_expanded_default_closed_section_open(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 2,
+            'enablecompletion' => 1,
+        ]);
+        $format = course_get_format($course);
+        $format->update_course_format_options(['navstyle' => 'accordion']);
+
+        $pending = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $done = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 2,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $completioninfo = new \completion_info($course);
+        $completioninfo->update_state(
+            get_fast_modinfo($course, $student->id)->get_cm($done->cmid),
+            COMPLETION_COMPLETE,
+            $student->id
+        );
+
+        $section1id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 1]);
+        $section2id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 2]);
+
+        // Confirm section 2 really is closed by the accordion's own default first
+        // (it has no pending activity, so it is not the auto-picked section) — this
+        // reproduces the exact starting point of the reported bug. course_get_format()
+        // is re-fetched fresh before each render rather than reusing the $format
+        // obtained above: create_module() resets the course format singleton cache, so
+        // holding onto a reference from before that point risks a render building its
+        // context off a stale, no-longer-registered format instance.
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = course_get_format($course)->get_output_classname('content');
+        $htmlbefore  = $renderer->render(new $outputclass(course_get_format($course)));
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="false"[^>]*aria-controls="sc-accordion-body-' . $section2id . '"~',
+            $htmlbefore
+        );
+
+        // The student manually expands section 2 — exactly what
+        // format_smartcards_toggle_section persists when Bootstrap's shown.bs.collapse
+        // event fires client-side.
+        \format_smartcards\external\toggle_section::execute((int)$section2id, true);
+
+        $html = $renderer->render(new $outputclass(course_get_format($course)));
+
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="true"[^>]*aria-controls="sc-accordion-body-' . $section2id . '"~',
+            $html
+        );
+        // Section 1 (still untouched, still pending) must remain the auto-picked
+        // default-open section — expanding section 2 must not steal that.
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="true"[^>]*aria-controls="sc-accordion-body-' . $section1id . '"~',
             $html
         );
     }

@@ -42,4 +42,11 @@ $functions = [
         'ajax'         => true,
         'capabilities' => 'format/smartcards:manageappearance',
     ],
+    'format_smartcards_toggle_section' => [
+        'classname'   => 'format_smartcards\external\toggle_section',
+        'methodname'  => 'execute',
+        'description' => 'Persists a manual expand/collapse of one section in the accordion navigation style.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
 ];
