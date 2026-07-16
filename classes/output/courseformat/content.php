@@ -166,8 +166,8 @@ class content extends content_base {
      * first collapsible section when nothing is pending (completion disabled entirely,
      * or everything already complete) rather than leaving the whole accordion collapsed.
      *
-     * @param array<int, section_progress> $progressbyindex Progress keyed by the
-     *        section's index in $sectionsdata, in course order.
+     * @param section_progress[] $progressbyindex Progress keyed by the section's index
+     *                                             in $sectionsdata, in course order.
      * @return int|null Index into $sectionsdata to mark open, or null when there are no
      *                   collapsible sections at all.
      */
