@@ -150,7 +150,9 @@ const clearFormError = (form) => {
 };
 
 /**
- * Wires the type radio buttons to toggle the emoji/icon fields.
+ * Wires the type radio buttons to toggle the emoji/icon fields. The third option,
+ * 'default', hides both — it means "keep the activity's default icon" so a teacher can
+ * customise only the colours/font without being forced to also pick an emoji or icon.
  *
  * @param {HTMLElement} form The editor form.
  * @returns {void}
@@ -162,9 +164,8 @@ const wireTypeToggle = (form) => {
         if (!event.target.matches(SELECTORS.TYPE_RADIO)) {
             return;
         }
-        const isEmoji = event.target.value === 'emoji';
-        emojiField.hidden = !isEmoji;
-        iconField.hidden = isEmoji;
+        emojiField.hidden = event.target.value !== 'emoji';
+        iconField.hidden = event.target.value !== 'icon';
     });
 };
 
@@ -213,10 +214,14 @@ const wireLabelColorSwatches = (form) => {
  */
 const gatherFormValues = (form) => {
     const checkedType = form.querySelector(`${SELECTORS.TYPE_RADIO}:checked`);
-    const type = checkedType ? checkedType.value : 'emoji';
-    const value = type === 'emoji'
-        ? form.querySelector(SELECTORS.EMOJI_INPUT).value.trim()
-        : form.querySelector(SELECTORS.ICON_SELECT).value;
+    const type = checkedType ? checkedType.value : 'default';
+
+    let value = '';
+    if (type === 'emoji') {
+        value = form.querySelector(SELECTORS.EMOJI_INPUT).value.trim();
+    } else if (type === 'icon') {
+        value = form.querySelector(SELECTORS.ICON_SELECT).value;
+    }
 
     const bgcolorInput = form.querySelector(SELECTORS.BGCOLOR_INPUT);
     const bgcolor = bgcolorInput.dataset.cleared === '1' ? '' : bgcolorInput.value;

@@ -48,8 +48,15 @@ class appearance_repository {
     /** @var string Custom appearance is a bundled library icon name. */
     public const TYPE_ICON = 'icon';
 
+    /**
+     * @var string No icon/emoji override — the item keeps the default per-module-type
+     *             icon. Lets a teacher customise only bgcolor/labelcolor/labelfont
+     *             without being forced to also pick an emoji or icon.
+     */
+    public const TYPE_DEFAULT = 'default';
+
     /** @var string[] All valid values of the "type" column. */
-    private const VALID_TYPES = [self::TYPE_IMAGE, self::TYPE_EMOJI, self::TYPE_ICON];
+    private const VALID_TYPES = [self::TYPE_IMAGE, self::TYPE_EMOJI, self::TYPE_ICON, self::TYPE_DEFAULT];
 
     /**
      * Returns the appearance configured for one course module, if any.

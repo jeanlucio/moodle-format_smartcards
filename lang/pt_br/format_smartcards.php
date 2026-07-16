@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 $string['accessactivity'] = 'Acessar atividade';
 $string['appearance_bgcolor'] = 'Cor de fundo do círculo';
 $string['appearance_defaultcolor'] = 'Padrão';
+$string['appearance_defaulticon'] = 'Ícone padrão';
 $string['appearance_emoji'] = 'Emoji';
 $string['appearance_emoji_placeholder'] = 'Cole ou digite um único emoji';
 $string['appearance_emoji_required'] = 'Digite um emoji antes de salvar';

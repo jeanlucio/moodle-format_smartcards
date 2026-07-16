@@ -119,6 +119,30 @@ final class appearance_repository_test extends \advanced_testcase {
     }
 
     /**
+     * TYPE_DEFAULT must be accepted with an empty value, so a teacher can customise
+     * only bgcolor/labelcolor/labelfont while keeping the activity's default
+     * per-module-type icon, without being forced to also pick an emoji or icon.
+     *
+     * @covers ::save_for_activity
+     */
+    public function test_default_type_accepts_empty_value_with_colours(): void {
+        $this->resetAfterTest();
+        $saved = (new appearance_repository())->save_for_activity(
+            1,
+            appearance_repository::TYPE_DEFAULT,
+            '',
+            null,
+            appearance_palette::LABEL_COLORS['blue'],
+            'nunito'
+        );
+
+        $this->assertSame(appearance_repository::TYPE_DEFAULT, $saved->type);
+        $this->assertSame('', $saved->value);
+        $this->assertSame(appearance_palette::LABEL_COLORS['blue'], $saved->labelcolor);
+        $this->assertSame('nunito', $saved->labelfont);
+    }
+
+    /**
      * An icon name containing anything other than lowercase letters, digits and
      * hyphens must be rejected.
      *

@@ -47,10 +47,23 @@
                 type="radio"
                 class="form-check-input"
                 name="sc-appearance-type"
+                id="sc-appearance-type-default"
+                value="default"
+                data-region="smartcards-type-radio"
+                checked
+            >
+            <label class="form-check-label" for="sc-appearance-type-default">
+                {{#str}} appearance_defaulticon, format_smartcards {{/str}}
+            </label>
+        </div>
+        <div class="form-check">
+            <input
+                type="radio"
+                class="form-check-input"
+                name="sc-appearance-type"
                 id="sc-appearance-type-emoji"
                 value="emoji"
                 data-region="smartcards-type-radio"
-                checked
             >
             <label class="form-check-label" for="sc-appearance-type-emoji">
                 {{#str}} appearance_emoji, format_smartcards {{/str}}
@@ -71,7 +84,7 @@
         </div>
     </fieldset>
 
-    <div class="sc-appearance-field" data-region="smartcards-emoji-field">
+    <div class="sc-appearance-field" data-region="smartcards-emoji-field" hidden>
         <label class="sc-appearance-label" for="sc-appearance-emoji-input">
             {{#str}} appearance_emoji, format_smartcards {{/str}}
         </label>

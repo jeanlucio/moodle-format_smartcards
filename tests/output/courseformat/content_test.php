@@ -140,4 +140,51 @@ final class content_test extends \advanced_testcase {
             $html
         );
     }
+
+    /**
+     * An activity with appearance type=default and only a labelcolor set must render
+     * with the ordinary per-module-type icon (not an emoji span or a custom icon img),
+     * while still applying the custom title colour — the "keep the default icon, only
+     * customise colour/font" combination the appearance editor exists to support.
+     *
+     * @covers ::export_for_template
+     * @covers ::build_cards_data
+     */
+    public function test_default_type_keeps_module_icon_with_custom_title_colour(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $page      = $generator->create_module('page', ['course' => $course->id]);
+
+        (new \format_smartcards\local\appearance_repository())->save_for_activity(
+            $page->cmid,
+            \format_smartcards\local\appearance_repository::TYPE_DEFAULT,
+            '',
+            null,
+            \format_smartcards\local\appearance_palette::LABEL_COLORS['blue'],
+            null
+        );
+
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringNotContainsString('sc-card-emoji', $html);
+        $this->assertMatchesRegularExpression('~<img src="[^"]*/page/[^"]*icon"~', $html);
+        $this->assertStringContainsString(
+            'style="color: ' . \format_smartcards\local\appearance_palette::LABEL_COLORS['blue'] . '"',
+            $html
+        );
+    }
 }
