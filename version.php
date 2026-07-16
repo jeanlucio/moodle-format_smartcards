@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026071701;
+$plugin->version   = 2026071702;
 $plugin->requires  = 2024100700;
 $plugin->supported = [405, 502];
 $plugin->component = 'format_smartcards';

@@ -217,6 +217,14 @@
     line-height: 1;
 }
 
+.format-smartcards .sc-card-completionicon {
+    position: absolute;
+    inset-block-end: -0.25rem;
+    inset-inline-start: -0.25rem;
+    font-size: 1rem;
+    line-height: 1;
+}
+
 .format-smartcards .sc-card-title {
     font-size: 0.85rem;
     overflow-wrap: break-word;
@@ -252,6 +260,20 @@
 .format-smartcards .sc-sheet-access {
     display: inline-block;
     margin-block-start: 0.5rem;
+}
+
+.format-smartcards .sc-sheet-toggle {
+    min-inline-size: 44px;
+    min-block-size: 44px;
+}
+
+.format-smartcards .sc-sheet-criteria {
+    margin-block-end: 0;
+    padding-inline-start: 1.25rem;
+}
+
+.format-smartcards .sc-sheet-description {
+    font-size: 0.9rem;
 }
 
 .format-smartcards .sc-appearance-field {

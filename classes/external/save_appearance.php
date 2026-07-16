@@ -26,6 +26,7 @@ use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
+use format_smartcards\local\cm_description_resolver;
 use invalid_parameter_exception;
 
 /**
@@ -100,7 +101,7 @@ class save_appearance extends external_api {
         string $labelfont = '',
         string $imagedata = ''
     ): array {
-        global $PAGE;
+        global $PAGE, $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'cmid' => $cmid,
@@ -147,7 +148,9 @@ class save_appearance extends external_api {
             $course,
             $renderer,
             $repository->get_for_activity($params['cmid']),
-            $formatoptions
+            $formatoptions,
+            (int)$USER->id,
+            cm_description_resolver::resolve_one($cminfo)
         );
         if ($card === null) {
             throw new coding_exception('Card became invisible right after saving its own appearance');
@@ -206,32 +209,59 @@ class save_appearance extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
-            'cmid'             => new external_value(PARAM_INT, 'Course module id'),
-            'name'             => new external_value(PARAM_RAW, 'Activity name'),
-            'iconurl'          => new external_value(PARAM_RAW, 'Default per-module-type icon URL'),
-            'modtypelabel'     => new external_value(PARAM_RAW, 'Localised module type name'),
-            'url'              => new external_value(PARAM_RAW, 'Activity URL, or empty when not directly accessible'),
-            'hasurl'           => new external_value(PARAM_BOOL, 'Whether the activity is directly accessible'),
-            'badge'            => new external_value(PARAM_RAW, "'locked', 'timed', or empty"),
-            'badgelabel'       => new external_value(PARAM_RAW, 'Localised badge label'),
-            'islocked'         => new external_value(PARAM_BOOL, 'Whether the locked badge applies'),
-            'istimed'          => new external_value(PARAM_BOOL, 'Whether the timed badge applies'),
-            'hasbadge'         => new external_value(PARAM_BOOL, 'Whether any badge applies'),
-            'reason'           => new external_value(PARAM_RAW, 'Availability reason (may contain safe core-generated markup)'),
-            'hasreason'        => new external_value(PARAM_BOOL, 'Whether a reason is present'),
-            'duedate'          => new external_value(PARAM_INT, 'Expected completion timestamp, or 0'),
-            'hasduedate'       => new external_value(PARAM_BOOL, 'Whether a due date is present'),
-            'duedateformatted' => new external_value(PARAM_RAW, 'Localised due date, or empty'),
-            'dimmed'           => new external_value(PARAM_BOOL, 'Whether the card should render dimmed'),
-            'hiddenlabel'      => new external_value(PARAM_RAW, "Localised 'Hidden' label, or empty"),
-            'isemoji'          => new external_value(PARAM_BOOL, 'Whether the appearance type is emoji'),
-            'emoji'            => new external_value(PARAM_RAW, 'Emoji character, or empty'),
-            'iscustomicon'     => new external_value(PARAM_BOOL, 'Whether a custom icon/image replaces the default one'),
-            'customiconurl'    => new external_value(PARAM_RAW, 'Custom icon/image URL, or empty'),
-            'hasiconstyle'     => new external_value(PARAM_BOOL, 'Whether the icon circle has a custom style'),
-            'iconstyle'        => new external_value(PARAM_RAW, 'Inline CSS for the icon circle, or empty'),
-            'hastitlestyle'    => new external_value(PARAM_BOOL, 'Whether the title has a custom style'),
-            'titlestyle'       => new external_value(PARAM_RAW, 'Inline CSS for the title, or empty'),
+            'cmid'                 => new external_value(PARAM_INT, 'Course module id'),
+            'name'                 => new external_value(PARAM_RAW, 'Activity name'),
+            'iconurl'              => new external_value(PARAM_RAW, 'Default per-module-type icon URL'),
+            'modtypelabel'         => new external_value(PARAM_RAW, 'Localised module type name'),
+            'url'                  => new external_value(
+                PARAM_RAW,
+                'Activity URL, or empty when not directly accessible'
+            ),
+            'hasurl'               => new external_value(PARAM_BOOL, 'Whether the activity is directly accessible'),
+            'badge'                => new external_value(PARAM_RAW, "'locked', 'timed', or empty"),
+            'badgelabel'           => new external_value(PARAM_RAW, 'Localised badge label'),
+            'islocked'             => new external_value(PARAM_BOOL, 'Whether the locked badge applies'),
+            'istimed'              => new external_value(PARAM_BOOL, 'Whether the timed badge applies'),
+            'hasbadge'             => new external_value(PARAM_BOOL, 'Whether any badge applies'),
+            'reason'               => new external_value(
+                PARAM_RAW,
+                'Availability reason (may contain safe core-generated markup)'
+            ),
+            'hasreason'            => new external_value(PARAM_BOOL, 'Whether a reason is present'),
+            'duedate'              => new external_value(PARAM_INT, 'Expected completion timestamp, or 0'),
+            'hasduedate'           => new external_value(PARAM_BOOL, 'Whether a due date is present'),
+            'duedateformatted'     => new external_value(PARAM_RAW, 'Localised due date, or empty'),
+            'dimmed'               => new external_value(PARAM_BOOL, 'Whether the card should render dimmed'),
+            'hiddenlabel'          => new external_value(PARAM_RAW, "Localised 'Hidden' label, or empty"),
+            'isemoji'              => new external_value(PARAM_BOOL, 'Whether the appearance type is emoji'),
+            'emoji'                => new external_value(PARAM_RAW, 'Emoji character, or empty'),
+            'iscustomicon'         => new external_value(
+                PARAM_BOOL,
+                'Whether a custom icon/image replaces the default one'
+            ),
+            'customiconurl'        => new external_value(PARAM_RAW, 'Custom icon/image URL, or empty'),
+            'hasiconstyle'         => new external_value(PARAM_BOOL, 'Whether the icon circle has a custom style'),
+            'iconstyle'            => new external_value(PARAM_RAW, 'Inline CSS for the icon circle, or empty'),
+            'hastitlestyle'        => new external_value(PARAM_BOOL, 'Whether the title has a custom style'),
+            'titlestyle'           => new external_value(PARAM_RAW, 'Inline CSS for the title, or empty'),
+            'opensheet'            => new external_value(PARAM_BOOL, 'Whether tapping the card opens the status sheet'),
+            'statuslabel'          => new external_value(
+                PARAM_RAW,
+                'Combined availability + completion label for aria-label'
+            ),
+            'hasstatuslabel'       => new external_value(PARAM_BOOL, 'Whether statuslabel is non-empty'),
+            'hascompletionbadge'   => new external_value(PARAM_BOOL, 'Whether completion is tracked for this activity'),
+            'iscompletionpending'  => new external_value(PARAM_BOOL, 'Whether completion is tracked but not yet met'),
+            'iscompletioncomplete' => new external_value(PARAM_BOOL, 'Whether completion is tracked and already met'),
+            'completionbadgelabel' => new external_value(PARAM_RAW, 'Localised completion badge label, or empty'),
+            'completiontype'       => new external_value(PARAM_RAW, "'none', 'manual' or 'automatic'"),
+            'completioncriteria'   => new external_value(
+                PARAM_RAW,
+                'JSON array of localised automatic criteria descriptions'
+            ),
+            'cantoggle'            => new external_value(PARAM_BOOL, 'Whether the manual completion toggle applies'),
+            'hasdescription'       => new external_value(PARAM_BOOL, 'Whether a "Display description" intro is present'),
+            'description'          => new external_value(PARAM_RAW, 'Rendered description HTML, or empty'),
         ]);
     }
 }

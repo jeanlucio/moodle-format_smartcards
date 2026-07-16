@@ -30,12 +30,15 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * Creates a course with one page activity and returns it alongside the course.
      *
+     * @param array $moduleoptions Extra options passed to create_module() (e.g. completion
+     *                              tracking, showdescription).
+     * @param array $courseoptions Extra options passed to create_course() (e.g. enablecompletion).
      * @return array{0: \stdClass, 1: \stdClass} Course record and course-module record.
      */
-    private function create_course_with_page(): array {
+    private function create_course_with_page(array $moduleoptions = [], array $courseoptions = []): array {
         $generator = $this->getDataGenerator();
-        $course    = $generator->create_course();
-        $page      = $generator->create_module('page', ['course' => $course->id]);
+        $course    = $generator->create_course($courseoptions);
+        $page      = $generator->create_module('page', ['course' => $course->id] + $moduleoptions);
         return [$course, $page];
     }
 
@@ -76,7 +79,9 @@ final class card_builder_test extends \advanced_testcase {
             $course,
             $renderer,
             (new appearance_repository())->get_for_activity($page->cmid),
-            $formatoptions
+            $formatoptions,
+            (int)$student->id,
+            ''
         );
 
         $this->assertStringContainsString('color: ' . $ownlabelcolor, $card['titlestyle']);
@@ -106,7 +111,7 @@ final class card_builder_test extends \advanced_testcase {
             'defaultlabelfont'  => 'varelaround',
         ];
 
-        $card = card_builder::build($cm, $course, $renderer, null, $formatoptions);
+        $card = card_builder::build($cm, $course, $renderer, null, $formatoptions, (int)$student->id, '');
 
         $this->assertStringContainsString('color: ' . appearance_palette::LABEL_COLORS['teal'], $card['titlestyle']);
         $this->assertStringContainsString("'Varela Round'", $card['titlestyle']);
@@ -146,7 +151,9 @@ final class card_builder_test extends \advanced_testcase {
             $course,
             $renderer,
             (new appearance_repository())->get_for_activity($page->cmid),
-            $formatoptions
+            $formatoptions,
+            (int)$student->id,
+            ''
         );
 
         $this->assertStringContainsString('background-color: ' . $ownbgcolor, $card['iconstyle']);
@@ -172,7 +179,7 @@ final class card_builder_test extends \advanced_testcase {
 
         $formatoptions = ['defaultbgcolor' => appearance_repository::BGCOLOR_TRANSPARENT];
 
-        $card = card_builder::build($cm, $course, $renderer, null, $formatoptions);
+        $card = card_builder::build($cm, $course, $renderer, null, $formatoptions, (int)$student->id, '');
 
         $this->assertStringContainsString('background-color: transparent', $card['iconstyle']);
     }
@@ -213,7 +220,9 @@ final class card_builder_test extends \advanced_testcase {
             $course,
             $renderer,
             (new appearance_repository())->get_for_activity($page->cmid),
-            []
+            [],
+            (int)$student->id,
+            ''
         );
 
         $this->assertTrue($card['iscustomicon']);
@@ -238,9 +247,153 @@ final class card_builder_test extends \advanced_testcase {
         global $PAGE;
         $renderer = $PAGE->get_renderer('format_smartcards');
 
-        $card = card_builder::build($cm, $course, $renderer, null, []);
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
 
         $this->assertSame('', $card['titlestyle']);
         $this->assertFalse($card['hastitlestyle']);
+    }
+
+    /**
+     * A manual-tracking activity not yet completed must open the sheet, carry the pending
+     * completion badge, and offer the toggle button to a student who holds the manual
+     * completion capability.
+     *
+     * @covers ::build
+     */
+    public function test_manual_completion_pending_opens_the_sheet_with_a_toggle_button(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page(
+            ['completion' => COMPLETION_TRACKING_MANUAL],
+            ['enablecompletion' => 1]
+        );
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
+
+        $this->assertTrue($card['opensheet']);
+        $this->assertTrue($card['hascompletionbadge']);
+        $this->assertTrue($card['iscompletionpending']);
+        $this->assertFalse($card['iscompletioncomplete']);
+        $this->assertSame('manual', $card['completiontype']);
+        $this->assertTrue($card['cantoggle']);
+    }
+
+    /**
+     * A manual-tracking activity already completed, with no availability restriction and
+     * no description, must NOT open the sheet — the badge alone already says "done", so
+     * tapping the card goes straight to the activity (a behaviour explicitly confirmed
+     * during design, see SCOPE.md).
+     *
+     * @covers ::build
+     */
+    public function test_manual_completion_complete_with_nothing_else_skips_the_sheet(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page(
+            ['completion' => COMPLETION_TRACKING_MANUAL],
+            ['enablecompletion' => 1]
+        );
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $completion = new \completion_info($course);
+        $cm         = get_fast_modinfo($course, $student->id)->get_cm($page->cmid);
+        $completion->update_state($cm, COMPLETION_COMPLETE, $student->id);
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
+
+        $this->assertFalse($card['opensheet']);
+        $this->assertTrue($card['hascompletionbadge']);
+        $this->assertTrue($card['iscompletioncomplete']);
+        $this->assertFalse($card['iscompletionpending']);
+    }
+
+    /**
+     * An automatic-tracking activity exposes its criteria descriptions for the sheet, and
+     * never offers the manual toggle (core does not allow overriding automatic criteria).
+     *
+     * @covers ::build
+     */
+    public function test_automatic_completion_exposes_criteria_and_never_offers_a_toggle(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page(
+            [
+                'completion' => COMPLETION_TRACKING_AUTOMATIC,
+                'completionview' => 1,
+            ],
+            ['enablecompletion' => 1]
+        );
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
+
+        $this->assertTrue($card['opensheet']);
+        $this->assertSame('automatic', $card['completiontype']);
+        $this->assertNotSame('[]', $card['completioncriteria']);
+        $this->assertFalse($card['cantoggle']);
+    }
+
+    /**
+     * A description passed in by the caller must open the sheet on its own, even when
+     * there is no availability badge and no completion tracking at all.
+     *
+     * @covers ::build
+     */
+    public function test_description_alone_opens_the_sheet(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '<p>Read first.</p>');
+
+        $this->assertTrue($card['opensheet']);
+        $this->assertTrue($card['hasdescription']);
+        $this->assertSame('<p>Read first.</p>', $card['description']);
+    }
+
+    /**
+     * With no badge, no completion tracking and no description, the sheet must not open
+     * at all — the card stays a plain direct link, unchanged from before this feature.
+     *
+     * @covers ::build
+     */
+    public function test_nothing_to_show_skips_the_sheet(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
+
+        $this->assertFalse($card['opensheet']);
+        $this->assertFalse($card['hascompletionbadge']);
+        $this->assertFalse($card['hasdescription']);
     }
 }

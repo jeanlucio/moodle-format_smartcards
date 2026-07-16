@@ -24,6 +24,7 @@ use format_smartcards\external\toggle_section;
 use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
+use format_smartcards\local\cm_description_resolver;
 use format_smartcards\local\section_progress;
 use format_smartcards\local\section_progress_resolver;
 use renderer_base;
@@ -69,7 +70,7 @@ class content extends content_base {
      * @return stdClass|array Data context for the template.
      */
     public function export_for_template(renderer_base $output): stdClass|array {
-        global $PAGE;
+        global $PAGE, $USER;
 
         if ($PAGE->user_is_editing()) {
             return parent::export_for_template($output);
@@ -87,6 +88,8 @@ class content extends content_base {
 
         $formatoptions = $format->get_format_options();
         $appearances   = (new appearance_repository())->get_many_for_activities(array_keys($modinfo->get_cms()));
+        $descriptions  = cm_description_resolver::resolve_many($modinfo->get_cms());
+        $userid        = (int)$USER->id;
 
         $isaccordion = ($formatoptions['navstyle'] ?? 'default') === 'accordion';
         $completioninfo = null;
@@ -114,7 +117,16 @@ class content extends content_base {
                 continue;
             }
 
-            $cards = $this->build_cards_data($modinfo, $sectioninfo, $course, $output, $appearances, $formatoptions);
+            $cards = $this->build_cards_data(
+                $modinfo,
+                $sectioninfo,
+                $course,
+                $output,
+                $appearances,
+                $formatoptions,
+                $userid,
+                $descriptions
+            );
             if (empty($cards) && $sectioninfo->section > 0 && (string)$sectioninfo->summary === '') {
                 continue;
             }
@@ -218,6 +230,9 @@ class content extends content_base {
      * @param renderer_base $output Renderer used to resolve module icon URLs.
      * @param appearance[] $appearances Custom appearance keyed by cmid, from get_many_for_activities().
      * @param array $formatoptions The course's resolved format options.
+     * @param int $userid User id to resolve completion state for.
+     * @param array<int, string> $descriptions Rendered description HTML keyed by cmid,
+     *                                          from cm_description_resolver::resolve_many().
      * @return array<int, array<string, mixed>> Card data, one entry per visible module.
      */
     private function build_cards_data(
@@ -226,12 +241,22 @@ class content extends content_base {
         stdClass $course,
         renderer_base $output,
         array $appearances,
-        array $formatoptions
+        array $formatoptions,
+        int $userid,
+        array $descriptions
     ): array {
         $cards = [];
 
         foreach ($this->get_section_cms($modinfo, $sectioninfo) as $cm) {
-            $card = card_builder::build($cm, $course, $output, $appearances[$cm->id] ?? null, $formatoptions);
+            $card = card_builder::build(
+                $cm,
+                $course,
+                $output,
+                $appearances[$cm->id] ?? null,
+                $formatoptions,
+                $userid,
+                $descriptions[$cm->id] ?? ''
+            );
             if ($card !== null) {
                 $cards[] = $card;
             }

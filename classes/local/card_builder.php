@@ -49,6 +49,13 @@ class card_builder {
      *                              fallback below the activity's own appearance. Pass [] to skip the
      *                              course-level fallback (falls straight through to the
      *                              system default).
+     * @param int $userid User id to resolve completion state for. 0 (not logged in) or a
+     *                     guest always resolves to no completion tracking.
+     * @param string $description Rendered "Display description on course page" HTML for
+     *                             this activity (see cm_description_resolver), or '' when
+     *                             not applicable. Resolving this is the caller's
+     *                             responsibility so a whole-grid render can bulk-load it
+     *                             once instead of once per card.
      * @return array<string, mixed>|null Template context, or null when not visible at all.
      */
     public static function build(
@@ -56,7 +63,9 @@ class card_builder {
         stdClass $course,
         renderer_base $output,
         ?appearance $item,
-        array $formatoptions = []
+        array $formatoptions,
+        int $userid,
+        string $description
     ): ?array {
         $status = status_resolver::resolve($cm);
         if (!$status->isvisible) {
@@ -84,33 +93,72 @@ class card_builder {
         [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
             = self::build_appearance_styles($item, $output, $formatoptions, $cm->id);
 
+        $completion  = cm_completion_resolver::resolve($cm, $userid);
+        $ispending   = $completion->is_tracked() && !$completion->iscomplete;
+        $iscomplete  = $completion->is_tracked() && $completion->iscomplete;
+        $hasdescription = ($description !== '');
+
+        // The sheet only ever needs to interrupt the tap when it has something the
+        // badge alone cannot show: an availability reason/date, a pending completion
+        // (either an explanation of the automatic criteria, or the manual toggle
+        // button), or a description the teacher opted into showing. A plain "complete"
+        // state needs no explanation — the badge alone already says it all — so it
+        // never opens the sheet on its own (see SCOPE.md §4 for the full reasoning).
+        $opensheet = ($status->badge !== null) || $ispending || $hasdescription;
+
+        $completionbadgelabel = match (true) {
+            $ispending  => get_string('status_completion_pending', 'format_smartcards'),
+            $iscomplete => get_string('status_completion_complete', 'format_smartcards'),
+            default => '',
+        };
+
+        $statuslabelparts = array_filter([$badgelabel, $completionbadgelabel]);
+
+        // Mirrors the visibility check core itself applies to its own manual completion
+        // checkbox — showing a toggle button that would just 403 on submit is worse than
+        // not showing one at all.
+        $cantoggle = ($completion->tracking === cm_completion::TRACKING_MANUAL)
+            && has_capability('moodle/course:togglecompletion', $cm->context, $userid);
+
         return [
-            'cmid'             => $cm->id,
-            'name'             => format_string($cm->name, true, ['context' => $cm->context]),
-            'iconurl'          => $output->image_url('icon', $cm->modname)->out(false),
-            'modtypelabel'     => get_string('modulename', $cm->modname),
-            'url'              => $hasurl ? $cm->url->out(false) : '',
-            'hasurl'           => $hasurl,
-            'badge'            => $status->badge,
-            'badgelabel'       => $badgelabel,
-            'islocked'         => ($status->badge === status_resolver::BADGE_LOCKED),
-            'istimed'          => ($status->badge === status_resolver::BADGE_TIMED),
-            'hasbadge'         => ($status->badge !== null),
-            'reason'           => $reason,
-            'hasreason'        => ($reason !== ''),
-            'duedate'          => $duedate,
-            'hasduedate'       => $hasduedate,
-            'duedateformatted' => $duedateformatted,
-            'dimmed'           => $status->dimmed,
-            'hiddenlabel'      => $status->dimmed ? get_string('hiddenactivity', 'format_smartcards') : '',
-            'isemoji'          => $isemoji,
-            'emoji'            => $emoji,
-            'iscustomicon'     => $iscustomicon,
-            'customiconurl'    => $customiconurl,
-            'hasiconstyle'     => ($iconstyle !== ''),
-            'iconstyle'        => $iconstyle,
-            'hastitlestyle'    => ($titlestyle !== ''),
-            'titlestyle'       => $titlestyle,
+            'cmid'                 => $cm->id,
+            'name'                 => format_string($cm->name, true, ['context' => $cm->context]),
+            'iconurl'              => $output->image_url('icon', $cm->modname)->out(false),
+            'modtypelabel'         => get_string('modulename', $cm->modname),
+            'url'                  => $hasurl ? $cm->url->out(false) : '',
+            'hasurl'               => $hasurl,
+            'badge'                => $status->badge,
+            'badgelabel'           => $badgelabel,
+            'islocked'             => ($status->badge === status_resolver::BADGE_LOCKED),
+            'istimed'              => ($status->badge === status_resolver::BADGE_TIMED),
+            'hasbadge'             => ($status->badge !== null),
+            'reason'               => $reason,
+            'hasreason'            => ($reason !== ''),
+            'duedate'              => $duedate,
+            'hasduedate'           => $hasduedate,
+            'duedateformatted'     => $duedateformatted,
+            'dimmed'               => $status->dimmed,
+            'hiddenlabel'          => $status->dimmed ? get_string('hiddenactivity', 'format_smartcards') : '',
+            'isemoji'              => $isemoji,
+            'emoji'                => $emoji,
+            'iscustomicon'         => $iscustomicon,
+            'customiconurl'        => $customiconurl,
+            'hasiconstyle'         => ($iconstyle !== ''),
+            'iconstyle'            => $iconstyle,
+            'hastitlestyle'        => ($titlestyle !== ''),
+            'titlestyle'           => $titlestyle,
+            'opensheet'            => $opensheet,
+            'statuslabel'          => implode(', ', $statuslabelparts),
+            'hasstatuslabel'       => !empty($statuslabelparts),
+            'hascompletionbadge'   => $completion->is_tracked(),
+            'iscompletionpending'  => $ispending,
+            'iscompletioncomplete' => $iscomplete,
+            'completionbadgelabel' => $completionbadgelabel,
+            'completiontype'       => $completion->tracking,
+            'completioncriteria'   => json_encode($completion->criteria),
+            'cantoggle'            => $cantoggle,
+            'hasdescription'       => $hasdescription,
+            'description'          => $description,
         ];
     }
 

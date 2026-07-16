@@ -18,12 +18,13 @@
     @template format_smartcards/local/status_sheet
 
     Body of the status sheet (core/modal) opened when a student taps a card
-    that carries a badge. Shows the badge label, the reason text already
-    computed by core availability, an optional due date, and an "Access"
-    link only when the activity is actually reachable.
+    that needs more room than the icon badges alone can show: an
+    availability reason/date, a pending completion (manual toggle button or
+    automatic criteria list), and/or a "Display description" intro.
 
     Example context (json):
     {
+        "hasbadgelabel": true,
         "badgelabel": "Restricted",
         "hasreason": true,
         "reason": "Not available unless you complete Forum introduction",
@@ -31,13 +32,26 @@
         "hasduedate": true,
         "duedateformatted": "3 August 2026",
         "statusduelabel": "Due date",
-        "hasurl": false,
+        "hascompletion": true,
+        "statuscompletionlabel": "Completion",
+        "ismanual": true,
+        "isautomatic": false,
+        "iscompletioncomplete": false,
+        "cmid": 5,
+        "cantoggle": true,
+        "markcompletelabel": "Mark as done",
+        "markincompletelabel": "Mark as not done",
+        "criteria": ["Receive a grade"],
+        "hasdescription": true,
+        "statusdescriptionlabel": "Description",
+        "description": "<p>Read chapters 1-3 before attempting this quiz.</p>",
+        "hasurl": true,
         "url": "#",
         "accessactivitylabel": "Access activity"
     }
 }}
-<div class="sc-sheet">
-    <p class="sc-sheet-badgelabel">{{badgelabel}}</p>
+<div class="sc-sheet" data-region="smartcards-sheet" data-cmid="{{cmid}}">
+    {{#hasbadgelabel}}<p class="sc-sheet-badgelabel">{{badgelabel}}</p>{{/hasbadgelabel}}
     {{#hasreason}}
         <div class="sc-sheet-row">
             <span class="sc-sheet-label">{{statusreasonlabel}}</span>
@@ -53,6 +67,43 @@
             <span class="sc-sheet-value">{{duedateformatted}}</span>
         </div>
     {{/hasduedate}}
+    {{#hascompletion}}
+        <div class="sc-sheet-row">
+            <span class="sc-sheet-label">{{statuscompletionlabel}}</span>
+            {{#ismanual}}
+                {{#cantoggle}}
+                <button
+                    type="button"
+                    class="btn btn-outline-primary sc-sheet-toggle"
+                    data-region="smartcards-sheet-toggle"
+                    data-cmid="{{cmid}}"
+                    data-iscompletioncomplete="{{#iscompletioncomplete}}1{{/iscompletioncomplete}}{{^iscompletioncomplete}}0{{/iscompletioncomplete}}"
+                    data-markcompletelabel="{{markcompletelabel}}"
+                    data-markincompletelabel="{{markincompletelabel}}"
+                >{{#iscompletioncomplete}}{{markincompletelabel}}{{/iscompletioncomplete}}{{^iscompletioncomplete}}{{markcompletelabel}}{{/iscompletioncomplete}}</button>
+                {{/cantoggle}}
+                {{^cantoggle}}
+                <span class="sc-sheet-value">
+                    {{#iscompletioncomplete}}{{markincompletelabel}}{{/iscompletioncomplete}}{{^iscompletioncomplete}}{{markcompletelabel}}{{/iscompletioncomplete}}
+                </span>
+                {{/cantoggle}}
+            {{/ismanual}}
+            {{#isautomatic}}
+                <ul class="sc-sheet-criteria">
+                    {{#criteria}}<li>{{.}}</li>{{/criteria}}
+                </ul>
+            {{/isautomatic}}
+        </div>
+    {{/hascompletion}}
+    {{#hasdescription}}
+        <div class="sc-sheet-row">
+            <span class="sc-sheet-label">{{statusdescriptionlabel}}</span>
+            {{! description is core-generated via format_module_intro() (format_text under the
+                hood), the same trusted rendering core itself uses for activity intros — not raw
+                user input rendered unescaped. }}
+            <div class="sc-sheet-description">{{{description}}}</div>
+        </div>
+    {{/hasdescription}}
     {{#hasurl}}
         <a href="{{url}}" class="btn btn-primary sc-sheet-access">{{accessactivitylabel}}</a>
     {{/hasurl}}

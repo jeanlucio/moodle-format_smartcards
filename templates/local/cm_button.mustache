@@ -18,9 +18,12 @@
     @template format_smartcards/local/cm_button
 
     Single activity card/button for the SmartCards grid. Renders as a plain
-    link when the activity has no badge (direct access), or as a button that
-    opens the status sheet when a badge (locked/timed) is present. The icon
-    is always decorative; the title is always real, localizable text.
+    link when opensheet is false (direct access, nothing to explain), or as
+    a button that opens the status sheet when opensheet is true (an
+    availability badge, a pending completion, or a description to show). The
+    icon is always decorative; the title is always real, localizable text.
+    The availability badge (locked/timed) and the completion badge (pending/
+    complete) are independent and can both be visible at once.
 
     Example context (json):
     {
@@ -45,13 +48,25 @@
         "hasiconstyle": true,
         "iconstyle": "background-color: #1565c0",
         "hastitlestyle": true,
-        "titlestyle": "color: #1565c0; font-family: 'Nunito', sans-serif"
+        "titlestyle": "color: #1565c0; font-family: 'Nunito', sans-serif",
+        "opensheet": true,
+        "statuslabel": "Restricted, Pending",
+        "hasstatuslabel": true,
+        "hascompletionbadge": true,
+        "iscompletionpending": true,
+        "iscompletioncomplete": false,
+        "completionbadgelabel": "Pending",
+        "completiontype": "manual",
+        "completioncriteria": "[]",
+        "cantoggle": true,
+        "hasdescription": false,
+        "description": ""
     }
 }}
-{{#hasbadge}}
+{{#opensheet}}
 <button
     type="button"
-    class="sc-card sc-card-badge{{#dimmed}} sc-card-dimmed{{/dimmed}}"
+    class="sc-card sc-card-opensheet{{#dimmed}} sc-card-dimmed{{/dimmed}}"
     data-region="smartcards-card"
     data-cmid="{{cmid}}"
     data-name="{{name}}"
@@ -60,26 +75,40 @@
     data-hasurl="{{#hasurl}}1{{/hasurl}}{{^hasurl}}0{{/hasurl}}"
     data-url="{{url}}"
     data-duedateformatted="{{duedateformatted}}"
-    aria-label="{{name}} — {{badgelabel}}"
+    data-completiontype="{{completiontype}}"
+    data-completionbadgelabel="{{completionbadgelabel}}"
+    data-completioncriteria="{{completioncriteria}}"
+    data-cantoggle="{{#cantoggle}}1{{/cantoggle}}{{^cantoggle}}0{{/cantoggle}}"
+    data-iscompletioncomplete="{{#iscompletioncomplete}}1{{/iscompletioncomplete}}{{^iscompletioncomplete}}0{{/iscompletioncomplete}}"
+    data-hasdescription="{{#hasdescription}}1{{/hasdescription}}{{^hasdescription}}0{{/hasdescription}}"
+    data-description="{{description}}"
+    aria-label="{{name}}{{#hasstatuslabel}} — {{statuslabel}}{{/hasstatuslabel}}"
 >
     <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
         {{> format_smartcards/local/cm_icon }}
         <span class="sc-card-badgeicon">{{#islocked}}🔒{{/islocked}}{{#istimed}}🕒{{/istimed}}</span>
+        {{#hascompletionbadge}}
+        <span class="sc-card-completionicon">{{#iscompletioncomplete}}✅{{/iscompletioncomplete}}{{^iscompletioncomplete}}⚪{{/iscompletioncomplete}}</span>
+        {{/hascompletionbadge}}
     </span>
     <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
     {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
 </button>
-{{/hasbadge}}
-{{^hasbadge}}
+{{/opensheet}}
+{{^opensheet}}
     {{#hasurl}}
     <a
         href="{{url}}"
         class="sc-card{{#dimmed}} sc-card-dimmed{{/dimmed}}"
         data-region="smartcards-card"
         data-cmid="{{cmid}}"
+        aria-label="{{name}}{{#hasstatuslabel}} — {{statuslabel}}{{/hasstatuslabel}}"
     >
         <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
             {{> format_smartcards/local/cm_icon }}
+            {{#hascompletionbadge}}
+            <span class="sc-card-completionicon">{{#iscompletioncomplete}}✅{{/iscompletioncomplete}}{{^iscompletioncomplete}}⚪{{/iscompletioncomplete}}</span>
+            {{/hascompletionbadge}}
         </span>
         <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
         {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
@@ -90,12 +119,16 @@
         class="sc-card sc-card-static{{#dimmed}} sc-card-dimmed{{/dimmed}}"
         data-region="smartcards-card"
         data-cmid="{{cmid}}"
+        aria-label="{{name}}{{#hasstatuslabel}} — {{statuslabel}}{{/hasstatuslabel}}"
     >
         <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
             {{> format_smartcards/local/cm_icon }}
+            {{#hascompletionbadge}}
+            <span class="sc-card-completionicon">{{#iscompletioncomplete}}✅{{/iscompletioncomplete}}{{^iscompletioncomplete}}⚪{{/iscompletioncomplete}}</span>
+            {{/hascompletionbadge}}
         </span>
         <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
         {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
     </div>
     {{/hasurl}}
-{{/hasbadge}}
+{{/opensheet}}
