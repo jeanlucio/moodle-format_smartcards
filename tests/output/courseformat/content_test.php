@@ -468,4 +468,39 @@ final class content_test extends \advanced_testcase {
             $html
         );
     }
+
+    /**
+     * A section with no activities and no summary must still render its own heading in
+     * the grid, matching the standard Moodle course index sidebar (core_courseformat's
+     * own courseindex output), which always lists every visible section regardless of
+     * whether it has content yet. Silently dropping empty sections from the grid while
+     * the sidebar still promised them left a real click-to-nowhere gap for students.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_a_section_with_no_activities_still_renders_its_heading(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 2]);
+
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+        // Section 2 is deliberately left with no activities and no summary.
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString(get_string('sectionname', 'format_smartcards') . ' 2', $html);
+    }
 }

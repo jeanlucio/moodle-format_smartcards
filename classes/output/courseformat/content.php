@@ -127,9 +127,6 @@ class content extends content_base {
                 $userid,
                 $descriptions
             );
-            if (empty($cards) && $sectioninfo->section > 0 && (string)$sectioninfo->summary === '') {
-                continue;
-            }
 
             $iscollapsible = $isaccordion && $sectioninfo->section > 0;
             $progress = $iscollapsible ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
