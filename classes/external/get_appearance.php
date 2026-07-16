@@ -22,6 +22,7 @@ use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_palette;
 use format_smartcards\local\appearance_repository;
 
@@ -79,6 +80,8 @@ class get_appearance extends external_api {
             ];
         }
 
+        $hasimage = $item?->type === appearance_repository::TYPE_IMAGE && $item->value !== '';
+
         return [
             'cmid'       => $params['cmid'],
             'type'       => $item?->type ?? appearance_repository::TYPE_DEFAULT,
@@ -87,6 +90,7 @@ class get_appearance extends external_api {
             'labelcolor' => $item?->labelcolor ?? '',
             'labelfont'  => $item?->labelfont ?? '',
             'iconurl'    => $renderer->image_url('icon', $cminfo->modname)->out(false),
+            'imageurl'   => $hasimage ? appearance_image_store::url($params['cmid'])->out(false) : '',
             'icons'      => $icons,
         ];
     }
@@ -105,6 +109,7 @@ class get_appearance extends external_api {
             'labelcolor' => new external_value(PARAM_RAW, 'Title colour #RRGGBB, or empty'),
             'labelfont'  => new external_value(PARAM_RAW, 'Curated font slug, or empty'),
             'iconurl'    => new external_value(PARAM_RAW, 'Default per-module-type icon URL'),
+            'imageurl'   => new external_value(PARAM_RAW, "Uploaded card image URL (type='image' only), or empty"),
             'icons'      => new external_multiple_structure(
                 new external_single_structure([
                     'slug' => new external_value(PARAM_RAW, 'Icon slug'),

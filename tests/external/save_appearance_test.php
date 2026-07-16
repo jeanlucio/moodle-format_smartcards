@@ -17,8 +17,10 @@
 namespace format_smartcards\external;
 
 use core_external\external_api;
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\appearance_palette;
+use invalid_parameter_exception;
 
 /**
  * Tests for the SmartCards save_appearance external function.
@@ -29,6 +31,9 @@ use format_smartcards\local\appearance_palette;
  * @coversDefaultClass \format_smartcards\external\save_appearance
  */
 final class save_appearance_test extends \advanced_testcase {
+    /** @var string Base64-encoded 1x1 transparent PNG, small enough to always pass the size check. */
+    private const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
     /**
      * Creates a course with one page activity and a teacher enrolled in it.
      *
@@ -157,5 +162,98 @@ final class save_appearance_test extends \advanced_testcase {
 
         $this->expectException(\dml_exception::class);
         save_appearance::execute(999999, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+    }
+
+    /**
+     * Uploading an image must store it via the File API and return a card whose custom
+     * icon fields point at it.
+     *
+     * @covers ::execute
+     * @covers ::resolve_image_value
+     */
+    public function test_teacher_can_upload_image_appearance(): void {
+        $this->resetAfterTest();
+        [, $page, $teacher] = $this->create_course_with_teacher();
+        $this->setUser($teacher);
+
+        $result = save_appearance::execute(
+            $page->cmid,
+            appearance_repository::TYPE_IMAGE,
+            '',
+            '',
+            '',
+            '',
+            self::TINY_PNG_BASE64
+        );
+        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+
+        $this->assertTrue($result['iscustomicon']);
+        $this->assertNotSame('', $result['customiconurl']);
+        $this->assertNotNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
+    }
+
+    /**
+     * Re-saving an image appearance (e.g. only to tweak the title colour) without
+     * uploading a new file must keep the previously stored image untouched.
+     *
+     * @covers ::execute
+     * @covers ::resolve_image_value
+     */
+    public function test_resaving_without_a_new_upload_keeps_the_existing_image(): void {
+        $this->resetAfterTest();
+        [, $page, $teacher] = $this->create_course_with_teacher();
+        $this->setUser($teacher);
+
+        save_appearance::execute($page->cmid, appearance_repository::TYPE_IMAGE, '', '', '', '', self::TINY_PNG_BASE64);
+        $firstfile = appearance_image_store::resolve_for_serving($page->cmid, 'cardimage');
+
+        save_appearance::execute(
+            $page->cmid,
+            appearance_repository::TYPE_IMAGE,
+            '',
+            '',
+            appearance_palette::LABEL_COLORS['blue'],
+            '',
+            ''
+        );
+        $secondfile = appearance_image_store::resolve_for_serving($page->cmid, 'cardimage');
+
+        $this->assertSame($firstfile->get_id(), $secondfile->get_id());
+    }
+
+    /**
+     * Choosing image type without ever uploading anything must be rejected — there is
+     * nothing to render.
+     *
+     * @covers ::execute
+     * @covers ::resolve_image_value
+     */
+    public function test_image_type_without_any_upload_is_rejected(): void {
+        $this->resetAfterTest();
+        [, $page, $teacher] = $this->create_course_with_teacher();
+        $this->setUser($teacher);
+
+        $this->expectException(invalid_parameter_exception::class);
+        save_appearance::execute($page->cmid, appearance_repository::TYPE_IMAGE, '', '', '', '', '');
+    }
+
+    /**
+     * Switching an activity away from image type must delete the now-orphaned stored
+     * file, not leave it behind.
+     *
+     * @covers ::execute
+     * @covers ::resolve_image_value
+     */
+    public function test_switching_away_from_image_deletes_the_stored_file(): void {
+        $this->resetAfterTest();
+        [, $page, $teacher] = $this->create_course_with_teacher();
+        $this->setUser($teacher);
+
+        save_appearance::execute($page->cmid, appearance_repository::TYPE_IMAGE, '', '', '', '', self::TINY_PNG_BASE64);
+        $this->assertNotNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
+
+        save_appearance::execute($page->cmid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '', '');
+
+        $this->assertNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
     }
 }

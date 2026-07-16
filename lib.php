@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/course/format/lib.php');
 
 use core\output\inplace_editable;
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_palette;
 use format_smartcards\local\appearance_repository;
 
@@ -366,4 +367,41 @@ function format_smartcards_inplace_editable(string $itemtype, int $itemid, mixed
         );
     }
     throw new coding_exception('Unknown inplace editable itemtype: ' . $itemtype);
+}
+
+/**
+ * Serves the uploaded card image of one activity's custom appearance
+ * (appearance_repository::TYPE_IMAGE), stored by appearance_image_store.
+ *
+ * @param stdClass $course Course the file's module belongs to.
+ * @param stdClass|null $cm Course module owning the requested context.
+ * @param context $context The module context resolved from the request URL.
+ * @param string $filearea File area requested.
+ * @param array $args Remaining pluginfile path segments.
+ * @param bool $forcedownload Whether the browser should force-download the file.
+ * @param array $options Additional options affecting file serving.
+ * @return bool false when the file cannot be served (core then renders a 404).
+ */
+function format_smartcards_pluginfile(
+    stdClass $course,
+    ?stdClass $cm,
+    context $context,
+    string $filearea,
+    array $args,
+    bool $forcedownload,
+    array $options = []
+): bool {
+    if ($context->contextlevel !== CONTEXT_MODULE || $cm === null) {
+        return false;
+    }
+
+    require_course_login($course, true, $cm);
+
+    $file = appearance_image_store::resolve_for_serving($cm->id, $filearea);
+    if ($file === null) {
+        return false;
+    }
+
+    send_stored_file($file, null, 0, $forcedownload, $options);
+    return true;
 }

@@ -49,6 +49,9 @@ const SELECTORS = {
     EMOJI_QUICKPICK: '[data-region="smartcards-emoji-quickpick"]',
     ICON_FIELD: '[data-region="smartcards-icon-field"]',
     ICON_BTN: '[data-region="smartcards-icon-btn"]',
+    IMAGE_FIELD: '[data-region="smartcards-image-field"]',
+    IMAGE_INPUT: '[data-region="smartcards-image-input"]',
+    IMAGE_FEEDBACK: '[data-region="smartcards-image-feedback"]',
     BGCOLOR_INPUT: '[data-region="smartcards-bgcolor-input"]',
     BGCOLOR_CLEAR: '[data-region="smartcards-bgcolor-clear"]',
     BGCOLOR_TRANSPARENT: '[data-region="smartcards-bgcolor-transparent"]',
@@ -84,6 +87,12 @@ const LABEL_FONTS = {
 /** @type {string[]} Curated "quick pick" emoji, shown as buttons above the free-text emoji input. */
 const EMOJIS = ['🎯', '🚀', '⭐', '🏆', '📚', '✏️', '🎨', '🎵', '🔬', '🧩', '🎮', '🌟'];
 
+/** @type {string[]} Accepted upload MIME types, mirrors appearance_image_store.php's decodable formats. */
+const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+
+/** @type {number} Client-side check only; the server enforces this independently (appearance_image_store::MAX_UPLOAD_BYTES). */
+const IMAGE_MAX_BYTES = 1048576;
+
 /**
  * Builds the template context for the editor form from the get_appearance response.
  *
@@ -103,6 +112,7 @@ const buildEditorContext = (cmid, name, bootstrap) => {
         isdefaulttype: bootstrap.type === 'default',
         isemojitype: bootstrap.type === 'emoji',
         isicontype: bootstrap.type === 'icon',
+        isimagetype: bootstrap.type === 'image',
         emojivalue: bootstrap.type === 'emoji' ? bootstrap.value : '',
         isbgcolordefault: bgcolorIsDefault,
         isbgcolortransparent: bgcolorIsTransparent,
@@ -154,6 +164,32 @@ const clearEmojiError = (form) => {
 };
 
 /**
+ * Shows a validation error on the image field and moves focus to it.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} message Localised error message.
+ * @returns {void}
+ */
+const showImageError = (form, message) => {
+    const input = form.querySelector(SELECTORS.IMAGE_INPUT);
+    const feedback = form.querySelector(SELECTORS.IMAGE_FEEDBACK);
+    input.classList.add('is-invalid');
+    feedback.textContent = message;
+    input.focus();
+};
+
+/**
+ * Clears the image field's validation error, if any.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @returns {void}
+ */
+const clearImageError = (form) => {
+    form.querySelector(SELECTORS.IMAGE_INPUT).classList.remove('is-invalid');
+    form.querySelector(SELECTORS.IMAGE_FEEDBACK).textContent = '';
+};
+
+/**
  * Shows a form-level error banner (e.g. a save() failure the server rejected), instead
  * of Moodle's generic exception dialog — the teacher stays in the modal and sees the
  * actual reason inline.
@@ -195,12 +231,14 @@ const clearFormError = (form) => {
 const wireTypeToggle = (form) => {
     const emojiField = form.querySelector(SELECTORS.EMOJI_FIELD);
     const iconField = form.querySelector(SELECTORS.ICON_FIELD);
+    const imageField = form.querySelector(SELECTORS.IMAGE_FIELD);
     form.addEventListener('change', (event) => {
         if (!event.target.matches(SELECTORS.TYPE_RADIO)) {
             return;
         }
         emojiField.hidden = event.target.value !== 'emoji';
         iconField.hidden = event.target.value !== 'icon';
+        imageField.hidden = event.target.value !== 'image';
 
         if (event.target.value === 'icon' && !form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`)) {
             const firstIcon = form.querySelector(SELECTORS.ICON_BTN);
@@ -281,10 +319,56 @@ const wireEmojiQuickpicks = (form) => {
 };
 
 /**
+ * Wires the image file input: validates the picked file client-side (type/size —
+ * convenience only, the server re-validates independently) and reads it into a data
+ * URL, stashed directly on the input element so gatherFormValues()/updatePreview() can
+ * read it back without a shared module-level variable. Picking no new file at all
+ * means gatherFormValues() sends an empty imagedata, which save_appearance.php treats
+ * as "keep the previously uploaded image" rather than "clear it".
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} invalidMessage Localised message for an unsupported file type.
+ * @param {string} toobigMessage Localised message for a file exceeding the size limit.
+ * @returns {void}
+ */
+const wireImageInput = (form, invalidMessage, toobigMessage) => {
+    const input = form.querySelector(SELECTORS.IMAGE_INPUT);
+    input.dataset.newDataUrl = '';
+
+    input.addEventListener('change', () => {
+        clearImageError(form);
+        input.dataset.newDataUrl = '';
+
+        const file = input.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (!IMAGE_MIME_TYPES.includes(file.type)) {
+            showImageError(form, invalidMessage);
+            input.value = '';
+            return;
+        }
+        if (file.size > IMAGE_MAX_BYTES) {
+            showImageError(form, toobigMessage);
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+            input.dataset.newDataUrl = reader.result;
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+        reader.readAsDataURL(file);
+    });
+};
+
+/**
  * Reads the current form state into the shape the web service expects.
  *
  * @param {HTMLElement} form The editor form.
- * @returns {{type: string, value: string, bgcolor: string, labelcolor: string, labelfont: string}}
+ * @returns {{type: string, value: string, bgcolor: string, labelcolor: string, labelfont: string, imagedata: string}}
  */
 const gatherFormValues = (form) => {
     const checkedType = form.querySelector(`${SELECTORS.TYPE_RADIO}:checked`);
@@ -311,7 +395,10 @@ const gatherFormValues = (form) => {
 
     const labelfont = form.querySelector(SELECTORS.LABELFONT_SELECT).value;
 
-    return {type, value, bgcolor, labelcolor, labelfont};
+    const imageDataUrl = form.querySelector(SELECTORS.IMAGE_INPUT).dataset.newDataUrl ?? '';
+    const imagedata = imageDataUrl.includes(',') ? imageDataUrl.split(',')[1] : '';
+
+    return {type, value, bgcolor, labelcolor, labelfont, imagedata};
 };
 
 /**
@@ -322,9 +409,10 @@ const gatherFormValues = (form) => {
  *
  * @param {HTMLElement} form The editor form.
  * @param {string} defaultIconUrl The activity's default per-module-type icon URL.
+ * @param {string} existingImageUrl The activity's previously uploaded card image URL, or ''.
  * @returns {void}
  */
-const updatePreview = (form, defaultIconUrl) => {
+const updatePreview = (form, defaultIconUrl, existingImageUrl) => {
     const values = gatherFormValues(form);
 
     const iconWrap = form.querySelector(SELECTORS.PREVIEW_ICONWRAP);
@@ -340,6 +428,9 @@ const updatePreview = (form, defaultIconUrl) => {
     } else if (values.type === 'icon') {
         const selectedIcon = form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`);
         iconImg.src = selectedIcon ? selectedIcon.dataset.url : defaultIconUrl;
+    } else if (values.type === 'image') {
+        const newDataUrl = form.querySelector(SELECTORS.IMAGE_INPUT).dataset.newDataUrl;
+        iconImg.src = newDataUrl || existingImageUrl || defaultIconUrl;
     } else {
         iconImg.src = defaultIconUrl;
     }
@@ -357,12 +448,16 @@ const updatePreview = (form, defaultIconUrl) => {
  * @returns {Promise<void>}
  */
 const openEditor = async(cmid, name) => {
-    const [title, savedMessage, emojiRequiredMessage, bootstrap] = await Promise.all([
-        Str.get_string('editappearance', 'format_smartcards'),
-        Str.get_string('changessaved', 'moodle'),
-        Str.get_string('appearance_emoji_required', 'format_smartcards'),
-        Ajax.call([{methodname: 'format_smartcards_get_appearance', args: {cmid: Number(cmid)}}])[0],
-    ]);
+    const [title, savedMessage, emojiRequiredMessage, imageRequiredMessage, imageInvalidMessage, imageToobigMessage, bootstrap] =
+        await Promise.all([
+            Str.get_string('editappearance', 'format_smartcards'),
+            Str.get_string('changessaved', 'moodle'),
+            Str.get_string('appearance_emoji_required', 'format_smartcards'),
+            Str.get_string('appearance_image_required', 'format_smartcards'),
+            Str.get_string('appearance_image_invalid', 'format_smartcards'),
+            Str.get_string('appearance_image_toobig', 'format_smartcards'),
+            Ajax.call([{methodname: 'format_smartcards_get_appearance', args: {cmid: Number(cmid)}}])[0],
+        ]);
     const {html, js} = await Templates.renderForPromise(
         'format_smartcards/local/appearance_editor',
         buildEditorContext(Number(cmid), name, bootstrap)
@@ -382,9 +477,10 @@ const openEditor = async(cmid, name) => {
     wireExclusivePressedGroup(form, SELECTORS.LABELCOLOR_SWATCH);
     wireExclusivePressedGroup(form, SELECTORS.ICON_BTN);
     wireEmojiQuickpicks(form);
+    wireImageInput(form, imageInvalidMessage, imageToobigMessage);
     form.querySelector(SELECTORS.EMOJI_INPUT).addEventListener('input', () => clearEmojiError(form));
 
-    const refreshPreview = () => updatePreview(form, bootstrap.iconurl);
+    const refreshPreview = () => updatePreview(form, bootstrap.iconurl, bootstrap.imageurl);
     form.addEventListener('input', refreshPreview);
     form.addEventListener('change', refreshPreview);
     form.addEventListener('click', (event) => {
@@ -401,6 +497,10 @@ const openEditor = async(cmid, name) => {
         const values = gatherFormValues(form);
         if (values.type === 'emoji' && values.value === '') {
             showEmojiError(form, emojiRequiredMessage);
+            return;
+        }
+        if (values.type === 'image' && values.imagedata === '' && !bootstrap.imageurl) {
+            showImageError(form, imageRequiredMessage);
             return;
         }
 

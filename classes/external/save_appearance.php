@@ -22,8 +22,11 @@ use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
+use format_smartcards\local\appearance;
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
+use invalid_parameter_exception;
 
 /**
  * Saves the custom appearance of one activity card and returns it fully re-rendered.
@@ -46,8 +49,8 @@ class save_appearance extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id'),
-            'type' => new external_value(PARAM_ALPHA, 'Appearance type: emoji or icon'),
-            'value' => new external_value(PARAM_RAW_TRIMMED, 'Emoji character or icon name'),
+            'type' => new external_value(PARAM_ALPHA, "Appearance type: 'default', 'emoji', 'icon' or 'image'"),
+            'value' => new external_value(PARAM_RAW_TRIMMED, 'Emoji character or icon name; ignored for image'),
             'bgcolor' => new external_value(
                 PARAM_RAW_TRIMMED,
                 'Circle background #RRGGBB, or empty for the default',
@@ -66,6 +69,12 @@ class save_appearance extends external_api {
                 VALUE_DEFAULT,
                 ''
             ),
+            'imagedata' => new external_value(
+                PARAM_RAW_TRIMMED,
+                'Base64-encoded image bytes (type=image only); empty keeps the existing image',
+                VALUE_DEFAULT,
+                ''
+            ),
         ]);
     }
 
@@ -73,11 +82,13 @@ class save_appearance extends external_api {
      * Saves the given appearance for one activity and returns its re-rendered card.
      *
      * @param int $cmid Course module id.
-     * @param string $type One of appearance_repository::TYPE_EMOJI or TYPE_ICON.
-     * @param string $value Emoji character or icon name.
+     * @param string $type One of appearance_repository::TYPE_EMOJI, TYPE_ICON, TYPE_IMAGE or TYPE_DEFAULT.
+     * @param string $value Emoji character or icon name; ignored for TYPE_IMAGE (see $imagedata).
      * @param string $bgcolor Circle background #RRGGBB, or '' for the default.
      * @param string $labelcolor Title colour #RRGGBB, or '' for the default.
      * @param string $labelfont Curated font slug, or '' for the system font.
+     * @param string $imagedata Base64-encoded image bytes (TYPE_IMAGE only), or '' to
+     *                          keep the previously uploaded image.
      * @return array<string, mixed>
      */
     public static function execute(
@@ -86,7 +97,8 @@ class save_appearance extends external_api {
         string $value,
         string $bgcolor = '',
         string $labelcolor = '',
-        string $labelfont = ''
+        string $labelfont = '',
+        string $imagedata = ''
     ): array {
         global $PAGE;
 
@@ -97,6 +109,7 @@ class save_appearance extends external_api {
             'bgcolor' => $bgcolor,
             'labelcolor' => $labelcolor,
             'labelfont' => $labelfont,
+            'imagedata' => $imagedata,
         ]);
 
         $cm      = get_coursemodule_from_id('', $params['cmid'], 0, false, MUST_EXIST);
@@ -106,10 +119,19 @@ class save_appearance extends external_api {
         require_capability('format/smartcards:manageappearance', $context);
 
         $repository = new appearance_repository();
-        $repository->save_for_activity(
+        $existing   = $repository->get_for_activity($params['cmid']);
+        $resolvedvalue = self::resolve_image_value(
             $params['cmid'],
             $params['type'],
             $params['value'],
+            $params['imagedata'],
+            $existing
+        );
+
+        $repository->save_for_activity(
+            $params['cmid'],
+            $params['type'],
+            $resolvedvalue,
             $params['bgcolor'] !== '' ? $params['bgcolor'] : null,
             $params['labelcolor'] !== '' ? $params['labelcolor'] : null,
             $params['labelfont'] !== '' ? $params['labelfont'] : null,
@@ -133,6 +155,48 @@ class save_appearance extends external_api {
         $card['badge'] = $card['badge'] ?? '';
 
         return $card;
+    }
+
+    /**
+     * Resolves the "value" to persist for the given type, handling TYPE_IMAGE's file
+     * lifecycle: a freshly uploaded image is stored (replacing any previous one), an
+     * empty upload keeps the previously stored image, and switching away from
+     * TYPE_IMAGE deletes the now-orphaned file.
+     *
+     * @param int $cmid Course module id.
+     * @param string $type Validated appearance type.
+     * @param string $value Validated value param (emoji/icon name; ignored for images).
+     * @param string $imagedata Base64-encoded image bytes, or '' when not (re)uploading.
+     * @param appearance|null $existing The activity's current appearance, if any, used
+     *        to detect a type change away from image.
+     * @return string The value to persist in format_smartcards_appearance.value.
+     * @throws invalid_parameter_exception If type is TYPE_IMAGE with nothing to store.
+     */
+    private static function resolve_image_value(
+        int $cmid,
+        string $type,
+        string $value,
+        string $imagedata,
+        ?appearance $existing
+    ): string {
+        $waskeepingimage = $existing !== null && $existing->type === appearance_repository::TYPE_IMAGE;
+
+        if ($type !== appearance_repository::TYPE_IMAGE) {
+            if ($waskeepingimage) {
+                appearance_image_store::delete($cmid);
+            }
+            return $value;
+        }
+
+        if ($imagedata !== '') {
+            return (string)appearance_image_store::store($cmid, $imagedata);
+        }
+
+        if ($waskeepingimage && $existing->value !== '') {
+            return $existing->value;
+        }
+
+        throw new invalid_parameter_exception('An image must be uploaded');
     }
 
     /**
@@ -162,6 +226,8 @@ class save_appearance extends external_api {
             'hiddenlabel'      => new external_value(PARAM_RAW, "Localised 'Hidden' label, or empty"),
             'isemoji'          => new external_value(PARAM_BOOL, 'Whether the appearance type is emoji'),
             'emoji'            => new external_value(PARAM_RAW, 'Emoji character, or empty'),
+            'iscustomicon'     => new external_value(PARAM_BOOL, 'Whether a custom icon/image replaces the default one'),
+            'customiconurl'    => new external_value(PARAM_RAW, 'Custom icon/image URL, or empty'),
             'hasiconstyle'     => new external_value(PARAM_BOOL, 'Whether the icon circle has a custom style'),
             'iconstyle'        => new external_value(PARAM_RAW, 'Inline CSS for the icon circle, or empty'),
             'hastitlestyle'    => new external_value(PARAM_BOOL, 'Whether the title has a custom style'),

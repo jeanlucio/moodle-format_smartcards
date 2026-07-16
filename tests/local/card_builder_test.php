@@ -178,6 +178,49 @@ final class card_builder_test extends \advanced_testcase {
     }
 
     /**
+     * An uploaded image appearance must render through the same iscustomicon/
+     * customiconurl fields the library icon type uses, with a URL built by
+     * appearance_image_store (no separate File API lookup at render time).
+     *
+     * @covers ::build
+     */
+    public function test_image_type_renders_as_custom_icon(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $fileid = appearance_image_store::store(
+            $page->cmid,
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        );
+        (new appearance_repository())->save_for_activity(
+            $page->cmid,
+            appearance_repository::TYPE_IMAGE,
+            (string)$fileid,
+            null,
+            null,
+            null
+        );
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            (new appearance_repository())->get_for_activity($page->cmid),
+            []
+        );
+
+        $this->assertTrue($card['iscustomicon']);
+        $this->assertSame(appearance_image_store::url($page->cmid)->out(false), $card['customiconurl']);
+    }
+
+    /**
      * With no course defaults and no activity appearance, the title must carry no
      * inline style at all — the system/theme default applies, exactly as before this
      * feature existed.

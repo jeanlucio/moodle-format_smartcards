@@ -39,6 +39,7 @@
         "isdefaulttype": false,
         "isemojitype": true,
         "isicontype": false,
+        "isimagetype": false,
         "colors": [
             {"slug": "blue", "hex": "#1565c0", "selected": true}
         ],
@@ -111,6 +112,20 @@
                 {{#str}} appearance_icon, format_smartcards {{/str}}
             </label>
         </div>
+        <div class="form-check">
+            <input
+                type="radio"
+                class="form-check-input"
+                name="sc-appearance-type"
+                id="sc-appearance-type-image"
+                value="image"
+                data-region="smartcards-type-radio"
+                {{#isimagetype}}checked{{/isimagetype}}
+            >
+            <label class="form-check-label" for="sc-appearance-type-image">
+                {{#str}} appearance_image, format_smartcards {{/str}}
+            </label>
+        </div>
     </fieldset>
 
     <div class="sc-appearance-field" data-region="smartcards-emoji-field" {{^isemojitype}}hidden{{/isemojitype}}>
@@ -161,6 +176,24 @@
             </button>
             {{/icons}}
         </div>
+    </div>
+
+    <div class="sc-appearance-field" data-region="smartcards-image-field" {{^isimagetype}}hidden{{/isimagetype}}>
+        <label class="sc-appearance-label" for="sc-appearance-image-input">
+            {{#str}} appearance_image, format_smartcards {{/str}}
+        </label>
+        <input
+            type="file"
+            class="form-control sc-appearance-image-input"
+            id="sc-appearance-image-input"
+            data-region="smartcards-image-input"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            aria-describedby="sc-appearance-image-hint sc-appearance-image-feedback"
+        >
+        <div class="form-text" id="sc-appearance-image-hint">
+            {{#str}} appearance_image_hint, format_smartcards {{/str}}
+        </div>
+        <div class="invalid-feedback" id="sc-appearance-image-feedback" data-region="smartcards-image-feedback"></div>
     </div>
 
     <div class="sc-appearance-field">

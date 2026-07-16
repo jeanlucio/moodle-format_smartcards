@@ -17,6 +17,7 @@
 namespace format_smartcards\external;
 
 use core_external\external_api;
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_palette;
 use format_smartcards\local\appearance_repository;
 
@@ -63,6 +64,7 @@ final class get_appearance_test extends \advanced_testcase {
         $this->assertSame('', $result['labelcolor']);
         $this->assertSame('', $result['labelfont']);
         $this->assertNotSame('', $result['iconurl']);
+        $this->assertSame('', $result['imageurl']);
     }
 
     /**
@@ -93,6 +95,36 @@ final class get_appearance_test extends \advanced_testcase {
         $this->assertSame('#fff3e0', $result['bgcolor']);
         $this->assertSame(appearance_palette::LABEL_COLORS['blue'], $result['labelcolor']);
         $this->assertSame('fredoka', $result['labelfont']);
+    }
+
+    /**
+     * When the saved appearance is an uploaded image, imageurl must point at it so the
+     * editor can show the current image without a separate round trip.
+     *
+     * @covers ::execute
+     */
+    public function test_returns_image_url_for_image_type(): void {
+        $this->resetAfterTest();
+        [, $page, $teacher] = $this->create_course_with_teacher();
+        $this->setUser($teacher);
+
+        $fileid = appearance_image_store::store(
+            $page->cmid,
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        );
+        (new appearance_repository())->save_for_activity(
+            $page->cmid,
+            appearance_repository::TYPE_IMAGE,
+            (string)$fileid,
+            null,
+            null,
+            null
+        );
+
+        $result = get_appearance::execute($page->cmid);
+        $result = external_api::clean_returnvalue(get_appearance::execute_returns(), $result);
+
+        $this->assertNotSame('', $result['imageurl']);
     }
 
     /**

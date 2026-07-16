@@ -82,7 +82,7 @@ class card_builder {
         };
 
         [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
-            = self::build_appearance_styles($item, $output, $formatoptions);
+            = self::build_appearance_styles($item, $output, $formatoptions, $cm->id);
 
         return [
             'cmid'             => $cm->id,
@@ -119,25 +119,31 @@ class card_builder {
      * circle and title, from its custom appearance (if any) and the course's default
      * title colour/font (if the activity does not set its own).
      *
-     * The image appearance type is not rendered yet (uploaded images need the File API
-     * wiring, not yet built), so only emoji, library icon, and the two colour/font
-     * fields are wired up so far.
-     *
      * @param appearance|null $item The activity's custom appearance, or null.
      * @param renderer_base $output Renderer used to resolve the custom icon's URL.
      * @param array $formatoptions The course's resolved format options, for the
      *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont fallback.
+     * @param int $cmid Course module id, used to build the uploaded card image's URL
+     *                  when the appearance type is TYPE_IMAGE.
      * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string}
      *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle.
      */
-    private static function build_appearance_styles(?appearance $item, renderer_base $output, array $formatoptions): array {
+    private static function build_appearance_styles(
+        ?appearance $item,
+        renderer_base $output,
+        array $formatoptions,
+        int $cmid
+    ): array {
         $isemoji = $item !== null && $item->type === appearance_repository::TYPE_EMOJI;
         $emoji   = $isemoji ? $item->value : '';
 
-        $iscustomicon = $item !== null && $item->type === appearance_repository::TYPE_ICON;
-        $customiconurl = $iscustomicon
-            ? $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false)
-            : '';
+        $iscustomicon = $item !== null
+            && in_array($item->type, [appearance_repository::TYPE_ICON, appearance_repository::TYPE_IMAGE], true);
+        $customiconurl = match ($item?->type) {
+            appearance_repository::TYPE_ICON => $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false),
+            appearance_repository::TYPE_IMAGE => appearance_image_store::url($cmid)->out(false),
+            default => '',
+        };
 
         $defaultbgcolor = (string)($formatoptions['defaultbgcolor'] ?? '');
         $bgcolor        = $item?->bgcolor ?? ($defaultbgcolor !== '' ? $defaultbgcolor : null);
