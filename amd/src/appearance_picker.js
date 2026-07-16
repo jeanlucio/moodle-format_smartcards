@@ -87,8 +87,13 @@ const LABEL_FONTS = {
 /** @type {string[]} Curated "quick pick" emoji, shown as buttons above the free-text emoji input. */
 const EMOJIS = ['🎯', '🚀', '⭐', '🏆', '📚', '✏️', '🎨', '🎵', '🔬', '🧩', '🎮', '🌟'];
 
-/** @type {string[]} Accepted upload MIME types, mirrors appearance_image_store.php's decodable formats. */
-const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+/**
+ * @type {string[]} Accepted upload MIME types. WEBP is deliberately excluded: GD (which
+ * appearance_image_store.php re-encodes through) is not guaranteed to be built with WebP
+ * support across hosting environments — a browser can preview a WEBP file client-side (its
+ * own decoder), but the server-side re-encode can then fail on a GD build without it.
+ */
+const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif'];
 
 /** @type {number} Client-side check only; the server enforces this independently (appearance_image_store::MAX_UPLOAD_BYTES). */
 const IMAGE_MAX_BYTES = 1048576;
