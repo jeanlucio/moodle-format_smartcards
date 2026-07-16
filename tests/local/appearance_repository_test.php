@@ -192,6 +192,26 @@ final class appearance_repository_test extends \advanced_testcase {
     }
 
     /**
+     * The literal 'transparent' is not a #RRGGBB value but must still be accepted, so a
+     * teacher can make the icon circle blend into the card instead of picking a colour.
+     *
+     * @covers ::save_for_activity
+     */
+    public function test_transparent_bgcolor_is_accepted(): void {
+        $this->resetAfterTest();
+        $saved = (new appearance_repository())->save_for_activity(
+            1,
+            appearance_repository::TYPE_ICON,
+            'book',
+            appearance_repository::BGCOLOR_TRANSPARENT,
+            null,
+            null
+        );
+
+        $this->assertSame(appearance_repository::BGCOLOR_TRANSPARENT, $saved->bgcolor);
+    }
+
+    /**
      * A labelcolor outside the curated palette must be rejected, even if it is a
      * well-formed #RRGGBB value — the palette is the whole point (pre-validated
      * contrast, never a free colour picker).

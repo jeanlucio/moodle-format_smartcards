@@ -33,7 +33,9 @@
         "type": "emoji",
         "emojivalue": "🚀",
         "iconvalue": "",
-        "bgcolor": "",
+        "bgcolorinputvalue": "#f8f9fa",
+        "isbgcolordefault": true,
+        "isbgcolortransparent": false,
         "isdefaulttype": false,
         "isemojitype": true,
         "isicontype": false,
@@ -171,14 +173,23 @@
                 class="form-control form-control-color"
                 id="sc-appearance-bgcolor-input"
                 data-region="smartcards-bgcolor-input"
-                value="{{#bgcolor}}{{bgcolor}}{{/bgcolor}}{{^bgcolor}}#f8f9fa{{/bgcolor}}"
+                value="{{bgcolorinputvalue}}"
             >
             <button
                 type="button"
                 class="btn btn-link sc-appearance-clear"
                 data-region="smartcards-bgcolor-clear"
+                aria-pressed="{{#isbgcolordefault}}true{{/isbgcolordefault}}{{^isbgcolordefault}}false{{/isbgcolordefault}}"
             >
                 {{#str}} appearance_defaultcolor, format_smartcards {{/str}}
+            </button>
+            <button
+                type="button"
+                class="btn btn-link sc-appearance-clear"
+                data-region="smartcards-bgcolor-transparent"
+                aria-pressed="{{#isbgcolortransparent}}true{{/isbgcolortransparent}}{{^isbgcolortransparent}}false{{/isbgcolortransparent}}"
+            >
+                {{#str}} appearance_transparent, format_smartcards {{/str}}
             </button>
         </div>
     </div>

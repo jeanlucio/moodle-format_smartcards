@@ -28,6 +28,7 @@ require_once($CFG->dirroot . '/course/format/lib.php');
 
 use core\output\inplace_editable;
 use format_smartcards\local\appearance_palette;
+use format_smartcards\local\appearance_repository;
 
 /**
  * SmartCards course format class.
@@ -239,11 +240,11 @@ class format_smartcards extends core_courseformat\base {
     /**
      * Returns the format options for this course.
      *
-     * Four options, each with a site-wide default (settings.php) overridable per
-     * course: cardsize and showcardframe control the grid's visual density; the two
+     * Five options, each with a site-wide default (settings.php) overridable per
+     * course: cardsize and showcardframe control the grid's visual density; the three
      * "default" colour/font options give the whole course a fallback that an
-     * individual activity's own appearance.labelcolor/labelfont still takes priority
-     * over (see card_builder::build()).
+     * individual activity's own appearance still takes priority over (see
+     * card_builder::build()).
      *
      * @param bool $foreditform Whether this is being called to populate the course edit form.
      * @return array
@@ -261,6 +262,10 @@ class format_smartcards extends core_courseformat\base {
                     'default' => get_config('format_smartcards', 'showcardframe'),
                     'type' => PARAM_INT,
                 ],
+                'defaultbgcolor' => [
+                    'default' => get_config('format_smartcards', 'defaultbgcolor'),
+                    'type' => PARAM_TEXT,
+                ],
                 'defaultlabelcolor' => [
                     'default' => get_config('format_smartcards', 'defaultlabelcolor'),
                     'type' => PARAM_TEXT,
@@ -273,6 +278,14 @@ class format_smartcards extends core_courseformat\base {
         }
 
         if ($foreditform && !isset($courseformatoptions['cardsize']['label'])) {
+            $bgcoloroptions = [
+                '' => get_string('appearance_defaultcolor', 'format_smartcards'),
+                appearance_repository::BGCOLOR_TRANSPARENT => get_string('appearance_transparent', 'format_smartcards'),
+            ];
+            foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
+                $bgcoloroptions[$hex] = ucfirst($slug);
+            }
+
             $labelcoloroptions = ['' => get_string('appearance_defaultcolor', 'format_smartcards')];
             foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
                 $labelcoloroptions[$hex] = ucfirst($slug);
@@ -304,6 +317,11 @@ class format_smartcards extends core_courseformat\base {
                             1 => new lang_string('yes'),
                         ],
                     ],
+                ],
+                'defaultbgcolor' => [
+                    'label' => new lang_string('defaultbgcolor', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [$bgcoloroptions],
                 ],
                 'defaultlabelcolor' => [
                     'label' => new lang_string('defaultlabelcolor', 'format_smartcards'),

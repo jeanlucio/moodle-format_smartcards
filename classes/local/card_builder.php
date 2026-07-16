@@ -45,8 +45,8 @@ class card_builder {
      * @param appearance|null $item The module's custom appearance, or null for the default.
      * @param array $formatoptions The course's resolved format options
      *                              (course_format::get_format_options()), used for the
-     *                              defaultlabelcolor/defaultlabelfont fallback below the
-     *                              activity's own appearance. Pass [] to skip the
+     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont
+     *                              fallback below the activity's own appearance. Pass [] to skip the
      *                              course-level fallback (falls straight through to the
      *                              system default).
      * @return array<string, mixed>|null Template context, or null when not visible at all.
@@ -126,7 +126,7 @@ class card_builder {
      * @param appearance|null $item The activity's custom appearance, or null.
      * @param renderer_base $output Renderer used to resolve the custom icon's URL.
      * @param array $formatoptions The course's resolved format options, for the
-     *                              defaultlabelcolor/defaultlabelfont fallback.
+     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont fallback.
      * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string}
      *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle.
      */
@@ -139,8 +139,9 @@ class card_builder {
             ? $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false)
             : '';
 
-        $bgcolor   = $item?->bgcolor;
-        $iconstyle = $bgcolor !== null ? 'background-color: ' . $bgcolor : '';
+        $defaultbgcolor = (string)($formatoptions['defaultbgcolor'] ?? '');
+        $bgcolor        = $item?->bgcolor ?? ($defaultbgcolor !== '' ? $defaultbgcolor : null);
+        $iconstyle      = $bgcolor !== null ? 'background-color: ' . $bgcolor : '';
 
         $defaultlabelcolor = (string)($formatoptions['defaultlabelcolor'] ?? '');
         $defaultlabelfont  = (string)($formatoptions['defaultlabelfont'] ?? '');

@@ -58,5 +58,18 @@ function xmldb_format_smartcards_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071500, 'format', 'smartcards');
     }
 
+    if ($oldversion < 2026071700) {
+        $table = new xmldb_table('format_smartcards_appearance');
+        $field = new xmldb_field('bgcolor', XMLDB_TYPE_CHAR, '11', null, null, null, null, 'value');
+
+        if ($dbman->field_exists($table, $field)) {
+            // Widened from 7 to 11 chars so bgcolor can also store the literal
+            // 'transparent', alongside #RRGGBB.
+            $dbman->change_field_precision($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026071700, 'format', 'smartcards');
+    }
+
     return true;
 }

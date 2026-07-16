@@ -17,7 +17,7 @@
 namespace format_smartcards\local;
 
 /**
- * Tests for the SmartCards card_builder, focused on the defaultlabelcolor/
+ * Tests for the SmartCards card_builder, focused on the defaultbgcolor/defaultlabelcolor/
  * defaultlabelfont course format option fallback (the full render pipeline is covered
  * by tests/output/courseformat/content_test.php).
  *
@@ -110,6 +110,71 @@ final class card_builder_test extends \advanced_testcase {
 
         $this->assertStringContainsString('color: ' . appearance_palette::LABEL_COLORS['teal'], $card['titlestyle']);
         $this->assertStringContainsString("'Varela Round'", $card['titlestyle']);
+    }
+
+    /**
+     * An activity's own bgcolor must take priority over the course's defaultbgcolor
+     * format option, never the other way round.
+     *
+     * @covers ::build
+     */
+    public function test_activity_own_bgcolor_overrides_course_default(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $ownbgcolor = appearance_palette::LABEL_COLORS['pink'];
+        (new appearance_repository())->save_for_activity(
+            $page->cmid,
+            appearance_repository::TYPE_DEFAULT,
+            '',
+            $ownbgcolor,
+            null,
+            null
+        );
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $formatoptions = ['defaultbgcolor' => appearance_palette::LABEL_COLORS['green']];
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            (new appearance_repository())->get_for_activity($page->cmid),
+            $formatoptions
+        );
+
+        $this->assertStringContainsString('background-color: ' . $ownbgcolor, $card['iconstyle']);
+        $this->assertStringNotContainsString(appearance_palette::LABEL_COLORS['green'], $card['iconstyle']);
+    }
+
+    /**
+     * With no activity appearance at all, the course's defaultbgcolor must still apply,
+     * including the special 'transparent' value.
+     *
+     * @covers ::build
+     */
+    public function test_course_default_bgcolor_applies_with_no_activity_appearance(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $formatoptions = ['defaultbgcolor' => appearance_repository::BGCOLOR_TRANSPARENT];
+
+        $card = card_builder::build($cm, $course, $renderer, null, $formatoptions);
+
+        $this->assertStringContainsString('background-color: transparent', $card['iconstyle']);
     }
 
     /**

@@ -59,6 +59,13 @@ class appearance_repository {
     private const VALID_TYPES = [self::TYPE_IMAGE, self::TYPE_EMOJI, self::TYPE_ICON, self::TYPE_DEFAULT];
 
     /**
+     * @var string Special bgcolor value meaning "no background colour at all" (the
+     *             circle blends into the card). Not a #RRGGBB value, so it is checked
+     *             for explicitly in validate_bgcolor() rather than by the hex regex.
+     */
+    public const BGCOLOR_TRANSPARENT = 'transparent';
+
+    /**
      * Returns the appearance configured for one course module, if any.
      *
      * @param int $cmid Course module id.
@@ -348,15 +355,18 @@ class appearance_repository {
      *
      * Unlike labelcolor, bgcolor is not restricted to a curated palette: the circle
      * only ever holds a decorative icon, never text, so WCAG text-contrast rules do not
-     * apply to it. It is still validated as a well-formed #RRGGBB value (defense in
-     * depth against malformed CSS injection).
+     * apply to it. It is still validated as either a well-formed #RRGGBB value (defense
+     * in depth against malformed CSS injection) or the literal BGCOLOR_TRANSPARENT.
      *
      * @param string|null $bgcolor Colour to validate.
      * @return void
      * @throws invalid_parameter_exception If $bgcolor is set but malformed.
      */
     private function validate_bgcolor(?string $bgcolor): void {
-        if ($bgcolor !== null && !appearance_palette::is_valid_hex_color($bgcolor)) {
+        if ($bgcolor === null || $bgcolor === self::BGCOLOR_TRANSPARENT) {
+            return;
+        }
+        if (!appearance_palette::is_valid_hex_color($bgcolor)) {
             throw new invalid_parameter_exception('Invalid bgcolor: ' . $bgcolor);
         }
     }

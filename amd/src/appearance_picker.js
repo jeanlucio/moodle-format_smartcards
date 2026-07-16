@@ -51,6 +51,7 @@ const SELECTORS = {
     ICON_BTN: '[data-region="smartcards-icon-btn"]',
     BGCOLOR_INPUT: '[data-region="smartcards-bgcolor-input"]',
     BGCOLOR_CLEAR: '[data-region="smartcards-bgcolor-clear"]',
+    BGCOLOR_TRANSPARENT: '[data-region="smartcards-bgcolor-transparent"]',
     LABELCOLOR_SWATCH: '[data-region="smartcards-labelcolor-swatch"]',
     LABELFONT_SELECT: '[data-region="smartcards-labelfont-select"]',
     PREVIEW_ICONWRAP: '[data-region="smartcards-preview-iconwrap"]',
@@ -91,32 +92,39 @@ const EMOJIS = ['🎯', '🚀', '⭐', '🏆', '📚', '✏️', '🎨', '🎵',
  * @param {object} bootstrap The format_smartcards_get_appearance response.
  * @returns {object} Context for the appearance_editor template.
  */
-const buildEditorContext = (cmid, name, bootstrap) => ({
-    cmid,
-    name,
-    iconurl: bootstrap.iconurl,
-    isdefaulttype: bootstrap.type === 'default',
-    isemojitype: bootstrap.type === 'emoji',
-    isicontype: bootstrap.type === 'icon',
-    emojivalue: bootstrap.type === 'emoji' ? bootstrap.value : '',
-    bgcolor: bootstrap.bgcolor,
-    labelcolor: bootstrap.labelcolor,
-    colors: Object.entries(LABEL_COLORS).map(([slug, hex]) => ({
-        slug,
-        hex,
-        selected: hex === bootstrap.labelcolor,
-    })),
-    fonts: Object.entries(LABEL_FONTS).map(([slug, fontname]) => ({
-        slug,
-        name: fontname,
-        selected: slug === bootstrap.labelfont,
-    })),
-    icons: bootstrap.icons.map((icon) => ({
-        ...icon,
-        selected: bootstrap.type === 'icon' && icon.slug === bootstrap.value,
-    })),
-    emojis: EMOJIS,
-});
+const buildEditorContext = (cmid, name, bootstrap) => {
+    const bgcolorIsTransparent = bootstrap.bgcolor === 'transparent';
+    const bgcolorIsDefault = bootstrap.bgcolor === '';
+
+    return {
+        cmid,
+        name,
+        iconurl: bootstrap.iconurl,
+        isdefaulttype: bootstrap.type === 'default',
+        isemojitype: bootstrap.type === 'emoji',
+        isicontype: bootstrap.type === 'icon',
+        emojivalue: bootstrap.type === 'emoji' ? bootstrap.value : '',
+        isbgcolordefault: bgcolorIsDefault,
+        isbgcolortransparent: bgcolorIsTransparent,
+        bgcolorinputvalue: (!bgcolorIsTransparent && !bgcolorIsDefault) ? bootstrap.bgcolor : '#f8f9fa',
+        labelcolor: bootstrap.labelcolor,
+        colors: Object.entries(LABEL_COLORS).map(([slug, hex]) => ({
+            slug,
+            hex,
+            selected: hex === bootstrap.labelcolor,
+        })),
+        fonts: Object.entries(LABEL_FONTS).map(([slug, fontname]) => ({
+            slug,
+            name: fontname,
+            selected: slug === bootstrap.labelfont,
+        })),
+        icons: bootstrap.icons.map((icon) => ({
+            ...icon,
+            selected: bootstrap.type === 'icon' && icon.slug === bootstrap.value,
+        })),
+        emojis: EMOJIS,
+    };
+};
 
 /**
  * Shows a validation error on the emoji field (Bootstrap is-invalid pattern) and moves
@@ -204,24 +212,38 @@ const wireTypeToggle = (form) => {
 };
 
 /**
- * Wires the background colour input and its "Default" clear button.
+ * Wires the background colour input and its "Default"/"Transparent" buttons.
  *
- * A native colour input cannot represent "no value", so a data-cleared flag tracks
- * whether the teacher wants the default background instead of a chosen colour.
+ * A native colour input cannot represent "no value" or "transparent", so a
+ * tri-state data-mode flag ('default'|'transparent'|'custom') tracks which of the
+ * three the teacher actually wants; only 'custom' reads the colour input's value.
  *
  * @param {HTMLElement} form The editor form.
+ * @param {string} initialBgcolor The activity's current bgcolor ('', 'transparent', or a hex value).
  * @returns {void}
  */
-const wireBgcolor = (form) => {
+const wireBgcolor = (form, initialBgcolor) => {
     const input = form.querySelector(SELECTORS.BGCOLOR_INPUT);
-    const clearBtn = form.querySelector(SELECTORS.BGCOLOR_CLEAR);
-    input.dataset.cleared = input.value === '' ? '1' : '0';
-    input.addEventListener('input', () => {
-        input.dataset.cleared = '0';
-    });
-    clearBtn.addEventListener('click', () => {
-        input.dataset.cleared = '1';
-    });
+    const defaultBtn = form.querySelector(SELECTORS.BGCOLOR_CLEAR);
+    const transparentBtn = form.querySelector(SELECTORS.BGCOLOR_TRANSPARENT);
+
+    const setMode = (mode) => {
+        input.dataset.mode = mode;
+        defaultBtn.setAttribute('aria-pressed', mode === 'default' ? 'true' : 'false');
+        transparentBtn.setAttribute('aria-pressed', mode === 'transparent' ? 'true' : 'false');
+    };
+
+    if (initialBgcolor === '') {
+        setMode('default');
+    } else if (initialBgcolor === 'transparent') {
+        setMode('transparent');
+    } else {
+        setMode('custom');
+    }
+
+    input.addEventListener('input', () => setMode('custom'));
+    defaultBtn.addEventListener('click', () => setMode('default'));
+    transparentBtn.addEventListener('click', () => setMode('transparent'));
 };
 
 /**
@@ -277,7 +299,12 @@ const gatherFormValues = (form) => {
     }
 
     const bgcolorInput = form.querySelector(SELECTORS.BGCOLOR_INPUT);
-    const bgcolor = bgcolorInput.dataset.cleared === '1' ? '' : bgcolorInput.value;
+    let bgcolor = '';
+    if (bgcolorInput.dataset.mode === 'transparent') {
+        bgcolor = 'transparent';
+    } else if (bgcolorInput.dataset.mode === 'custom') {
+        bgcolor = bgcolorInput.value;
+    }
 
     const selectedSwatch = form.querySelector(`${SELECTORS.LABELCOLOR_SWATCH}[aria-pressed="true"]`);
     const labelcolor = selectedSwatch ? selectedSwatch.dataset.value : '';
@@ -351,7 +378,7 @@ const openEditor = async(cmid, name) => {
 
     const form = modal.getBody()[0].querySelector(SELECTORS.FORM);
     wireTypeToggle(form);
-    wireBgcolor(form);
+    wireBgcolor(form, bootstrap.bgcolor);
     wireExclusivePressedGroup(form, SELECTORS.LABELCOLOR_SWATCH);
     wireExclusivePressedGroup(form, SELECTORS.ICON_BTN);
     wireEmojiQuickpicks(form);

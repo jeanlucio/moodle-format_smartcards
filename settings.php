@@ -27,6 +27,7 @@
  */
 
 use format_smartcards\local\appearance_palette;
+use format_smartcards\local\appearance_repository;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -48,6 +49,21 @@ if ($ADMIN->fulltree) {
         new lang_string('showcardframe', 'format_smartcards'),
         new lang_string('showcardframe_desc', 'format_smartcards'),
         1
+    ));
+
+    $bgcoloroptions = [
+        '' => new lang_string('appearance_defaultcolor', 'format_smartcards'),
+        appearance_repository::BGCOLOR_TRANSPARENT => new lang_string('appearance_transparent', 'format_smartcards'),
+    ];
+    foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
+        $bgcoloroptions[$hex] = ucfirst($slug) . " ($hex)";
+    }
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/defaultbgcolor',
+        new lang_string('defaultbgcolor', 'format_smartcards'),
+        new lang_string('defaultbgcolor_desc', 'format_smartcards'),
+        '',
+        $bgcoloroptions
     ));
 
     $labelcoloroptions = ['' => new lang_string('appearance_defaultcolor', 'format_smartcards')];
