@@ -23,6 +23,7 @@
     Example context (json):
     {
         "uniqid": "sc63a1b2",
+        "courseid": 7,
         "hassections": true,
         "canedit": false,
         "editmodeactive": false,
@@ -66,7 +67,12 @@
         ]
     }
 }}
-<div id="{{uniqid}}" class="sc-course {{cardsizeclass}} {{noframeclass}}" data-region="smartcards-content">
+<div
+    id="{{uniqid}}"
+    class="sc-course {{cardsizeclass}} {{noframeclass}}"
+    data-region="smartcards-content"
+    data-courseid="{{courseid}}"
+>
     {{#hassections}}
         {{#sections}}
             <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
@@ -97,7 +103,12 @@
                 <h3 class="sc-section-title" id="sc-section-title-{{id}}">{{name}}</h3>
                 {{/iscollapsible}}
 
-                <div{{#iscollapsible}} id="sc-accordion-body-{{id}}" class="collapse {{#isopen}}show{{/isopen}}"{{/iscollapsible}}>
+                <div{{#iscollapsible}}
+                    id="sc-accordion-body-{{id}}"
+                    class="collapse {{#isopen}}show{{/isopen}}"
+                    data-region="smartcards-accordion-body"
+                    data-sectionid="{{id}}"
+                {{/iscollapsible}}>
                     {{#hascards}}
                         <div class="sc-grid">
                             {{#cards}}

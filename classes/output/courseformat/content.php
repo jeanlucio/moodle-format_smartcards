@@ -89,12 +89,20 @@ class content extends content_base {
 
         $isaccordion = ($formatoptions['navstyle'] ?? 'default') === 'accordion';
         $completioninfo = null;
+        $sectionpreferences = [];
+        $hastouchedaccordion = false;
         if ($isaccordion) {
-            // Loading this module is what activates Bootstrap's [data-bs-toggle="collapse"]
-            // click handling for the whole page (a side effect of its own import chain) —
-            // no bespoke AMD module needed for the accordion toggle itself.
-            $PAGE->requires->js_call_amd('core/local/collapsable_section/controls', 'init');
-            $completioninfo = new completion_info($course);
+            // Loads theme_boost/bootstrap/collapse (as a side effect of its own import
+            // chain) to activate Bootstrap's [data-bs-toggle="collapse"] click handling,
+            // and persists each manual toggle via the same core_courseformat_update_course
+            // web service and section preference core's own default view already uses
+            // (course_format::get_sections_preferences()), so a student's choice survives
+            // reloads exactly like it would on a standard Moodle course page.
+            $PAGE->requires->js_call_amd('format_smartcards/accordion', 'init');
+            $completioninfo      = new completion_info($course);
+            $sectionpreferences  = $format->get_sections_preferences();
+            $collapsedpreference = $format->get_sections_preferences_by_preference()['contentcollapsed'] ?? [];
+            $hastouchedaccordion = !empty($collapsedpreference);
         }
 
         $sectionsdata = [];
@@ -111,6 +119,7 @@ class content extends content_base {
 
             $iscollapsible = $isaccordion && $sectioninfo->section > 0;
             $progress = $iscollapsible ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
+            $explicitcollapsed = !empty($sectionpreferences[$sectioninfo->id]->contentcollapsed ?? false);
 
             $sectionsdata[] = [
                 'id'            => $sectioninfo->id,
@@ -120,7 +129,7 @@ class content extends content_base {
                 'cards'         => $cards,
                 'hascards'      => !empty($cards),
                 'iscollapsible' => $iscollapsible,
-                'isopen'        => false,
+                'isopen'        => $iscollapsible && !$explicitcollapsed,
                 'hasprogress'   => $progress !== null && $progress->has_tracking(),
                 'progresslabel' => ($progress !== null && $progress->has_tracking())
                     ? get_string('progresstotal', 'completion', (object)[
@@ -135,10 +144,16 @@ class content extends content_base {
             }
         }
 
-        if ($isaccordion) {
+        if ($isaccordion && !$hastouchedaccordion) {
+            // The student has never manually toggled any section of this course before:
+            // let the pending activity pick the one section that opens, instead of
+            // core's own "everything expanded" default — every other case (the student
+            // has touched at least one section) keeps the per-section value already set
+            // above, exactly matching core's own "expanded unless explicitly collapsed"
+            // rule, so a manual choice is never overridden by this logic again.
             $openindex = $this->find_default_open_section_index($progressbyindex);
-            if ($openindex !== null) {
-                $sectionsdata[$openindex]['isopen'] = true;
+            foreach (array_keys($progressbyindex) as $index) {
+                $sectionsdata[$index]['isopen'] = ($index === $openindex);
             }
         }
 
@@ -149,6 +164,7 @@ class content extends content_base {
 
         return (object)[
             'uniqid'         => 'sc' . uniqid(),
+            'courseid'       => $course->id,
             'sections'       => $sectionsdata,
             'hassections'    => !empty($sectionsdata),
             'canedit'        => $canedit,

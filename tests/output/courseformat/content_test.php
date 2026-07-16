@@ -320,4 +320,67 @@ final class content_test extends \advanced_testcase {
         $this->assertStringContainsString('Progress: 0 / 1', $html);
         $this->assertStringContainsString('Progress: 1 / 1', $html);
     }
+
+    /**
+     * Once the student has manually collapsed at least one section in this course, the
+     * "open the pending section" default must stop applying: every section reverts to
+     * core's own "expanded unless explicitly collapsed" rule, so a section the student
+     * deliberately closed never reopens itself just because it still has a pending
+     * activity — the student's own choice always wins over the smart default.
+     *
+     * @covers ::export_for_template
+     * @covers ::find_default_open_section_index
+     */
+    public function test_accordion_respects_a_manually_collapsed_section_over_pending_progress(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 2,
+            'enablecompletion' => 1,
+        ]);
+        $format = course_get_format($course);
+        $format->update_course_format_options(['navstyle' => 'accordion']);
+
+        $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 2,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $section1id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 1]);
+        $section2id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 2]);
+
+        // The student manually collapses section 1, even though it still has a pending
+        // activity — this is the same preference core's own default view persists.
+        $format->add_section_preference_ids('contentcollapsed', [$section1id]);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="false"[^>]*aria-controls="sc-accordion-body-' . $section1id . '"~',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="true"[^>]*aria-controls="sc-accordion-body-' . $section2id . '"~',
+            $html
+        );
+    }
 }
