@@ -33,7 +33,6 @@
 import Ajax from 'core/ajax';
 import ModalSaveCancel from 'core/modal_save_cancel';
 import ModalEvents from 'core/modal_events';
-import Notification from 'core/notification';
 import * as Str from 'core/str';
 import * as Templates from 'core/templates';
 import {add as addToast} from 'core/toast';
@@ -41,9 +40,11 @@ import {add as addToast} from 'core/toast';
 const SELECTORS = {
     TRIGGER: '[data-action="smartcardsEditAppearance"]',
     FORM: '[data-region="smartcards-appearance-form"]',
+    FORM_ERROR: '[data-region="smartcards-form-error"]',
     TYPE_RADIO: '[data-region="smartcards-type-radio"]',
     EMOJI_FIELD: '[data-region="smartcards-emoji-field"]',
     EMOJI_INPUT: '[data-region="smartcards-emoji-input"]',
+    EMOJI_FEEDBACK: '[data-region="smartcards-emoji-feedback"]',
     ICON_FIELD: '[data-region="smartcards-icon-field"]',
     ICON_SELECT: '[data-region="smartcards-icon-select"]',
     BGCOLOR_INPUT: '[data-region="smartcards-bgcolor-input"]',
@@ -93,6 +94,60 @@ const buildEditorContext = (cmid) => ({
     fonts: Object.entries(LABEL_FONTS).map(([slug, name]) => ({slug, name})),
     icons: ICONS.map((slug) => ({slug})),
 });
+
+/**
+ * Shows a validation error on the emoji field (Bootstrap is-invalid pattern) and moves
+ * focus to it, so the teacher sees exactly what to fix instead of a generic dialog.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} message Localised error message.
+ * @returns {void}
+ */
+const showEmojiError = (form, message) => {
+    const input = form.querySelector(SELECTORS.EMOJI_INPUT);
+    const feedback = form.querySelector(SELECTORS.EMOJI_FEEDBACK);
+    input.classList.add('is-invalid');
+    feedback.textContent = message;
+    input.focus();
+};
+
+/**
+ * Clears the emoji field's validation error, if any.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @returns {void}
+ */
+const clearEmojiError = (form) => {
+    form.querySelector(SELECTORS.EMOJI_INPUT).classList.remove('is-invalid');
+    form.querySelector(SELECTORS.EMOJI_FEEDBACK).textContent = '';
+};
+
+/**
+ * Shows a form-level error banner (e.g. a save() failure the server rejected), instead
+ * of Moodle's generic exception dialog — the teacher stays in the modal and sees the
+ * actual reason inline.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} message Error message, from the caught exception.
+ * @returns {void}
+ */
+const showFormError = (form, message) => {
+    const banner = form.querySelector(SELECTORS.FORM_ERROR);
+    banner.textContent = message;
+    banner.hidden = false;
+};
+
+/**
+ * Clears the form-level error banner, if any.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @returns {void}
+ */
+const clearFormError = (form) => {
+    const banner = form.querySelector(SELECTORS.FORM_ERROR);
+    banner.hidden = true;
+    banner.textContent = '';
+};
 
 /**
  * Wires the type radio buttons to toggle the emoji/icon fields.
@@ -182,9 +237,10 @@ const gatherFormValues = (form) => {
  * @returns {Promise<void>}
  */
 const openEditor = async(cmid, name) => {
-    const [title, savedMessage] = await Promise.all([
+    const [title, savedMessage, emojiRequiredMessage] = await Promise.all([
         Str.get_string('editappearance', 'format_smartcards'),
         Str.get_string('changessaved', 'moodle'),
+        Str.get_string('appearance_emoji_required', 'format_smartcards'),
     ]);
     const {html, js} = await Templates.renderForPromise(
         'format_smartcards/local/appearance_editor',
@@ -203,18 +259,31 @@ const openEditor = async(cmid, name) => {
     wireTypeToggle(form);
     wireBgcolor(form);
     wireLabelColorSwatches(form);
+    form.querySelector(SELECTORS.EMOJI_INPUT).addEventListener('input', () => clearEmojiError(form));
 
     modal.getRoot().on(ModalEvents.save, async(event) => {
         event.preventDefault();
+        clearFormError(form);
+
+        const values = gatherFormValues(form);
+        if (values.type === 'emoji' && values.value === '') {
+            showEmojiError(form, emojiRequiredMessage);
+            return;
+        }
+
         try {
             await Ajax.call([{
                 methodname: 'format_smartcards_save_appearance',
-                args: {cmid: Number(cmid), ...gatherFormValues(form)},
+                args: {cmid: Number(cmid), ...values},
             }])[0];
             await addToast(savedMessage, {type: 'success'});
             modal.hide();
         } catch (error) {
-            Notification.exception(error);
+            // The debuginfo field carries the specific reason (e.g. "Value is not a
+            // single emoji character") but is only present when debugdisplay is on;
+            // message is the generic localised string always sent, so it is the
+            // production fallback.
+            showFormError(form, error.debuginfo ?? error.message ?? String(error));
         }
     });
 };

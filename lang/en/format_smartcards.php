@@ -29,6 +29,7 @@ $string['appearance_bgcolor'] = 'Circle background colour';
 $string['appearance_defaultcolor'] = 'Default';
 $string['appearance_emoji'] = 'Emoji';
 $string['appearance_emoji_placeholder'] = 'Paste or type a single emoji';
+$string['appearance_emoji_required'] = 'Enter an emoji before saving';
 $string['appearance_icon'] = 'Library icon';
 $string['appearance_labelcolor'] = 'Title colour';
 $string['appearance_labelfont'] = 'Title font';

@@ -29,6 +29,7 @@ $string['appearance_bgcolor'] = 'Cor de fundo do círculo';
 $string['appearance_defaultcolor'] = 'Padrão';
 $string['appearance_emoji'] = 'Emoji';
 $string['appearance_emoji_placeholder'] = 'Cole ou digite um único emoji';
+$string['appearance_emoji_required'] = 'Digite um emoji antes de salvar';
 $string['appearance_icon'] = 'Ícone de biblioteca';
 $string['appearance_labelcolor'] = 'Cor do título';
 $string['appearance_labelfont'] = 'Fonte do título';

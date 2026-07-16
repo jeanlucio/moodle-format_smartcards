@@ -38,6 +38,8 @@
     }
 }}
 <form class="sc-appearance-form" data-region="smartcards-appearance-form" data-cmid="{{cmid}}">
+    <div class="alert alert-danger" role="alert" data-region="smartcards-form-error" hidden></div>
+
     <fieldset class="sc-appearance-field">
         <legend class="sc-appearance-legend">{{#str}} appearance_type, format_smartcards {{/str}}</legend>
         <div class="form-check">
@@ -80,7 +82,9 @@
             data-region="smartcards-emoji-input"
             placeholder="{{#str}} appearance_emoji_placeholder, format_smartcards {{/str}}"
             maxlength="8"
+            aria-describedby="sc-appearance-emoji-feedback"
         >
+        <div class="invalid-feedback" id="sc-appearance-emoji-feedback" data-region="smartcards-emoji-feedback"></div>
     </div>
 
     <div class="sc-appearance-field" data-region="smartcards-icon-field" hidden>
