@@ -38,6 +38,7 @@ $string['appearance_labelfont_system'] = 'Default (system font)';
 $string['appearance_type'] = 'Appearance type';
 $string['editappearance'] = 'Card appearance';
 $string['hiddenactivity'] = 'Hidden';
+$string['plugin_description'] = 'Shows activities as buttons/cards, reusing Moodle\'s native availability logic — no stealth activities.';
 $string['pluginname'] = 'SmartCards';
 $string['privacy:metadata'] = 'The SmartCards course format does not store any personal data. It only displays activity availability information that is already computed by Moodle core.';
 $string['section0name'] = 'General';

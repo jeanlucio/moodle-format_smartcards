@@ -62,6 +62,21 @@ class appearance_palette {
     ];
 
     /**
+     * @var string[] Curated "quick pick" icon slugs offered in the appearance picker.
+     *      Each name is a real Bootstrap Icons slug with a matching SVG bundled in
+     *      pix/bsicons/ (see readme_moodle.txt for the update procedure). This is the
+     *      single source of truth for the list — the appearance editor's icon grid
+     *      fetches it (with resolved URLs) from get_appearance rather than keeping its
+     *      own copy in JavaScript.
+     */
+    public const ICONS = [
+        'book', 'pencil', 'camera-video', 'mic', 'chat-dots', 'trophy', 'star', 'flag',
+        'puzzle', 'gear', 'calendar-event', 'clipboard-check', 'lightbulb', 'map',
+        'music-note', 'palette', 'rocket', 'bullseye', 'award', 'journal-text',
+        'mortarboard', 'people',
+    ];
+
+    /**
      * Returns whether the given #RRGGBB value belongs to the curated labelcolor palette.
      *
      * labelcolor is stored as the hex value itself (not the slug), so validation checks

@@ -33,4 +33,13 @@ $functions = [
         'ajax'         => true,
         'capabilities' => 'format/smartcards:manageappearance',
     ],
+    'format_smartcards_get_appearance' => [
+        'classname'    => 'format_smartcards\external\get_appearance',
+        'methodname'   => 'execute',
+        'description'  => 'Returns one activity\'s current appearance, plus the editor\'s bootstrap data '
+            . '(default icon URL, curated icon URLs).',
+        'type'         => 'read',
+        'ajax'         => true,
+        'capabilities' => 'format/smartcards:manageappearance',
+    ],
 ];
