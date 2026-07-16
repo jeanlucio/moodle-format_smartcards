@@ -19,26 +19,51 @@
 
     Body of the "Card appearance" modal opened from the native per-activity edit menu.
     Lets the teacher choose an emoji or a library icon, a circle background colour, and
-    a title colour/font from the curated palettes. Rendered client-side by
-    appearance_picker.js via Templates.renderForPromise(), so all labels go through the
-    str Mustache helper instead of being pre-resolved server-side.
+    a title colour/font from the curated palettes, with a live preview of the result.
+    Rendered client-side by appearance_picker.js via Templates.renderForPromise(), after
+    fetching the activity's current appearance (so the form starts pre-filled instead of
+    always blank) — so all labels go through the str Mustache helper instead of being
+    pre-resolved server-side.
 
     Example context (json):
     {
         "cmid": 5,
+        "name": "Quiz 1",
+        "iconurl": "#",
+        "type": "emoji",
+        "emojivalue": "🚀",
+        "iconvalue": "",
+        "bgcolor": "",
+        "isdefaulttype": false,
+        "isemojitype": true,
+        "isicontype": false,
         "colors": [
-            {"slug": "blue", "hex": "#1565c0"}
+            {"slug": "blue", "hex": "#1565c0", "selected": true}
         ],
         "fonts": [
-            {"slug": "nunito", "name": "Nunito"}
+            {"slug": "nunito", "name": "Nunito", "selected": false}
         ],
         "icons": [
-            {"slug": "book"}
-        ]
+            {"slug": "book", "url": "#", "selected": false}
+        ],
+        "emojis": ["🎯", "🚀", "⭐"]
     }
 }}
 <form class="sc-appearance-form" data-region="smartcards-appearance-form" data-cmid="{{cmid}}">
     <div class="alert alert-danger" role="alert" data-region="smartcards-form-error" hidden></div>
+
+    <div class="sc-appearance-field">
+        <span class="sc-appearance-label" id="sc-appearance-preview-legend">
+            {{#str}} appearance_preview, format_smartcards {{/str}}
+        </span>
+        <div class="sc-card sc-appearance-preview-card" aria-labelledby="sc-appearance-preview-legend">
+            <span class="sc-card-icon" data-region="smartcards-preview-iconwrap" aria-hidden="true">
+                <img src="{{iconurl}}" alt="" class="sc-card-iconimg" data-region="smartcards-preview-iconimg">
+                <span class="sc-card-emoji" data-region="smartcards-preview-emoji" hidden></span>
+            </span>
+            <span class="sc-card-title" data-region="smartcards-preview-title">{{name}}</span>
+        </div>
+    </div>
 
     <fieldset class="sc-appearance-field">
         <legend class="sc-appearance-legend">{{#str}} appearance_type, format_smartcards {{/str}}</legend>
@@ -50,7 +75,7 @@
                 id="sc-appearance-type-default"
                 value="default"
                 data-region="smartcards-type-radio"
-                checked
+                {{#isdefaulttype}}checked{{/isdefaulttype}}
             >
             <label class="form-check-label" for="sc-appearance-type-default">
                 {{#str}} appearance_defaulticon, format_smartcards {{/str}}
@@ -64,6 +89,7 @@
                 id="sc-appearance-type-emoji"
                 value="emoji"
                 data-region="smartcards-type-radio"
+                {{#isemojitype}}checked{{/isemojitype}}
             >
             <label class="form-check-label" for="sc-appearance-type-emoji">
                 {{#str}} appearance_emoji, format_smartcards {{/str}}
@@ -77,6 +103,7 @@
                 id="sc-appearance-type-icon"
                 value="icon"
                 data-region="smartcards-type-radio"
+                {{#isicontype}}checked{{/isicontype}}
             >
             <label class="form-check-label" for="sc-appearance-type-icon">
                 {{#str}} appearance_icon, format_smartcards {{/str}}
@@ -84,31 +111,54 @@
         </div>
     </fieldset>
 
-    <div class="sc-appearance-field" data-region="smartcards-emoji-field" hidden>
+    <div class="sc-appearance-field" data-region="smartcards-emoji-field" {{^isemojitype}}hidden{{/isemojitype}}>
         <label class="sc-appearance-label" for="sc-appearance-emoji-input">
             {{#str}} appearance_emoji, format_smartcards {{/str}}
         </label>
+        <div class="sc-appearance-emoji-quickpicks" data-region="smartcards-emoji-quickpicks">
+            {{#emojis}}
+            <button type="button" class="sc-appearance-emoji-btn" data-region="smartcards-emoji-quickpick" data-value="{{.}}">
+                {{.}}
+            </button>
+            {{/emojis}}
+        </div>
         <input
             type="text"
             class="form-control sc-appearance-emoji-input"
             id="sc-appearance-emoji-input"
             data-region="smartcards-emoji-input"
             placeholder="{{#str}} appearance_emoji_placeholder, format_smartcards {{/str}}"
+            value="{{emojivalue}}"
             maxlength="8"
             aria-describedby="sc-appearance-emoji-feedback"
         >
         <div class="invalid-feedback" id="sc-appearance-emoji-feedback" data-region="smartcards-emoji-feedback"></div>
     </div>
 
-    <div class="sc-appearance-field" data-region="smartcards-icon-field" hidden>
-        <label class="sc-appearance-label" for="sc-appearance-icon-select">
+    <div class="sc-appearance-field" data-region="smartcards-icon-field" {{^isicontype}}hidden{{/isicontype}}>
+        <span class="sc-appearance-label" id="sc-appearance-icon-legend">
             {{#str}} appearance_icon, format_smartcards {{/str}}
-        </label>
-        <select class="form-control" id="sc-appearance-icon-select" data-region="smartcards-icon-select">
+        </span>
+        <div
+            class="sc-appearance-icon-grid"
+            data-region="smartcards-icon-grid"
+            role="group"
+            aria-labelledby="sc-appearance-icon-legend"
+        >
             {{#icons}}
-            <option value="{{slug}}">{{slug}}</option>
+            <button
+                type="button"
+                class="sc-appearance-icon-btn"
+                data-region="smartcards-icon-btn"
+                data-value="{{slug}}"
+                data-url="{{url}}"
+                aria-pressed="{{#selected}}true{{/selected}}{{^selected}}false{{/selected}}"
+                aria-label="{{slug}}"
+            >
+                <img src="{{url}}" alt="" class="sc-appearance-icon-img">
+            </button>
             {{/icons}}
-        </select>
+        </div>
     </div>
 
     <div class="sc-appearance-field">
@@ -121,7 +171,7 @@
                 class="form-control form-control-color"
                 id="sc-appearance-bgcolor-input"
                 data-region="smartcards-bgcolor-input"
-                value="#f8f9fa"
+                value="{{#bgcolor}}{{bgcolor}}{{/bgcolor}}{{^bgcolor}}#f8f9fa{{/bgcolor}}"
             >
             <button
                 type="button"
@@ -148,7 +198,7 @@
                 class="sc-appearance-swatch sc-appearance-swatch-default"
                 data-region="smartcards-labelcolor-swatch"
                 data-value=""
-                aria-pressed="true"
+                aria-pressed="{{^labelcolor}}true{{/labelcolor}}{{#labelcolor}}false{{/labelcolor}}"
                 aria-label="{{#str}} appearance_defaultcolor, format_smartcards {{/str}}"
             ></button>
             {{#colors}}
@@ -158,7 +208,7 @@
                 data-region="smartcards-labelcolor-swatch"
                 data-value="{{hex}}"
                 style="background-color: {{hex}}"
-                aria-pressed="false"
+                aria-pressed="{{#selected}}true{{/selected}}{{^selected}}false{{/selected}}"
                 aria-label="{{slug}}"
             ></button>
             {{/colors}}
@@ -172,7 +222,7 @@
         <select class="form-control" id="sc-appearance-labelfont-select" data-region="smartcards-labelfont-select">
             <option value="">{{#str}} appearance_labelfont_system, format_smartcards {{/str}}</option>
             {{#fonts}}
-            <option value="{{slug}}">{{name}}</option>
+            <option value="{{slug}}" {{#selected}}selected{{/selected}}>{{name}}</option>
             {{/fonts}}
         </select>
     </div>

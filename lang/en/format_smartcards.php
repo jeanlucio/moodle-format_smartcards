@@ -35,6 +35,7 @@ $string['appearance_icon'] = 'Library icon';
 $string['appearance_labelcolor'] = 'Title colour';
 $string['appearance_labelfont'] = 'Title font';
 $string['appearance_labelfont_system'] = 'Default (system font)';
+$string['appearance_preview'] = 'Preview';
 $string['appearance_type'] = 'Appearance type';
 $string['editappearance'] = 'Card appearance';
 $string['hiddenactivity'] = 'Hidden';

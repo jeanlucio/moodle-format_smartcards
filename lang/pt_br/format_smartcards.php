@@ -35,6 +35,7 @@ $string['appearance_icon'] = 'Ícone de biblioteca';
 $string['appearance_labelcolor'] = 'Cor do título';
 $string['appearance_labelfont'] = 'Fonte do título';
 $string['appearance_labelfont_system'] = 'Padrão (fonte do sistema)';
+$string['appearance_preview'] = 'Prévia';
 $string['appearance_type'] = 'Tipo de aparência';
 $string['editappearance'] = 'Aparência do card';
 $string['hiddenactivity'] = 'Oculto';

@@ -15,15 +15,16 @@
 
 /**
  * Opens the "Card appearance" editor (a core/modal_save_cancel) from the native
- * per-activity edit menu entry added by content/cm/controlmenu, and saves the chosen
- * emoji/icon, colours and font via the format_smartcards_save_appearance web service.
+ * per-activity edit menu entry added by content/cm/controlmenu. Fetches the activity's
+ * current appearance first (format_smartcards_get_appearance) so the form opens
+ * pre-filled instead of always blank, keeps a live preview in sync with every field
+ * change, then saves via format_smartcards_save_appearance.
  *
  * The colour and font palettes are curated and bundled with the plugin (never a free
- * colour picker or an external font), so they are declared here as plain constants
- * instead of being fetched from the server — they never change per course or user.
- * Icon glyph rendering is not wired into the card yet (bundled in a later step), so
- * picking an icon here only saves the slug; it will start rendering once that step
- * lands, with no further change needed to this module.
+ * colour picker or an external font), so they are declared here as plain constants —
+ * they never change per course or user. The icon list, by contrast, comes from
+ * get_appearance: bundled pix file URLs can only be resolved correctly server-side, so
+ * this module never constructs one itself.
  *
  * @module     format_smartcards/appearance_picker
  * @copyright  2026 Jean Lúcio
@@ -45,12 +46,17 @@ const SELECTORS = {
     EMOJI_FIELD: '[data-region="smartcards-emoji-field"]',
     EMOJI_INPUT: '[data-region="smartcards-emoji-input"]',
     EMOJI_FEEDBACK: '[data-region="smartcards-emoji-feedback"]',
+    EMOJI_QUICKPICK: '[data-region="smartcards-emoji-quickpick"]',
     ICON_FIELD: '[data-region="smartcards-icon-field"]',
-    ICON_SELECT: '[data-region="smartcards-icon-select"]',
+    ICON_BTN: '[data-region="smartcards-icon-btn"]',
     BGCOLOR_INPUT: '[data-region="smartcards-bgcolor-input"]',
     BGCOLOR_CLEAR: '[data-region="smartcards-bgcolor-clear"]',
     LABELCOLOR_SWATCH: '[data-region="smartcards-labelcolor-swatch"]',
     LABELFONT_SELECT: '[data-region="smartcards-labelfont-select"]',
+    PREVIEW_ICONWRAP: '[data-region="smartcards-preview-iconwrap"]',
+    PREVIEW_ICONIMG: '[data-region="smartcards-preview-iconimg"]',
+    PREVIEW_EMOJI: '[data-region="smartcards-preview-emoji"]',
+    PREVIEW_TITLE: '[data-region="smartcards-preview-title"]',
 };
 
 /** @type {Object<string, string>} Curated labelcolor palette slug => #RRGGBB, mirrors appearance_palette.php. */
@@ -74,25 +80,42 @@ const LABEL_FONTS = {
     comicneue: 'Comic Neue',
 };
 
-/** @type {string[]} Curated "quick pick" icon names (real Bootstrap Icons slugs, bundled in a later step). */
-const ICONS = [
-    'book', 'pencil', 'camera-video', 'mic', 'chat-dots', 'trophy', 'star', 'flag',
-    'puzzle', 'gear', 'calendar-event', 'clipboard-check', 'lightbulb', 'map',
-    'music-note', 'palette', 'rocket', 'bullseye', 'award', 'journal-text',
-    'mortarboard', 'people',
-];
+/** @type {string[]} Curated "quick pick" emoji, shown as buttons above the free-text emoji input. */
+const EMOJIS = ['🎯', '🚀', '⭐', '🏆', '📚', '✏️', '🎨', '🎵', '🔬', '🧩', '🎮', '🌟'];
 
 /**
- * Builds the template context for the editor form.
+ * Builds the template context for the editor form from the get_appearance response.
  *
  * @param {number} cmid Course module id being edited.
+ * @param {string} name Activity name.
+ * @param {object} bootstrap The format_smartcards_get_appearance response.
  * @returns {object} Context for the appearance_editor template.
  */
-const buildEditorContext = (cmid) => ({
+const buildEditorContext = (cmid, name, bootstrap) => ({
     cmid,
-    colors: Object.entries(LABEL_COLORS).map(([slug, hex]) => ({slug, hex})),
-    fonts: Object.entries(LABEL_FONTS).map(([slug, name]) => ({slug, name})),
-    icons: ICONS.map((slug) => ({slug})),
+    name,
+    iconurl: bootstrap.iconurl,
+    isdefaulttype: bootstrap.type === 'default',
+    isemojitype: bootstrap.type === 'emoji',
+    isicontype: bootstrap.type === 'icon',
+    emojivalue: bootstrap.type === 'emoji' ? bootstrap.value : '',
+    bgcolor: bootstrap.bgcolor,
+    labelcolor: bootstrap.labelcolor,
+    colors: Object.entries(LABEL_COLORS).map(([slug, hex]) => ({
+        slug,
+        hex,
+        selected: hex === bootstrap.labelcolor,
+    })),
+    fonts: Object.entries(LABEL_FONTS).map(([slug, fontname]) => ({
+        slug,
+        name: fontname,
+        selected: slug === bootstrap.labelfont,
+    })),
+    icons: bootstrap.icons.map((icon) => ({
+        ...icon,
+        selected: bootstrap.type === 'icon' && icon.slug === bootstrap.value,
+    })),
+    emojis: EMOJIS,
 });
 
 /**
@@ -154,6 +177,10 @@ const clearFormError = (form) => {
  * 'default', hides both — it means "keep the activity's default icon" so a teacher can
  * customise only the colours/font without being forced to also pick an emoji or icon.
  *
+ * Switching to 'icon' with nothing pressed yet auto-selects the first icon, so "icon
+ * type" can never end up with an empty selection — the same guarantee a <select> gives
+ * for free, which the visual grid replaced.
+ *
  * @param {HTMLElement} form The editor form.
  * @returns {void}
  */
@@ -166,6 +193,13 @@ const wireTypeToggle = (form) => {
         }
         emojiField.hidden = event.target.value !== 'emoji';
         iconField.hidden = event.target.value !== 'icon';
+
+        if (event.target.value === 'icon' && !form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`)) {
+            const firstIcon = form.querySelector(SELECTORS.ICON_BTN);
+            if (firstIcon) {
+                firstIcon.setAttribute('aria-pressed', 'true');
+            }
+        }
     });
 };
 
@@ -181,7 +215,7 @@ const wireTypeToggle = (form) => {
 const wireBgcolor = (form) => {
     const input = form.querySelector(SELECTORS.BGCOLOR_INPUT);
     const clearBtn = form.querySelector(SELECTORS.BGCOLOR_CLEAR);
-    input.dataset.cleared = '1';
+    input.dataset.cleared = input.value === '' ? '1' : '0';
     input.addEventListener('input', () => {
         input.dataset.cleared = '0';
     });
@@ -191,17 +225,35 @@ const wireBgcolor = (form) => {
 };
 
 /**
- * Wires the title colour swatches so exactly one is pressed at a time.
+ * Wires a group of mutually-exclusive pressable buttons (title colour swatches or icon
+ * grid buttons) so exactly one carries aria-pressed="true" at a time.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} selector Selector matching every button in the group.
+ * @returns {void}
+ */
+const wireExclusivePressedGroup = (form, selector) => {
+    const buttons = form.querySelectorAll(selector);
+    buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+            buttons.forEach((other) => other.setAttribute('aria-pressed', 'false'));
+            button.setAttribute('aria-pressed', 'true');
+        });
+    });
+};
+
+/**
+ * Wires the emoji quick-pick buttons to fill the free-text input.
  *
  * @param {HTMLElement} form The editor form.
  * @returns {void}
  */
-const wireLabelColorSwatches = (form) => {
-    const swatches = form.querySelectorAll(SELECTORS.LABELCOLOR_SWATCH);
-    swatches.forEach((swatch) => {
-        swatch.addEventListener('click', () => {
-            swatches.forEach((other) => other.setAttribute('aria-pressed', 'false'));
-            swatch.setAttribute('aria-pressed', 'true');
+const wireEmojiQuickpicks = (form) => {
+    const input = form.querySelector(SELECTORS.EMOJI_INPUT);
+    form.querySelectorAll(SELECTORS.EMOJI_QUICKPICK).forEach((button) => {
+        button.addEventListener('click', () => {
+            input.value = button.dataset.value;
+            clearEmojiError(form);
         });
     });
 };
@@ -220,7 +272,8 @@ const gatherFormValues = (form) => {
     if (type === 'emoji') {
         value = form.querySelector(SELECTORS.EMOJI_INPUT).value.trim();
     } else if (type === 'icon') {
-        value = form.querySelector(SELECTORS.ICON_SELECT).value;
+        const selectedIcon = form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`);
+        value = selectedIcon ? selectedIcon.dataset.value : '';
     }
 
     const bgcolorInput = form.querySelector(SELECTORS.BGCOLOR_INPUT);
@@ -235,6 +288,41 @@ const gatherFormValues = (form) => {
 };
 
 /**
+ * Re-renders the live preview card from the form's current state. This is a
+ * client-side approximation of card_builder.php for preview purposes only — the actual
+ * saved card is always rendered server-side by card_builder, the single source of truth
+ * once a save succeeds.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} defaultIconUrl The activity's default per-module-type icon URL.
+ * @returns {void}
+ */
+const updatePreview = (form, defaultIconUrl) => {
+    const values = gatherFormValues(form);
+
+    const iconWrap = form.querySelector(SELECTORS.PREVIEW_ICONWRAP);
+    const iconImg = form.querySelector(SELECTORS.PREVIEW_ICONIMG);
+    const emojiSpan = form.querySelector(SELECTORS.PREVIEW_EMOJI);
+    const titleSpan = form.querySelector(SELECTORS.PREVIEW_TITLE);
+
+    const isEmoji = values.type === 'emoji';
+    emojiSpan.hidden = !isEmoji;
+    iconImg.hidden = isEmoji;
+    if (isEmoji) {
+        emojiSpan.textContent = values.value;
+    } else if (values.type === 'icon') {
+        const selectedIcon = form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`);
+        iconImg.src = selectedIcon ? selectedIcon.dataset.url : defaultIconUrl;
+    } else {
+        iconImg.src = defaultIconUrl;
+    }
+
+    iconWrap.style.backgroundColor = values.bgcolor || '';
+    titleSpan.style.color = values.labelcolor || '';
+    titleSpan.style.fontFamily = values.labelfont ? `'${LABEL_FONTS[values.labelfont]}', sans-serif` : '';
+};
+
+/**
  * Opens the appearance editor modal for one activity and saves the result.
  *
  * @param {string} cmid Course module id, from the trigger's dataset.
@@ -242,14 +330,15 @@ const gatherFormValues = (form) => {
  * @returns {Promise<void>}
  */
 const openEditor = async(cmid, name) => {
-    const [title, savedMessage, emojiRequiredMessage] = await Promise.all([
+    const [title, savedMessage, emojiRequiredMessage, bootstrap] = await Promise.all([
         Str.get_string('editappearance', 'format_smartcards'),
         Str.get_string('changessaved', 'moodle'),
         Str.get_string('appearance_emoji_required', 'format_smartcards'),
+        Ajax.call([{methodname: 'format_smartcards_get_appearance', args: {cmid: Number(cmid)}}])[0],
     ]);
     const {html, js} = await Templates.renderForPromise(
         'format_smartcards/local/appearance_editor',
-        buildEditorContext(Number(cmid))
+        buildEditorContext(Number(cmid), name, bootstrap)
     );
 
     const modal = await ModalSaveCancel.create({
@@ -263,8 +352,20 @@ const openEditor = async(cmid, name) => {
     const form = modal.getBody()[0].querySelector(SELECTORS.FORM);
     wireTypeToggle(form);
     wireBgcolor(form);
-    wireLabelColorSwatches(form);
+    wireExclusivePressedGroup(form, SELECTORS.LABELCOLOR_SWATCH);
+    wireExclusivePressedGroup(form, SELECTORS.ICON_BTN);
+    wireEmojiQuickpicks(form);
     form.querySelector(SELECTORS.EMOJI_INPUT).addEventListener('input', () => clearEmojiError(form));
+
+    const refreshPreview = () => updatePreview(form, bootstrap.iconurl);
+    form.addEventListener('input', refreshPreview);
+    form.addEventListener('change', refreshPreview);
+    form.addEventListener('click', (event) => {
+        if (event.target.closest('button')) {
+            refreshPreview();
+        }
+    });
+    refreshPreview();
 
     modal.getRoot().on(ModalEvents.save, async(event) => {
         event.preventDefault();
