@@ -254,4 +254,70 @@ final class content_test extends \advanced_testcase {
 
         $this->assertStringContainsString('style="color: ' . $coursedefault . '"', $html);
     }
+
+    /**
+     * With navstyle=accordion, the section with a pending completion-tracked activity
+     * must render expanded (aria-expanded="true", collapse "show"), and a fully-complete
+     * section must render collapsed — the "resume where you left off" behaviour the
+     * accordion style exists to provide.
+     *
+     * @covers ::export_for_template
+     * @covers ::find_default_open_section_index
+     */
+    public function test_accordion_opens_the_section_with_a_pending_activity(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 2,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'accordion']);
+
+        $pending = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $done = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 2,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $completioninfo = new \completion_info($course);
+        $completioninfo->update_state(
+            get_fast_modinfo($course, $student->id)->get_cm($done->cmid),
+            COMPLETION_COMPLETE,
+            $student->id
+        );
+        $section1id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 1]);
+        $section2id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 2]);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="true"[^>]*aria-controls="sc-accordion-body-' . $section1id . '"~',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '~aria-expanded="false"[^>]*aria-controls="sc-accordion-body-' . $section2id . '"~',
+            $html
+        );
+        $this->assertStringContainsString('Progress: 0 / 1', $html);
+        $this->assertStringContainsString('Progress: 1 / 1', $html);
+    }
 }

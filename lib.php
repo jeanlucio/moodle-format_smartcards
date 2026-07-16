@@ -241,11 +241,12 @@ class format_smartcards extends core_courseformat\base {
     /**
      * Returns the format options for this course.
      *
-     * Five options, each with a site-wide default (settings.php) overridable per
+     * Six options, each with a site-wide default (settings.php) overridable per
      * course: cardsize and showcardframe control the grid's visual density; the three
      * "default" colour/font options give the whole course a fallback that an
      * individual activity's own appearance still takes priority over (see
-     * card_builder::build()).
+     * card_builder::build()); navstyle controls the section navigation layout (view
+     * mode only, see classes/output/courseformat/content.php).
      *
      * @param bool $foreditform Whether this is being called to populate the course edit form.
      * @return array
@@ -274,6 +275,10 @@ class format_smartcards extends core_courseformat\base {
                 'defaultlabelfont' => [
                     'default' => get_config('format_smartcards', 'defaultlabelfont'),
                     'type' => PARAM_ALPHANUM,
+                ],
+                'navstyle' => [
+                    'default' => get_config('format_smartcards', 'navstyle'),
+                    'type' => PARAM_ALPHA,
                 ],
             ];
         }
@@ -333,6 +338,16 @@ class format_smartcards extends core_courseformat\base {
                     'label' => new lang_string('defaultlabelfont', 'format_smartcards'),
                     'element_type' => 'select',
                     'element_attributes' => [$labelfontoptions],
+                ],
+                'navstyle' => [
+                    'label' => new lang_string('navstyle', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [
+                        [
+                            'default' => new lang_string('navstyle_default', 'format_smartcards'),
+                            'accordion' => new lang_string('navstyle_accordion', 'format_smartcards'),
+                        ],
+                    ],
                 ],
             ];
             $courseformatoptions = array_merge_recursive($courseformatoptions, $courseformatoptionsedit);

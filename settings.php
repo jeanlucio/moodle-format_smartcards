@@ -89,4 +89,15 @@ if ($ADMIN->fulltree) {
         '',
         $labelfontoptions
     ));
+
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/navstyle',
+        new lang_string('navstyle', 'format_smartcards'),
+        new lang_string('navstyle_desc', 'format_smartcards'),
+        'default',
+        [
+            'default'   => new lang_string('navstyle_default', 'format_smartcards'),
+            'accordion' => new lang_string('navstyle_accordion', 'format_smartcards'),
+        ]
+    ));
 }

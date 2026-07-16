@@ -17,11 +17,14 @@
 namespace format_smartcards\output\courseformat;
 
 use cm_info;
+use completion_info;
 use context_course;
 use core_courseformat\output\local\content as content_base;
 use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
+use format_smartcards\local\section_progress;
+use format_smartcards\local\section_progress_resolver;
 use renderer_base;
 use section_info;
 use stdClass;
@@ -84,7 +87,18 @@ class content extends content_base {
         $formatoptions = $format->get_format_options();
         $appearances   = (new appearance_repository())->get_many_for_activities(array_keys($modinfo->get_cms()));
 
+        $isaccordion = ($formatoptions['navstyle'] ?? 'default') === 'accordion';
+        $completioninfo = null;
+        if ($isaccordion) {
+            // Loading this module is what activates Bootstrap's [data-bs-toggle="collapse"]
+            // click handling for the whole page (a side effect of its own import chain) —
+            // no bespoke AMD module needed for the accordion toggle itself.
+            $PAGE->requires->js_call_amd('core/local/collapsable_section/controls', 'init');
+            $completioninfo = new completion_info($course);
+        }
+
         $sectionsdata = [];
+        $progressbyindex = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
             if (!$sectioninfo->uservisible && $sectioninfo->section > 0) {
                 continue;
@@ -95,14 +109,37 @@ class content extends content_base {
                 continue;
             }
 
+            $iscollapsible = $isaccordion && $sectioninfo->section > 0;
+            $progress = $iscollapsible ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
+
             $sectionsdata[] = [
-                'id'          => $sectioninfo->id,
-                'num'         => $sectioninfo->section,
-                'name'        => $format->get_section_name($sectioninfo),
-                'issection0'  => ($sectioninfo->section === 0),
-                'cards'       => $cards,
-                'hascards'    => !empty($cards),
+                'id'            => $sectioninfo->id,
+                'num'           => $sectioninfo->section,
+                'name'          => $format->get_section_name($sectioninfo),
+                'issection0'    => ($sectioninfo->section === 0),
+                'cards'         => $cards,
+                'hascards'      => !empty($cards),
+                'iscollapsible' => $iscollapsible,
+                'isopen'        => false,
+                'hasprogress'   => $progress !== null && $progress->has_tracking(),
+                'progresslabel' => ($progress !== null && $progress->has_tracking())
+                    ? get_string('progresstotal', 'completion', (object)[
+                        'complete' => $progress->complete,
+                        'total' => $progress->total,
+                    ])
+                    : '',
             ];
+
+            if ($iscollapsible) {
+                $progressbyindex[array_key_last($sectionsdata)] = $progress;
+            }
+        }
+
+        if ($isaccordion) {
+            $openindex = $this->find_default_open_section_index($progressbyindex);
+            if ($openindex !== null) {
+                $sectionsdata[$openindex]['isopen'] = true;
+            }
         }
 
         $cardsize = $formatoptions['cardsize'] ?? 'small';
@@ -118,7 +155,31 @@ class content extends content_base {
             'editmodeactive' => $PAGE->user_is_editing(),
             'cardsizeclass'  => 'sc-size-' . $cardsize,
             'noframeclass'   => empty($formatoptions['showcardframe']) ? 'sc-noframe' : '',
+            'isaccordion'    => $isaccordion,
         ];
+    }
+
+    /**
+     * Picks which collapsible section the accordion opens by default: the first one
+     * (in course order) with at least one completion-tracked activity the user has not
+     * finished yet, so a returning student lands where they left off. Falls back to the
+     * first collapsible section when nothing is pending (completion disabled entirely,
+     * or everything already complete) rather than leaving the whole accordion collapsed.
+     *
+     * @param array<int, section_progress> $progressbyindex Progress keyed by the
+     *        section's index in $sectionsdata, in course order.
+     * @return int|null Index into $sectionsdata to mark open, or null when there are no
+     *                   collapsible sections at all.
+     */
+    private function find_default_open_section_index(array $progressbyindex): ?int {
+        $firstindex = null;
+        foreach ($progressbyindex as $index => $progress) {
+            $firstindex ??= $index;
+            if ($progress->has_pending()) {
+                return $index;
+            }
+        }
+        return $firstindex;
     }
 
     /**

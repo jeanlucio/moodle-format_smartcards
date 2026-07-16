@@ -112,6 +112,49 @@
     margin-block-end: 0.75rem;
 }
 
+.format-smartcards .sc-accordion-title {
+    margin-block-end: 0;
+}
+
+.format-smartcards .sc-accordion-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    border: 0;
+    background-color: transparent;
+    padding: 0.5rem 0;
+    margin-block-end: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+}
+
+.format-smartcards .sc-accordion-progress {
+    margin-inline-start: auto;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--secondary, #6c757d);
+    white-space: nowrap;
+}
+
+.format-smartcards .sc-accordion-toggle.collapsed .sc-accordion-chevron-collapsed {
+    display: inline-flex;
+}
+
+.format-smartcards .sc-accordion-toggle.collapsed .sc-accordion-chevron-expanded {
+    display: none;
+}
+
+.format-smartcards .sc-accordion-toggle:not(.collapsed) .sc-accordion-chevron-collapsed {
+    display: none;
+}
+
+.format-smartcards .sc-accordion-toggle:not(.collapsed) .sc-accordion-chevron-expanded {
+    display: inline-flex;
+}
+
 .format-smartcards .sc-grid {
     display: flex;
     flex-wrap: wrap;
