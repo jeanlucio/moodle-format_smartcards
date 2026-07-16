@@ -75,7 +75,9 @@
                     <button
                         type="button"
                         class="sc-accordion-toggle {{^isopen}}collapsed{{/isopen}}"
+                        data-toggle="collapse"
                         data-bs-toggle="collapse"
+                        data-target="#sc-accordion-body-{{id}}"
                         data-bs-target="#sc-accordion-body-{{id}}"
                         aria-expanded="{{#isopen}}true{{/isopen}}{{^isopen}}false{{/isopen}}"
                         aria-controls="sc-accordion-body-{{id}}"
