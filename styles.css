@@ -22,6 +22,53 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+/*
+ * Curated labelfont palette (see appearance_palette.php). Only the Regular weight is
+ * bundled for each family — the card title never renders bold, so a Bold file would be
+ * dead weight. The browser only downloads the @font-face file that is actually used by
+ * an element on the page, so having all five declared here does not cost anything on
+ * pages that use zero or one of them.
+ */
+@font-face {
+    font-family: 'Fredoka';
+    src: url([[font:format_smartcards|fredoka-regular.woff2]]) format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Baloo 2';
+    src: url([[font:format_smartcards|baloo2-regular.woff2]]) format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Varela Round';
+    src: url([[font:format_smartcards|varelaround-regular.woff2]]) format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Nunito';
+    src: url([[font:format_smartcards|nunito-regular.woff2]]) format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Comic Neue';
+    src: url([[font:format_smartcards|comicneue-regular.woff2]]) format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 .format-smartcards .sc-course {
     --sc-card-size: 6.5rem;
     --sc-card-gap: 1rem;

@@ -69,7 +69,8 @@ class card_builder {
             default => '',
         };
 
-        [$isemoji, $emoji, $iconstyle, $titlestyle] = self::build_appearance_styles($item);
+        [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
+            = self::build_appearance_styles($item, $output);
 
         return [
             'cmid'             => $cm->id,
@@ -92,6 +93,8 @@ class card_builder {
             'hiddenlabel'      => $status->dimmed ? get_string('hiddenactivity', 'format_smartcards') : '',
             'isemoji'          => $isemoji,
             'emoji'            => $emoji,
+            'iscustomicon'     => $iscustomicon,
+            'customiconurl'    => $customiconurl,
             'hasiconstyle'     => ($iconstyle !== ''),
             'iconstyle'        => $iconstyle,
             'hastitlestyle'    => ($titlestyle !== ''),
@@ -100,23 +103,30 @@ class card_builder {
     }
 
     /**
-     * Derives the inline style declarations for one card's icon circle and title from
-     * its custom appearance, if any.
+     * Derives the inline style declarations and icon selection for one card's icon
+     * circle and title, from its custom appearance, if any.
      *
-     * Image and icon appearance types are not rendered yet (uploaded images need the
-     * File API wiring; icon names need the bundled icon library), so only the emoji
-     * type and the two colour/font fields are wired up so far.
+     * The image appearance type is not rendered yet (uploaded images need the File API
+     * wiring, not yet built), so only emoji, library icon, and the two colour/font
+     * fields are wired up so far.
      *
      * @param appearance|null $item The activity's custom appearance, or null.
-     * @return array{0: bool, 1: string, 2: string, 3: string} isemoji, emoji, iconstyle, titlestyle.
+     * @param renderer_base $output Renderer used to resolve the custom icon's URL.
+     * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string}
+     *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle.
      */
-    private static function build_appearance_styles(?appearance $item): array {
+    private static function build_appearance_styles(?appearance $item, renderer_base $output): array {
         if ($item === null) {
-            return [false, '', '', ''];
+            return [false, '', false, '', '', ''];
         }
 
         $isemoji = ($item->type === appearance_repository::TYPE_EMOJI);
         $emoji   = $isemoji ? $item->value : '';
+
+        $iscustomicon = ($item->type === appearance_repository::TYPE_ICON);
+        $customiconurl = $iscustomicon
+            ? $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false)
+            : '';
 
         $iconstyle = $item->bgcolor !== null ? 'background-color: ' . $item->bgcolor : '';
 
@@ -129,6 +139,6 @@ class card_builder {
         }
         $titlestyle = implode('; ', $titlestyleparts);
 
-        return [$isemoji, $emoji, $iconstyle, $titlestyle];
+        return [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle];
     }
 }

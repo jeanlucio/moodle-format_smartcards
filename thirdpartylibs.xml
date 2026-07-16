@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<libraries>
+    <library>
+        <location>pix/bsicons</location>
+        <name>Bootstrap Icons</name>
+        <description>Curated subset of icon SVGs offered in the card appearance picker.</description>
+        <version>1.13.1</version>
+        <license>MIT</license>
+        <repository>https://github.com/twbs/icons</repository>
+    </library>
+    <library>
+        <location>fonts/fredoka-regular.woff2</location>
+        <name>Fredoka</name>
+        <description>Curated title font offered in the card appearance picker (labelfont).</description>
+        <version>Google Fonts v17, Regular (400) only</version>
+        <license>OFL-1.1</license>
+        <repository>https://fonts.google.com/specimen/Fredoka</repository>
+    </library>
+    <library>
+        <location>fonts/baloo2-regular.woff2</location>
+        <name>Baloo 2</name>
+        <description>Curated title font offered in the card appearance picker (labelfont).</description>
+        <version>Google Fonts v23, Regular (400) only</version>
+        <license>OFL-1.1</license>
+        <repository>https://fonts.google.com/specimen/Baloo+2</repository>
+    </library>
+    <library>
+        <location>fonts/varelaround-regular.woff2</location>
+        <name>Varela Round</name>
+        <description>Curated title font offered in the card appearance picker (labelfont).</description>
+        <version>Google Fonts v21, Regular (400, the only weight this family offers)</version>
+        <license>OFL-1.1</license>
+        <repository>https://fonts.google.com/specimen/Varela+Round</repository>
+    </library>
+    <library>
+        <location>fonts/nunito-regular.woff2</location>
+        <name>Nunito</name>
+        <description>Curated title font offered in the card appearance picker (labelfont).</description>
+        <version>Google Fonts v32, Regular (400) only</version>
+        <license>OFL-1.1</license>
+        <repository>https://fonts.google.com/specimen/Nunito</repository>
+    </library>
+    <library>
+        <location>fonts/comicneue-regular.woff2</location>
+        <name>Comic Neue</name>
+        <description>Curated title font offered in the card appearance picker (labelfont).</description>
+        <version>Google Fonts v9, Regular (400) only</version>
+        <license>OFL-1.1</license>
+        <repository>https://fonts.google.com/specimen/Comic+Neue</repository>
+    </library>
+</libraries>

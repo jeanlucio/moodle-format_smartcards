@@ -77,7 +77,7 @@ const LABEL_FONTS = {
 const ICONS = [
     'book', 'pencil', 'camera-video', 'mic', 'chat-dots', 'trophy', 'star', 'flag',
     'puzzle', 'gear', 'calendar-event', 'clipboard-check', 'lightbulb', 'map',
-    'music-note', 'palette', 'rocket', 'target', 'award', 'journal-text',
+    'music-note', 'palette', 'rocket', 'bullseye', 'award', 'journal-text',
     'mortarboard', 'people',
 ];
 

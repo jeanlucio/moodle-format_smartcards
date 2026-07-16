@@ -17,15 +17,17 @@
 {{!
     @template format_smartcards/local/cm_icon
 
-    Decorative content of one card's icon circle: the teacher's custom emoji
-    when configured (SmartCards appearance, type=emoji), otherwise the
-    default per-module-type icon. Always aria-hidden — the real accessible
+    Decorative content of one card's icon circle: the teacher's custom emoji or bundled
+    library icon when configured (SmartCards appearance, type=emoji or type=icon),
+    otherwise the default per-module-type icon. Always aria-hidden — the real accessible
     name is the card's text title, rendered by the caller.
 
     Example context (json):
     {
-        "isemoji": true,
-        "emoji": "🎉",
+        "isemoji": false,
+        "emoji": "",
+        "iscustomicon": true,
+        "customiconurl": "#",
         "iconurl": "#"
     }
 }}
@@ -33,5 +35,10 @@
 <span class="sc-card-emoji">{{emoji}}</span>
 {{/isemoji}}
 {{^isemoji}}
-<img src="{{iconurl}}" alt="" class="sc-card-iconimg">
+    {{#iscustomicon}}
+    <img src="{{customiconurl}}" alt="" class="sc-card-iconimg">
+    {{/iscustomicon}}
+    {{^iscustomicon}}
+    <img src="{{iconurl}}" alt="" class="sc-card-iconimg">
+    {{/iscustomicon}}
 {{/isemoji}}
