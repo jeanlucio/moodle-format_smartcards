@@ -187,4 +187,71 @@ final class content_test extends \advanced_testcase {
             $html
         );
     }
+
+    /**
+     * The cardsize and showcardframe format options must control the grid container's
+     * CSS classes, which styles.css keys its size presets and borderless mode off.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_cardsize_and_showcardframe_options_control_grid_classes(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $generator->create_module('page', ['course' => $course->id]);
+
+        $format = course_get_format($course);
+        $format->update_course_format_options(['cardsize' => 'large', 'showcardframe' => 0]);
+
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression('~class="sc-course[^"]*sc-size-large~', $html);
+        $this->assertMatchesRegularExpression('~class="sc-course[^"]*sc-noframe~', $html);
+    }
+
+    /**
+     * The course's defaultlabelcolor format option must style an activity that does not
+     * set its own labelcolor.
+     *
+     * @covers ::export_for_template
+     * @covers ::build_cards_data
+     */
+    public function test_defaultlabelcolor_applies_when_activity_has_no_own_colour(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $generator->create_module('page', ['course' => $course->id]);
+
+        $coursedefault = \format_smartcards\local\appearance_palette::LABEL_COLORS['green'];
+        course_get_format($course)->update_course_format_options(['defaultlabelcolor' => $coursedefault]);
+
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('style="color: ' . $coursedefault . '"', $html);
+    }
 }

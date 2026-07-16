@@ -26,6 +26,8 @@
         "hassections": true,
         "canedit": false,
         "editmodeactive": false,
+        "cardsizeclass": "sc-size-small",
+        "noframeclass": "",
         "sections": [
             {
                 "id": 10,
@@ -59,7 +61,7 @@
         ]
     }
 }}
-<div id="{{uniqid}}" class="sc-course" data-region="smartcards-content">
+<div id="{{uniqid}}" class="sc-course {{cardsizeclass}} {{noframeclass}}" data-region="smartcards-content">
     {{#hassections}}
         {{#sections}}
             <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">

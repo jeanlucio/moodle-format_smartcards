@@ -71,9 +71,35 @@
 
 .format-smartcards .sc-course {
     --sc-card-size: 6.5rem;
+    --sc-card-icon-size: 3rem;
+    --sc-card-emoji-size: 1.75rem;
     --sc-card-gap: 1rem;
     --sc-card-radius: 0.75rem;
     --sc-dimmed-opacity: 0.5;
+}
+
+/*
+ * Card size presets (format_smartcards/cardsize format option, §9). Small matches the
+ * original fixed dimensions; medium/large scale the card, icon circle and emoji in
+ * lockstep so the title never ends up cramped under an oversized icon.
+ */
+.format-smartcards .sc-course.sc-size-medium {
+    --sc-card-size: 8.75rem;
+    --sc-card-icon-size: 5rem;
+    --sc-card-emoji-size: 2.5rem;
+}
+
+.format-smartcards .sc-course.sc-size-large {
+    --sc-card-size: 11.25rem;
+    --sc-card-icon-size: 7.5rem;
+    --sc-card-emoji-size: 3.5rem;
+}
+
+/* showcardframe format option (§8): borderless cards, icon and title only. */
+.format-smartcards .sc-course.sc-noframe .sc-card {
+    border: 0;
+    background-color: transparent;
+    padding-inline: 0;
 }
 
 .format-smartcards .sc-section {
@@ -124,8 +150,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    inline-size: 3rem;
-    block-size: 3rem;
+    inline-size: var(--sc-card-icon-size, 3rem);
+    block-size: var(--sc-card-icon-size, 3rem);
     border-radius: 50%;
     background-color: var(--light, #f8f9fa);
 }
@@ -136,7 +162,7 @@
 }
 
 .format-smartcards .sc-card-emoji {
-    font-size: 1.75rem;
+    font-size: var(--sc-card-emoji-size, 1.75rem);
     line-height: 1;
 }
 

@@ -81,7 +81,8 @@ class content extends content_base {
 
         $canedit = has_capability('moodle/course:manageactivities', $context);
 
-        $appearances = (new appearance_repository())->get_many_for_activities(array_keys($modinfo->get_cms()));
+        $formatoptions = $format->get_format_options();
+        $appearances   = (new appearance_repository())->get_many_for_activities(array_keys($modinfo->get_cms()));
 
         $sectionsdata = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
@@ -89,7 +90,7 @@ class content extends content_base {
                 continue;
             }
 
-            $cards = $this->build_cards_data($modinfo, $sectioninfo, $course, $output, $appearances);
+            $cards = $this->build_cards_data($modinfo, $sectioninfo, $course, $output, $appearances, $formatoptions);
             if (empty($cards) && $sectioninfo->section > 0 && (string)$sectioninfo->summary === '') {
                 continue;
             }
@@ -104,12 +105,19 @@ class content extends content_base {
             ];
         }
 
+        $cardsize = $formatoptions['cardsize'] ?? 'small';
+        if (!in_array($cardsize, ['small', 'medium', 'large'], true)) {
+            $cardsize = 'small';
+        }
+
         return (object)[
             'uniqid'         => 'sc' . uniqid(),
             'sections'       => $sectionsdata,
             'hassections'    => !empty($sectionsdata),
             'canedit'        => $canedit,
             'editmodeactive' => $PAGE->user_is_editing(),
+            'cardsizeclass'  => 'sc-size-' . $cardsize,
+            'noframeclass'   => empty($formatoptions['showcardframe']) ? 'sc-noframe' : '',
         ];
     }
 
@@ -121,6 +129,7 @@ class content extends content_base {
      * @param stdClass $course Course record.
      * @param renderer_base $output Renderer used to resolve module icon URLs.
      * @param appearance[] $appearances Custom appearance keyed by cmid, from get_many_for_activities().
+     * @param array $formatoptions The course's resolved format options.
      * @return array<int, array<string, mixed>> Card data, one entry per visible module.
      */
     private function build_cards_data(
@@ -128,12 +137,13 @@ class content extends content_base {
         section_info $sectioninfo,
         stdClass $course,
         renderer_base $output,
-        array $appearances
+        array $appearances,
+        array $formatoptions
     ): array {
         $cards = [];
 
         foreach ($this->get_section_cms($modinfo, $sectioninfo) as $cm) {
-            $card = card_builder::build($cm, $course, $output, $appearances[$cm->id] ?? null);
+            $card = card_builder::build($cm, $course, $output, $appearances[$cm->id] ?? null, $formatoptions);
             if ($card !== null) {
                 $cards[] = $card;
             }

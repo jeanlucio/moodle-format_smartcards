@@ -115,11 +115,18 @@ class save_appearance extends external_api {
             $params['labelfont'] !== '' ? $params['labelfont'] : null,
         );
 
-        $modinfo = get_fast_modinfo($course);
-        $cminfo  = $modinfo->get_cm($params['cmid']);
-        $renderer = $PAGE->get_renderer('format_smartcards');
+        $modinfo       = get_fast_modinfo($course);
+        $cminfo        = $modinfo->get_cm($params['cmid']);
+        $renderer      = $PAGE->get_renderer('format_smartcards');
+        $formatoptions = course_get_format($course)->get_format_options();
 
-        $card = card_builder::build($cminfo, $course, $renderer, $repository->get_for_activity($params['cmid']));
+        $card = card_builder::build(
+            $cminfo,
+            $course,
+            $renderer,
+            $repository->get_for_activity($params['cmid']),
+            $formatoptions
+        );
         if ($card === null) {
             throw new coding_exception('Card became invisible right after saving its own appearance');
         }

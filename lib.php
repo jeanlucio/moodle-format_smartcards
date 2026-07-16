@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/course/format/lib.php');
 
 use core\output\inplace_editable;
+use format_smartcards\local\appearance_palette;
 
 /**
  * SmartCards course format class.
@@ -233,6 +234,92 @@ class format_smartcards extends core_courseformat\base {
         if (has_capability('format/smartcards:manageappearance', $this->get_context())) {
             $page->requires->js_call_amd('format_smartcards/appearance_picker', 'init');
         }
+    }
+
+    /**
+     * Returns the format options for this course.
+     *
+     * Four options, each with a site-wide default (settings.php) overridable per
+     * course: cardsize and showcardframe control the grid's visual density; the two
+     * "default" colour/font options give the whole course a fallback that an
+     * individual activity's own appearance.labelcolor/labelfont still takes priority
+     * over (see card_builder::build()).
+     *
+     * @param bool $foreditform Whether this is being called to populate the course edit form.
+     * @return array
+     */
+    public function course_format_options($foreditform = false): array {
+        static $courseformatoptions = false;
+
+        if ($courseformatoptions === false) {
+            $courseformatoptions = [
+                'cardsize' => [
+                    'default' => get_config('format_smartcards', 'cardsize'),
+                    'type' => PARAM_ALPHA,
+                ],
+                'showcardframe' => [
+                    'default' => get_config('format_smartcards', 'showcardframe'),
+                    'type' => PARAM_INT,
+                ],
+                'defaultlabelcolor' => [
+                    'default' => get_config('format_smartcards', 'defaultlabelcolor'),
+                    'type' => PARAM_TEXT,
+                ],
+                'defaultlabelfont' => [
+                    'default' => get_config('format_smartcards', 'defaultlabelfont'),
+                    'type' => PARAM_ALPHANUM,
+                ],
+            ];
+        }
+
+        if ($foreditform && !isset($courseformatoptions['cardsize']['label'])) {
+            $labelcoloroptions = ['' => get_string('appearance_defaultcolor', 'format_smartcards')];
+            foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
+                $labelcoloroptions[$hex] = ucfirst($slug);
+            }
+
+            $labelfontoptions = ['' => get_string('appearance_labelfont_system', 'format_smartcards')];
+            foreach (appearance_palette::LABEL_FONTS as $slug => $fontname) {
+                $labelfontoptions[$slug] = $fontname;
+            }
+
+            $courseformatoptionsedit = [
+                'cardsize' => [
+                    'label' => new lang_string('cardsize', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [
+                        [
+                            'small' => new lang_string('cardsize_small', 'format_smartcards'),
+                            'medium' => new lang_string('cardsize_medium', 'format_smartcards'),
+                            'large' => new lang_string('cardsize_large', 'format_smartcards'),
+                        ],
+                    ],
+                ],
+                'showcardframe' => [
+                    'label' => new lang_string('showcardframe', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [
+                        [
+                            0 => new lang_string('no'),
+                            1 => new lang_string('yes'),
+                        ],
+                    ],
+                ],
+                'defaultlabelcolor' => [
+                    'label' => new lang_string('defaultlabelcolor', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [$labelcoloroptions],
+                ],
+                'defaultlabelfont' => [
+                    'label' => new lang_string('defaultlabelfont', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [$labelfontoptions],
+                ],
+            ];
+            $courseformatoptions = array_merge_recursive($courseformatoptions, $courseformatoptionsedit);
+        }
+
+        return $courseformatoptions;
     }
 }
 

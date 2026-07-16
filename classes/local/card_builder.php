@@ -43,9 +43,21 @@ class card_builder {
      * @param stdClass $course Course record the module belongs to.
      * @param renderer_base $output Renderer used to resolve the default module icon URL.
      * @param appearance|null $item The module's custom appearance, or null for the default.
+     * @param array $formatoptions The course's resolved format options
+     *                              (course_format::get_format_options()), used for the
+     *                              defaultlabelcolor/defaultlabelfont fallback below the
+     *                              activity's own appearance. Pass [] to skip the
+     *                              course-level fallback (falls straight through to the
+     *                              system default).
      * @return array<string, mixed>|null Template context, or null when not visible at all.
      */
-    public static function build(cm_info $cm, stdClass $course, renderer_base $output, ?appearance $item): ?array {
+    public static function build(
+        cm_info $cm,
+        stdClass $course,
+        renderer_base $output,
+        ?appearance $item,
+        array $formatoptions = []
+    ): ?array {
         $status = status_resolver::resolve($cm);
         if (!$status->isvisible) {
             return null;
@@ -70,7 +82,7 @@ class card_builder {
         };
 
         [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
-            = self::build_appearance_styles($item, $output);
+            = self::build_appearance_styles($item, $output, $formatoptions);
 
         return [
             'cmid'             => $cm->id,
@@ -104,7 +116,8 @@ class card_builder {
 
     /**
      * Derives the inline style declarations and icon selection for one card's icon
-     * circle and title, from its custom appearance, if any.
+     * circle and title, from its custom appearance (if any) and the course's default
+     * title colour/font (if the activity does not set its own).
      *
      * The image appearance type is not rendered yet (uploaded images need the File API
      * wiring, not yet built), so only emoji, library icon, and the two colour/font
@@ -112,30 +125,34 @@ class card_builder {
      *
      * @param appearance|null $item The activity's custom appearance, or null.
      * @param renderer_base $output Renderer used to resolve the custom icon's URL.
+     * @param array $formatoptions The course's resolved format options, for the
+     *                              defaultlabelcolor/defaultlabelfont fallback.
      * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string}
      *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle.
      */
-    private static function build_appearance_styles(?appearance $item, renderer_base $output): array {
-        if ($item === null) {
-            return [false, '', false, '', '', ''];
-        }
-
-        $isemoji = ($item->type === appearance_repository::TYPE_EMOJI);
+    private static function build_appearance_styles(?appearance $item, renderer_base $output, array $formatoptions): array {
+        $isemoji = $item !== null && $item->type === appearance_repository::TYPE_EMOJI;
         $emoji   = $isemoji ? $item->value : '';
 
-        $iscustomicon = ($item->type === appearance_repository::TYPE_ICON);
+        $iscustomicon = $item !== null && $item->type === appearance_repository::TYPE_ICON;
         $customiconurl = $iscustomicon
             ? $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false)
             : '';
 
-        $iconstyle = $item->bgcolor !== null ? 'background-color: ' . $item->bgcolor : '';
+        $bgcolor   = $item?->bgcolor;
+        $iconstyle = $bgcolor !== null ? 'background-color: ' . $bgcolor : '';
+
+        $defaultlabelcolor = (string)($formatoptions['defaultlabelcolor'] ?? '');
+        $defaultlabelfont  = (string)($formatoptions['defaultlabelfont'] ?? '');
+        $labelcolor        = $item?->labelcolor ?? ($defaultlabelcolor !== '' ? $defaultlabelcolor : null);
+        $labelfont         = $item?->labelfont ?? ($defaultlabelfont !== '' ? $defaultlabelfont : null);
 
         $titlestyleparts = [];
-        if ($item->labelcolor !== null) {
-            $titlestyleparts[] = 'color: ' . $item->labelcolor;
+        if ($labelcolor !== null) {
+            $titlestyleparts[] = 'color: ' . $labelcolor;
         }
-        if ($item->labelfont !== null && array_key_exists($item->labelfont, appearance_palette::LABEL_FONTS)) {
-            $titlestyleparts[] = "font-family: '" . appearance_palette::LABEL_FONTS[$item->labelfont] . "', sans-serif";
+        if ($labelfont !== null && array_key_exists($labelfont, appearance_palette::LABEL_FONTS)) {
+            $titlestyleparts[] = "font-family: '" . appearance_palette::LABEL_FONTS[$labelfont] . "', sans-serif";
         }
         $titlestyle = implode('; ', $titlestyleparts);
 
