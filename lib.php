@@ -388,6 +388,16 @@ function format_smartcards_inplace_editable(string $itemtype, int $itemid, mixed
  * Serves the uploaded card image of one activity's custom appearance
  * (appearance_repository::TYPE_IMAGE), stored by appearance_image_store.
  *
+ * The card image is purely decorative — the same icon a locked/restricted activity
+ * still shows on its card, alongside the 'locked' badge, so a student can see what the
+ * card looks like without being able to open the activity itself. It must therefore stay
+ * servable whenever the card itself is visible ({@see cm_info::is_visible_on_course_page()},
+ * the same gate status_resolver::resolve() uses to decide whether the card renders at
+ * all), never gated behind the stricter {@see cm_info::$uservisible} that governs the
+ * activity's own content. require_course_login() with a $cm argument enforces exactly
+ * that stricter rule (it redirects when $cm->uservisible is false), so the course-level
+ * login check and the card-visibility check are done separately here instead.
+ *
  * @param stdClass $course Course the file's module belongs to.
  * @param stdClass|null $cm Course module owning the requested context.
  * @param context $context The module context resolved from the request URL.
@@ -410,7 +420,12 @@ function format_smartcards_pluginfile(
         return false;
     }
 
-    require_course_login($course, true, $cm);
+    require_course_login($course);
+
+    $cminfo = get_fast_modinfo($course)->get_cm($cm->id);
+    if (!$cminfo->is_visible_on_course_page()) {
+        return false;
+    }
 
     $file = appearance_image_store::resolve_for_serving($cm->id, $filearea);
     if ($file === null) {
