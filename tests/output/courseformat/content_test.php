@@ -274,7 +274,10 @@ final class content_test extends \advanced_testcase {
             'numsections' => 2,
             'enablecompletion' => 1,
         ]);
-        course_get_format($course)->update_course_format_options(['navstyle' => 'accordion']);
+        course_get_format($course)->update_course_format_options([
+            'navstyle' => 'accordion',
+            'progressdisplay' => 'count',
+        ]);
 
         $pending = $generator->create_module('page', [
             'course' => $course->id,
@@ -616,5 +619,144 @@ final class content_test extends \advanced_testcase {
         $this->assertStringNotContainsString('sc-accordion-toggle', $html);
         $this->assertStringNotContainsString('nav-tabs', $html);
         $this->assertSame(2, substr_count($html, 'class="sc-grid"'));
+    }
+
+    /**
+     * progressdisplay defaults to hidden when the course never set it explicitly — this
+     * plugin has no installed base yet (confirmed with the user), so there is no legacy
+     * behaviour to preserve; a section with pending completion-tracked activities must
+     * not leak any "Progress:" text into the accordion heading without an explicit
+     * opt-in.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_progressdisplay_defaults_to_hidden(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 1,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'accordion']);
+
+        $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringNotContainsString('sc-progress-label', $html);
+        $this->assertStringNotContainsString('Progress:', $html);
+    }
+
+    /**
+     * With progressdisplay=count, the plain/default navstyle (which never showed progress
+     * at all before this feature) must now render the same core progresstotal string the
+     * accordion already used, right next to the section heading.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_progressdisplay_count_shows_progress_in_default_navstyle(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 1,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['progressdisplay' => 'count']);
+
+        $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('sc-progress-label', $html);
+        $this->assertStringContainsString('Progress: 0 / 1', $html);
+    }
+
+    /**
+     * With progressdisplay=percent, the label is a rounded percentage instead of the
+     * core "Progress: X / Y" string.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_progressdisplay_percent_shows_a_rounded_percentage(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 1,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['progressdisplay' => 'percent']);
+
+        $done = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $completioninfo = new \completion_info($course);
+        $completioninfo->update_state(
+            get_fast_modinfo($course, $student->id)->get_cm($done->cmid),
+            COMPLETION_COMPLETE,
+            $student->id
+        );
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('>50%<', $html);
+        $this->assertStringNotContainsString('Progress:', $html);
     }
 }

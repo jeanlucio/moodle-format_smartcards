@@ -280,6 +280,10 @@ class format_smartcards extends core_courseformat\base {
                     'default' => get_config('format_smartcards', 'navstyle'),
                     'type' => PARAM_ALPHA,
                 ],
+                'progressdisplay' => [
+                    'default' => get_config('format_smartcards', 'progressdisplay'),
+                    'type' => PARAM_ALPHA,
+                ],
             ];
         }
 
@@ -348,6 +352,17 @@ class format_smartcards extends core_courseformat\base {
                             'accordion' => new lang_string('navstyle_accordion', 'format_smartcards'),
                             'tabs' => new lang_string('navstyle_tabs', 'format_smartcards'),
                             'sticky' => new lang_string('navstyle_sticky', 'format_smartcards'),
+                        ],
+                    ],
+                ],
+                'progressdisplay' => [
+                    'label' => new lang_string('progressdisplay', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [
+                        [
+                            'none' => new lang_string('progressdisplay_none', 'format_smartcards'),
+                            'count' => new lang_string('progressdisplay_count', 'format_smartcards'),
+                            'percent' => new lang_string('progressdisplay_percent', 'format_smartcards'),
                         ],
                     ],
                 ],

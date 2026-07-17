@@ -91,12 +91,22 @@ class content extends content_base {
         $descriptions  = cm_description_resolver::resolve_many($modinfo->get_cms());
         $userid        = (int)$USER->id;
 
-        $navstyle    = $formatoptions['navstyle'] ?? 'default';
-        $isaccordion = $navstyle === 'accordion';
-        $istabs      = $navstyle === 'tabs';
-        $issticky    = $navstyle === 'sticky';
+        $navstyle        = $formatoptions['navstyle'] ?? 'default';
+        $isaccordion     = $navstyle === 'accordion';
+        $istabs          = $navstyle === 'tabs';
+        $issticky        = $navstyle === 'sticky';
+        $progressdisplay = $formatoptions['progressdisplay'] ?? '';
+        // Positive match (show only for a recognised value), not a negative one against
+        // 'none' — an unset/empty/unrecognised option value must default to hidden, the
+        // same safe-by-default posture 'accordion'/'tabs'/'sticky' above already have.
+        $showprogress    = in_array($progressdisplay, ['count', 'percent'], true);
 
-        $completioninfo = null;
+        // Progress is resolved for every section regardless of navstyle or progressdisplay:
+        // the accordion/tabs "open the pending section" default (below) needs it even when
+        // progressdisplay='none' hides the visible label, so this is never skippable on the
+        // strength of the display option alone.
+        $completioninfo = new completion_info($course);
+
         $collapsedids = [];
         $expandedids = [];
         if ($isaccordion) {
@@ -105,20 +115,18 @@ class content extends content_base {
             // and persists each manual toggle via format_smartcards_toggle_section, so a
             // student's choice survives reloads.
             $PAGE->requires->js_call_amd('format_smartcards/accordion', 'init');
-            $completioninfo = new completion_info($course);
-            $preferences    = $format->get_sections_preferences_by_preference();
+            $preferences  = $format->get_sections_preferences_by_preference();
             // Cast to int: section_info::$id comes back as a string from the DB, but
             // in_array() below is intentionally strict, so an uncast list here would
             // never match any section id (the exact bug a real course hit).
-            $collapsedids   = array_map('intval', $preferences[toggle_section::PREFERENCE_COLLAPSED] ?? []);
-            $expandedids    = array_map('intval', $preferences[toggle_section::PREFERENCE_EXPANDED] ?? []);
+            $collapsedids = array_map('intval', $preferences[toggle_section::PREFERENCE_COLLAPSED] ?? []);
+            $expandedids  = array_map('intval', $preferences[toggle_section::PREFERENCE_EXPANDED] ?? []);
         } else if ($istabs) {
             // No preference to persist: unlike the accordion, a manual tab switch is never
             // expected to survive a reload (confirmed with the user) — every load simply
             // recomputes the same "first pending" default, so activating the native
             // Bootstrap tab machinery is the only setup needed.
             $PAGE->requires->js_call_amd('format_smartcards/tabs', 'init');
-            $completioninfo = new completion_info($course);
         }
 
         $sectionsdata = [];
@@ -141,8 +149,13 @@ class content extends content_base {
             );
 
             $iscollapsible = $isaccordion && $sectioninfo->section > 0;
-            $needsprogress = ($iscollapsible || $istabs) && $sectioninfo->section > 0;
-            $progress = $needsprogress ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
+            // Resolved for every non-General section regardless of navstyle/progressdisplay
+            // — the accordion/tabs default-section logic below needs it even when the
+            // label itself stays hidden (see the $completioninfo docblock note above).
+            $progress = $sectioninfo->section > 0
+                ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo)
+                : null;
+            $hastracking = $progress !== null && $progress->has_tracking();
 
             // A section is either explicitly collapsed, explicitly expanded, or genuinely
             // untouched (null) — tracking both directions (see toggle_section's docblock)
@@ -168,12 +181,9 @@ class content extends content_base {
                 'iscollapsible' => $iscollapsible,
                 'isopen'        => $iscollapsible && ($explicitopen ?? false),
                 'isactivetab'   => false,
-                'hasprogress'   => $progress !== null && $progress->has_tracking(),
-                'progresslabel' => ($progress !== null && $progress->has_tracking())
-                    ? get_string('progresstotal', 'completion', (object)[
-                        'complete' => $progress->complete,
-                        'total' => $progress->total,
-                    ])
+                'hasprogress'   => $hastracking && $showprogress,
+                'progresslabel' => ($hastracking && $showprogress)
+                    ? $this->format_progress_label($progress, $progressdisplay)
                     : '',
             ];
 
@@ -252,6 +262,24 @@ class content extends content_base {
             }
         }
         return $firstindex;
+    }
+
+    /**
+     * Formats one section's progress label according to the progressdisplay format option.
+     *
+     * @param section_progress $progress Section progress; caller guarantees has_tracking().
+     * @param string $progressdisplay 'count' or 'percent' ('none' never reaches this method).
+     * @return string
+     */
+    private function format_progress_label(section_progress $progress, string $progressdisplay): string {
+        if ($progressdisplay === 'percent') {
+            return get_string('progresspercent', 'format_smartcards', $progress->percent());
+        }
+
+        return get_string('progresstotal', 'completion', (object)[
+            'complete' => $progress->complete,
+            'total' => $progress->total,
+        ]);
     }
 
     /**

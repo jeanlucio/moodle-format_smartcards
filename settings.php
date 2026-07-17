@@ -102,4 +102,16 @@ if ($ADMIN->fulltree) {
             'sticky'    => new lang_string('navstyle_sticky', 'format_smartcards'),
         ]
     ));
+
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/progressdisplay',
+        new lang_string('progressdisplay', 'format_smartcards'),
+        new lang_string('progressdisplay_desc', 'format_smartcards'),
+        'none',
+        [
+            'none'    => new lang_string('progressdisplay_none', 'format_smartcards'),
+            'count'   => new lang_string('progressdisplay_count', 'format_smartcards'),
+            'percent' => new lang_string('progressdisplay_percent', 'format_smartcards'),
+        ]
+    ));
 }

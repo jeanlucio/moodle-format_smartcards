@@ -107,6 +107,10 @@
 }
 
 .format-smartcards .sc-section-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
     font-size: 1.1rem;
     font-weight: 600;
     margin-block-end: 0.75rem;
@@ -131,12 +135,15 @@
     cursor: pointer;
 }
 
-.format-smartcards .sc-accordion-progress {
-    margin-inline-start: auto;
+.format-smartcards .sc-progress-label {
     font-size: 0.8rem;
     font-weight: 400;
     color: var(--secondary, #6c757d);
     white-space: nowrap;
+}
+
+.format-smartcards .sc-accordion-toggle .sc-progress-label {
+    margin-inline-start: auto;
 }
 
 .format-smartcards .sc-accordion-toggle.collapsed .sc-accordion-chevron-collapsed {
@@ -177,14 +184,7 @@
     cursor: pointer;
 }
 
-.format-smartcards .sc-tabs-progress {
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: var(--secondary, #6c757d);
-    white-space: nowrap;
-}
-
-.format-smartcards .sc-tabs .nav-link.active .sc-tabs-progress {
+.format-smartcards .sc-tabs .nav-link.active .sc-progress-label {
     color: inherit;
 }
 

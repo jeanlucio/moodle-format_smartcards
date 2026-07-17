@@ -60,4 +60,16 @@ final class section_progress {
     public function has_pending(): bool {
         return $this->complete < $this->total;
     }
+
+    /**
+     * Completion percentage, rounded to the nearest whole number.
+     *
+     * Only meaningful when {@see has_tracking()} is true — $total is guaranteed non-zero
+     * in that case, so this never divides by zero.
+     *
+     * @return int
+     */
+    public function percent(): int {
+        return (int)round(($this->complete / $this->total) * 100);
+    }
 }

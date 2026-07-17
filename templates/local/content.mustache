@@ -106,7 +106,7 @@
                             aria-selected="{{#isactivetab}}true{{/isactivetab}}{{^isactivetab}}false{{/isactivetab}}"
                         >
                             <span class="sc-tabs-name">{{name}}</span>
-                            {{#hasprogress}}<span class="sc-tabs-progress">{{progresslabel}}</span>{{/hasprogress}}
+                            {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
                         </button>
                     </li>
                     {{/issection0}}
@@ -152,13 +152,16 @@
                             </span>
                             <span class="sc-accordion-name">{{name}}</span>
                             {{#hasprogress}}
-                            <span class="sc-accordion-progress">{{progresslabel}}</span>
+                            <span class="sc-progress-label">{{progresslabel}}</span>
                             {{/hasprogress}}
                         </button>
                     </h3>
                     {{/iscollapsible}}
                     {{^iscollapsible}}
-                    <h3 class="sc-section-title" id="sc-section-title-{{id}}">{{name}}</h3>
+                    <h3 class="sc-section-title" id="sc-section-title-{{id}}">
+                        <span class="sc-section-name">{{name}}</span>
+                        {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
+                    </h3>
                     {{/iscollapsible}}
 
                     <div{{#iscollapsible}}
