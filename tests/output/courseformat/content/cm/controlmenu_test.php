@@ -105,11 +105,13 @@ final class controlmenu_test extends \advanced_testcase {
         $menu = new $classname($format, $sectionone, $cminfo);
         $actionmenu = $menu->get_action_menu($renderer);
 
-        // A student still gets a minimal menu (e.g. Permalink), just never the
-        // appearance entry — this is a capability gate on one specific item, not on
-        // whether the menu exists at all.
-        $this->assertNotNull($actionmenu);
-        $html = $renderer->render($actionmenu);
+        // Whether a student gets any menu at all is core behaviour this plugin doesn't
+        // control and must not assert on: Moodle 5.x's course_get_cm_edit_actions()
+        // includes an unconditional "Permalink" item (a non-null menu), while Moodle
+        // 4.5's own version of the same function returns nothing for a student (a null
+        // menu) — confirmed by this test failing on the MOODLE_405_STABLE CI leg before
+        // this was accounted for. Only the appearance entry itself is ours to assert on.
+        $html = $actionmenu !== null ? $renderer->render($actionmenu) : '';
         $this->assertStringNotContainsString('smartcardsEditAppearance', $html);
     }
 }
