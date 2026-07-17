@@ -26,6 +26,7 @@ use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
 use format_smartcards\local\cm_description_resolver;
+use format_smartcards\local\section_card_builder;
 use format_smartcards\local\section_progress;
 use format_smartcards\local\section_progress_resolver;
 use renderer_base;
@@ -96,6 +97,7 @@ class content extends content_base {
         $isaccordion     = $navstyle === 'accordion';
         $istabs          = $navstyle === 'tabs';
         $issticky        = $navstyle === 'sticky';
+        $issectioncards  = $navstyle === 'sectioncards';
         $progressdisplay = $formatoptions['progressdisplay'] ?? '';
         // Positive match (show only for a recognised value), not a negative one against
         // 'none' — an unset/empty/unrecognised option value must default to hidden, the
@@ -128,7 +130,19 @@ class content extends content_base {
             // recomputes the same "first pending" default, so activating the native
             // Bootstrap tab machinery is the only setup needed.
             $PAGE->requires->js_call_amd('format_smartcards/tabs', 'init');
+        } else if ($issectioncards) {
+            // No default-active section either: every card is static until tapped, no
+            // "first pending" section to pick for the student ahead of time.
+            $PAGE->requires->js_call_amd('format_smartcards/section_modal', 'init');
         }
+
+        // Only queried in sectioncards mode: every other navstyle never renders a
+        // section-level icon, so bulk-loading this table for them would be pure waste.
+        $sectionappearances = $issectioncards
+            ? (new appearance_repository())->get_many_for_sections(
+                array_map(static fn (section_info $s): int => $s->id, $modinfo->get_section_info_all())
+            )
+            : [];
 
         $sectionsdata = [];
         $untouchedbyindex = [];
@@ -185,6 +199,29 @@ class content extends content_base {
                 ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo)
                 : null;
             $hastracking = $progress !== null && $progress->has_tracking();
+            $hasprogress = $hastracking && $showprogress;
+            $progresslabel = $hasprogress ? $progress->format_label($progressdisplay) : '';
+
+            // Built only for a real (non-General) section in sectioncards mode — reuses
+            // $cards/$sectionavailable/$hasprogress/$progresslabel computed above rather
+            // than recomputing anything, per section_card_builder's own docblock.
+            $sectioncard = ($issectioncards && $sectioninfo->section > 0)
+                ? section_card_builder::build(
+                    $sectioninfo,
+                    $format->get_section_name($sectioninfo),
+                    $output,
+                    $sectionappearances[$sectioninfo->id] ?? null,
+                    $appearances,
+                    array_column($cards, 'cmid'),
+                    $formatoptions,
+                    $sectionavailable,
+                    !empty($cards),
+                    $hasprogress,
+                    $progresslabel,
+                    $hastracking && $progress->has_pending(),
+                    $hastracking && !$progress->has_pending()
+                )
+                : null;
 
             // A section is either explicitly collapsed, explicitly expanded, or genuinely
             // untouched (null) — tracking both directions (see toggle_section's docblock)
@@ -211,10 +248,10 @@ class content extends content_base {
                 'iscollapsible' => $iscollapsible,
                 'isopen'        => $iscollapsible && ($explicitopen ?? false),
                 'isactivetab'   => false,
-                'hasprogress'   => $hastracking && $showprogress,
-                'progresslabel' => ($hastracking && $showprogress)
-                    ? $this->format_progress_label($progress, $progressdisplay)
-                    : '',
+                'hasprogress'   => $hasprogress,
+                'progresslabel' => $progresslabel,
+                'issectioncard' => ($sectioncard !== null),
+                'sectioncard'   => $sectioncard,
             ];
 
             $lastindex = array_key_last($sectionsdata);
@@ -261,6 +298,7 @@ class content extends content_base {
             'isaccordion'    => $isaccordion,
             'istabs'         => $istabs,
             'issticky'       => $issticky,
+            'issectioncards' => $issectioncards,
         ];
     }
 
@@ -292,24 +330,6 @@ class content extends content_base {
             }
         }
         return $firstindex;
-    }
-
-    /**
-     * Formats one section's progress label according to the progressdisplay format option.
-     *
-     * @param section_progress $progress Section progress; caller guarantees has_tracking().
-     * @param string $progressdisplay 'count' or 'percent' ('none' never reaches this method).
-     * @return string
-     */
-    private function format_progress_label(section_progress $progress, string $progressdisplay): string {
-        if ($progressdisplay === 'percent') {
-            return get_string('progresspercent', 'format_smartcards', $progress->percent());
-        }
-
-        return get_string('progresstotal', 'completion', (object)[
-            'complete' => $progress->complete,
-            'total' => $progress->total,
-        ]);
     }
 
     /**

@@ -24,9 +24,8 @@ use invalid_parameter_exception;
  * course/module/section deletion observers (see classes/observer.php and
  * classes/hook_listener.php).
  *
- * Only activity-level appearance has a UI in V1 (see SCOPE.md §3.2 — section appearance
- * is adiada for V0.2), but the table and this repository are already generic over both
- * context levels, since the same table serves both from day one.
+ * Generic over both context levels (activity and section) — the same table serves both
+ * from day one, and both have a full UI (section appearance since SCOPE.md §16 Fase 4).
  *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
@@ -100,6 +99,17 @@ class appearance_repository {
     }
 
     /**
+     * Bulk-loads the appearance configured for several course sections at once.
+     *
+     * @param int[] $sectionids Section ids.
+     * @return array<int, appearance> Appearance keyed by sectionid; sectionids without a
+     *                                custom appearance are simply absent from the array.
+     */
+    public function get_many_for_sections(array $sectionids): array {
+        return $this->get_many_for_items(self::CONTEXTLEVEL_SECTION, $sectionids);
+    }
+
+    /**
      * Creates or updates the appearance of one course module.
      *
      * @param int $cmid Course module id.
@@ -124,10 +134,6 @@ class appearance_repository {
 
     /**
      * Creates or updates the appearance of one course section.
-     *
-     * No UI exposes this in V1 (SCOPE.md §3.2 — section appearance is adiada for
-     * V0.2), but the table and repository are generic over both context levels from
-     * day one, and the deletion observers need to be exercised against real rows.
      *
      * @param int $sectionid Section id.
      * @param string $type One of TYPE_IMAGE, TYPE_EMOJI, TYPE_ICON.

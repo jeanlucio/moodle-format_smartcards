@@ -426,3 +426,37 @@
 .format-smartcards .sc-appearance-emoji-btn:hover {
     border-color: var(--primary, #0f6cbf);
 }
+
+/*
+ * navstyle = 'sectioncards' (SCOPE.md §16 Fase 4). The wrap around each section card
+ * button and its hidden modal-source sibling is removed from the layout tree entirely
+ * (display: contents), so the button behaves as a direct .sc-grid flex child exactly
+ * like every other card — the hidden sibling never affects sizing regardless, since
+ * [hidden] is display: none already, but this also avoids any extra block-level box
+ * the wrap would otherwise introduce.
+ */
+.format-smartcards .sc-section-card-wrap {
+    display: contents;
+}
+
+/*
+ * Full-screen override for the section-card modal (amd/src/section_modal.js). Scoped by
+ * this fixed class added to the modal's own root right after creation, never by an
+ * ancestor selector — core/modal, like the plugin's own Bootstrap modals, hoists its
+ * root to <body> before showing it, breaking any ancestor-based scope. No .modal-fullscreen
+ * Bootstrap utility is assumed here: Moodle 4.5's bundled Bootstrap 4 may not ship it.
+ */
+.format-smartcards .sc-section-modal .modal-dialog {
+    max-width: 100vw;
+    height: 100vh;
+    margin: 0;
+}
+
+.format-smartcards .sc-section-modal .modal-content {
+    height: 100vh;
+    border-radius: 0;
+}
+
+.format-smartcards .sc-section-modal .modal-body {
+    overflow-y: auto;
+}

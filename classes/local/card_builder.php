@@ -91,7 +91,12 @@ class card_builder {
         };
 
         [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
-            = self::build_appearance_styles($item, $output, $formatoptions, $cm->id);
+            = appearance_style_resolver::resolve(
+                $item,
+                $output,
+                $formatoptions,
+                fn (int $fileid): string => appearance_image_store::url($cm->id, $fileid)->out(false)
+            );
 
         $completion  = cm_completion_resolver::resolve($cm, $userid);
         $ispending   = $completion->is_tracked() && !$completion->iscomplete;
@@ -160,57 +165,5 @@ class card_builder {
             'hasdescription'       => $hasdescription,
             'description'          => $description,
         ];
-    }
-
-    /**
-     * Derives the inline style declarations and icon selection for one card's icon
-     * circle and title, from its custom appearance (if any) and the course's default
-     * title colour/font (if the activity does not set its own).
-     *
-     * @param appearance|null $item The activity's custom appearance, or null.
-     * @param renderer_base $output Renderer used to resolve the custom icon's URL.
-     * @param array $formatoptions The course's resolved format options, for the
-     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont fallback.
-     * @param int $cmid Course module id, used to build the uploaded card image's URL
-     *                  when the appearance type is TYPE_IMAGE.
-     * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string}
-     *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle.
-     */
-    private static function build_appearance_styles(
-        ?appearance $item,
-        renderer_base $output,
-        array $formatoptions,
-        int $cmid
-    ): array {
-        $isemoji = $item !== null && $item->type === appearance_repository::TYPE_EMOJI;
-        $emoji   = $isemoji ? $item->value : '';
-
-        $iscustomicon = $item !== null
-            && in_array($item->type, [appearance_repository::TYPE_ICON, appearance_repository::TYPE_IMAGE], true);
-        $customiconurl = match ($item?->type) {
-            appearance_repository::TYPE_ICON => $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false),
-            appearance_repository::TYPE_IMAGE => appearance_image_store::url($cmid, (int)$item->value)->out(false),
-            default => '',
-        };
-
-        $defaultbgcolor = (string)($formatoptions['defaultbgcolor'] ?? '');
-        $bgcolor        = $item?->bgcolor ?? ($defaultbgcolor !== '' ? $defaultbgcolor : null);
-        $iconstyle      = $bgcolor !== null ? 'background-color: ' . $bgcolor : '';
-
-        $defaultlabelcolor = (string)($formatoptions['defaultlabelcolor'] ?? '');
-        $defaultlabelfont  = (string)($formatoptions['defaultlabelfont'] ?? '');
-        $labelcolor        = $item?->labelcolor ?? ($defaultlabelcolor !== '' ? $defaultlabelcolor : null);
-        $labelfont         = $item?->labelfont ?? ($defaultlabelfont !== '' ? $defaultlabelfont : null);
-
-        $titlestyleparts = [];
-        if ($labelcolor !== null) {
-            $titlestyleparts[] = 'color: ' . $labelcolor;
-        }
-        if ($labelfont !== null && array_key_exists($labelfont, appearance_palette::LABEL_FONTS)) {
-            $titlestyleparts[] = "font-family: '" . appearance_palette::LABEL_FONTS[$labelfont] . "', sans-serif";
-        }
-        $titlestyle = implode('; ', $titlestyleparts);
-
-        return [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle];
     }
 }

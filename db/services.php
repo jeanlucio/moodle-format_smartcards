@@ -49,4 +49,21 @@ $functions = [
         'type'        => 'write',
         'ajax'        => true,
     ],
+    'format_smartcards_save_section_appearance' => [
+        'classname'    => 'format_smartcards\external\save_section_appearance',
+        'methodname'   => 'execute',
+        'description'  => 'Saves the custom emoji/icon appearance of one section card and returns it re-rendered.',
+        'type'         => 'write',
+        'ajax'         => true,
+        'capabilities' => 'format/smartcards:manageappearance',
+    ],
+    'format_smartcards_get_section_appearance' => [
+        'classname'    => 'format_smartcards\external\get_section_appearance',
+        'methodname'   => 'execute',
+        'description'  => 'Returns one section\'s current appearance, plus the editor\'s bootstrap data '
+            . '(generic icon URL, curated icon URLs).',
+        'type'         => 'read',
+        'ajax'         => true,
+        'capabilities' => 'format/smartcards:manageappearance',
+    ],
 ];

@@ -62,6 +62,7 @@ $string['navstyle'] = 'Navigation style';
 $string['navstyle_accordion'] = 'Accordion with progress';
 $string['navstyle_default'] = 'Default';
 $string['navstyle_desc'] = 'How sections are displayed and navigated. Teachers can override this per course.';
+$string['navstyle_sectioncards'] = 'Section cards';
 $string['navstyle_sticky'] = 'Sticky section headers';
 $string['navstyle_tabs'] = 'Tabs';
 $string['plugin_description'] = 'Shows activities as buttons/cards, reusing Moodle\'s native availability logic — no stealth activities.';

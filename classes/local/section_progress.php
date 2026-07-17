@@ -72,4 +72,27 @@ final class section_progress {
     public function percent(): int {
         return (int)round(($this->complete / $this->total) * 100);
     }
+
+    /**
+     * Formats this progress according to the progressdisplay format option.
+     *
+     * Shared by every renderer that shows a progress label (the flat/accordion/tabs
+     * grid in content.php, and the section card in section_card_builder) so the two
+     * navstyle families never drift into two slightly different label formats.
+     *
+     * @param string $progressdisplay 'count' or 'percent' ('none' never reaches this
+     *                                  method — callers only call it when has_tracking()
+     *                                  and the display option are both already checked).
+     * @return string
+     */
+    public function format_label(string $progressdisplay): string {
+        if ($progressdisplay === 'percent') {
+            return get_string('progresspercent', 'format_smartcards', $this->percent());
+        }
+
+        return get_string('progresstotal', 'completion', (object)[
+            'complete' => $this->complete,
+            'total' => $this->total,
+        ]);
+    }
 }

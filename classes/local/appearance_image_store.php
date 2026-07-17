@@ -16,24 +16,35 @@
 
 namespace format_smartcards\local;
 
+use Closure;
+use context_course;
 use context_module;
 use invalid_parameter_exception;
 use moodle_url;
 use stored_file;
 
 /**
- * Stores, replaces and serves the single uploaded image of one activity's card
- * appearance (appearance_repository::TYPE_IMAGE).
+ * Stores, replaces and serves the single uploaded image of one activity's or one
+ * section's card appearance (appearance_repository::TYPE_IMAGE).
  *
- * Files are scoped to the course module's own context (not the course context), one
- * fixed-name file per module, with itemid always 0 — the simplest File API pattern for
- * "at most one file per owner". This is a deliberate choice over the course-context
- * alternative: deleting a course module (or the whole course, which deletes every
- * module in it) already makes core delete every file stored under that module's
- * context, for every component — so no extra cleanup wiring is needed here on top of
- * the appearance-row cleanup in classes/observer.php and classes/hook_listener.php.
- * Only the "replace" case (a new image uploaded, or the type changed away from image)
- * needs an explicit delete, handled by save_appearance::execute() via delete()/store().
+ * Activity images are scoped to the course module's own context (not the course
+ * context), one fixed-name file per module, with itemid always 0 — the simplest File
+ * API pattern for "at most one file per owner". This is a deliberate choice over the
+ * course-context alternative: deleting a course module (or the whole course, which
+ * deletes every module in it) already makes core delete every file stored under that
+ * module's context, for every component — so no extra cleanup wiring is needed here on
+ * top of the appearance-row cleanup in classes/observer.php and
+ * classes/hook_listener.php. Only the "replace" case (a new image uploaded, or the type
+ * changed away from image) needs an explicit delete, handled by
+ * save_appearance::execute() via delete()/store().
+ *
+ * A section has no context of its own, so section images are scoped to the *course*
+ * context instead, disambiguated by a section-only file area (SECTION_FILEAREA) plus
+ * itemid = sectionid. Unlike the activity case, deleting a section does NOT delete the
+ * course context (only deleting the whole course does), so the section-deletion
+ * observer (classes/observer.php) must explicitly call delete_for_section() here, next
+ * to its existing appearance-row cleanup — this is the one part of the section-image
+ * story that cannot simply piggyback on a context being torn down for free.
  *
  * The uploaded bytes are never stored as-is: they are decoded through GD and
  * re-encoded as PNG before being written to the File API. This rules out SVG/polyglot
@@ -48,6 +59,9 @@ use stored_file;
 final class appearance_image_store {
     /** @var string File area holding the one card image of a course module. */
     private const FILEAREA = 'cardimage';
+
+    /** @var string File area holding the one card image of a course section. */
+    private const SECTION_FILEAREA = 'sectioncardimage';
 
     /** @var string Fixed filename every stored card image is saved as. */
     private const FILENAME = 'card.png';
@@ -68,20 +82,33 @@ final class appearance_image_store {
      * @throws invalid_parameter_exception If the data is not a valid, small-enough image.
      */
     public static function store(int $cmid, string $base64): int {
-        $raw = base64_decode($base64, true);
-        if ($raw === false || $raw === '') {
-            throw new invalid_parameter_exception('Image data is not valid base64');
-        }
-        if (strlen($raw) > self::MAX_UPLOAD_BYTES) {
-            throw new invalid_parameter_exception('Image exceeds the maximum upload size');
-        }
-
-        $png = self::reencode_as_png($raw);
+        $png = self::decode_and_reencode($base64);
 
         self::delete($cmid);
 
         $fs = get_file_storage();
         $file = $fs->create_file_from_string(self::file_record($cmid), $png);
+
+        return (int)$file->get_id();
+    }
+
+    /**
+     * Stores a base64-encoded image as the card image of one course section, replacing
+     * any image already stored for it.
+     *
+     * @param int $sectionid Section id that owns the image.
+     * @param int $courseid Id of the course the section belongs to.
+     * @param string $base64 Base64-encoded image bytes (no "data:" prefix).
+     * @return int The id of the newly stored file, to keep in the appearance row's value.
+     * @throws invalid_parameter_exception If the data is not a valid, small-enough image.
+     */
+    public static function store_for_section(int $sectionid, int $courseid, string $base64): int {
+        $png = self::decode_and_reencode($base64);
+
+        self::delete_for_section($sectionid, $courseid);
+
+        $fs = get_file_storage();
+        $file = $fs->create_file_from_string(self::file_record_for_section($sectionid, $courseid), $png);
 
         return (int)$file->get_id();
     }
@@ -102,6 +129,35 @@ final class appearance_image_store {
         }
 
         get_file_storage()->delete_area_files($context->id, 'format_smartcards', self::FILEAREA);
+    }
+
+    /**
+     * Deletes the card image of one course section, if any. Safe to call when no image
+     * was ever stored for it.
+     *
+     * Unlike delete(), the course context is never gone just because the section is —
+     * only deleting the whole course removes it — so this must be called explicitly by
+     * the section-deletion observer (classes/observer.php) rather than relying on a
+     * context teardown to take the file with it for free.
+     *
+     * @param int $sectionid Section id.
+     * @param int $courseid Id of the course the section belongs to.
+     * @return void
+     */
+    public static function delete_for_section(int $sectionid, int $courseid): void {
+        $context = context_course::instance($courseid, IGNORE_MISSING);
+        if ($context === false) {
+            // The course is already gone; core's own context deletion already took its
+            // files with it, nothing left to clean up here.
+            return;
+        }
+
+        get_file_storage()->delete_area_files(
+            $context->id,
+            'format_smartcards',
+            self::SECTION_FILEAREA,
+            $sectionid
+        );
     }
 
     /**
@@ -145,6 +201,35 @@ final class appearance_image_store {
     }
 
     /**
+     * Returns the deterministic pluginfile URL of one course section's card image.
+     *
+     * Same reasoning as url(): no existence check, no File API call, safe to call for
+     * every section card without an N+1 query.
+     *
+     * @param int $sectionid Section id.
+     * @param int $courseid Id of the course the section belongs to.
+     * @param int $rev Cache-busting revision, appended as a query param when > 0.
+     * @return moodle_url
+     */
+    public static function url_for_section(int $sectionid, int $courseid, int $rev = 0): moodle_url {
+        $context = context_course::instance($courseid);
+
+        $url = moodle_url::make_pluginfile_url(
+            $context->id,
+            'format_smartcards',
+            self::SECTION_FILEAREA,
+            $sectionid,
+            '/',
+            self::FILENAME
+        );
+        if ($rev > 0) {
+            $url->param('rev', $rev);
+        }
+
+        return $url;
+    }
+
+    /**
      * Resolves the stored_file to serve for one course module's card image, for
      * format_smartcards_pluginfile() in lib.php.
      *
@@ -171,6 +256,36 @@ final class appearance_image_store {
     }
 
     /**
+     * Resolves the stored_file to serve for one course section's card image, for
+     * format_smartcards_pluginfile() in lib.php.
+     *
+     * @param int $sectionid Section id.
+     * @param int $courseid Id of the course the section belongs to.
+     * @param string $filearea File area requested.
+     * @return stored_file|null The matching file, or null when not found.
+     */
+    public static function resolve_for_serving_section(int $sectionid, int $courseid, string $filearea): ?stored_file {
+        if ($filearea !== self::SECTION_FILEAREA) {
+            return null;
+        }
+
+        $context = context_course::instance($courseid);
+        $file = get_file_storage()->get_file(
+            $context->id,
+            'format_smartcards',
+            self::SECTION_FILEAREA,
+            $sectionid,
+            '/',
+            self::FILENAME
+        );
+        if (!$file || $file->is_directory()) {
+            return null;
+        }
+
+        return $file;
+    }
+
+    /**
      * Builds the File API file record for one module's card image.
      *
      * @param int $cmid Course module id.
@@ -187,6 +302,46 @@ final class appearance_image_store {
             'filepath'  => '/',
             'filename'  => self::FILENAME,
         ];
+    }
+
+    /**
+     * Builds the File API file record for one section's card image.
+     *
+     * @param int $sectionid Section id.
+     * @param int $courseid Id of the course the section belongs to.
+     * @return array<string, mixed>
+     */
+    private static function file_record_for_section(int $sectionid, int $courseid): array {
+        $context = context_course::instance($courseid);
+
+        return [
+            'contextid' => $context->id,
+            'component' => 'format_smartcards',
+            'filearea'  => self::SECTION_FILEAREA,
+            'itemid'    => $sectionid,
+            'filepath'  => '/',
+            'filename'  => self::FILENAME,
+        ];
+    }
+
+    /**
+     * Decodes and validates a base64-encoded upload, then re-encodes it as a
+     * size-capped PNG. Shared by store() and store_for_section().
+     *
+     * @param string $base64 Base64-encoded image bytes (no "data:" prefix).
+     * @return string PNG-encoded bytes.
+     * @throws invalid_parameter_exception If the data is not a valid, small-enough image.
+     */
+    private static function decode_and_reencode(string $base64): string {
+        $raw = base64_decode($base64, true);
+        if ($raw === false || $raw === '') {
+            throw new invalid_parameter_exception('Image data is not valid base64');
+        }
+        if (strlen($raw) > self::MAX_UPLOAD_BYTES) {
+            throw new invalid_parameter_exception('Image exceeds the maximum upload size');
+        }
+
+        return self::reencode_as_png($raw);
     }
 
     /**
@@ -237,5 +392,54 @@ final class appearance_image_store {
         }
 
         return $png;
+    }
+
+    /**
+     * Resolves the "value" to persist for a save_appearance/save_section_appearance
+     * call, handling TYPE_IMAGE's file lifecycle: a freshly uploaded image is stored
+     * (replacing any previous one), an empty upload keeps the previously stored image,
+     * and switching away from TYPE_IMAGE deletes the now-orphaned file.
+     *
+     * Shared by the activity and section web services so the two lifecycles (which
+     * differ only in which store()/delete() variant they call) cannot drift apart.
+     *
+     * @param string $type Validated appearance type.
+     * @param string $value Validated value param (emoji/icon name; ignored for images).
+     * @param string $imagedata Base64-encoded image bytes, or '' when not (re)uploading.
+     * @param appearance|null $existing The item's current appearance, if any, used to
+     *        detect a type change away from image.
+     * @param Closure $store Stores $imagedata and returns the new fileid, e.g.
+     *                        fn (string $imagedata) => self::store($cmid, $imagedata).
+     * @param Closure $delete Deletes the previously stored image, e.g.
+     *                         fn () => self::delete($cmid).
+     * @return string The value to persist in format_smartcards_appearance.value.
+     * @throws invalid_parameter_exception If type is TYPE_IMAGE with nothing to store.
+     */
+    public static function resolve_saved_value(
+        string $type,
+        string $value,
+        string $imagedata,
+        ?appearance $existing,
+        Closure $store,
+        Closure $delete
+    ): string {
+        $waskeepingimage = $existing !== null && $existing->type === appearance_repository::TYPE_IMAGE;
+
+        if ($type !== appearance_repository::TYPE_IMAGE) {
+            if ($waskeepingimage) {
+                $delete();
+            }
+            return $value;
+        }
+
+        if ($imagedata !== '') {
+            return (string)$store($imagedata);
+        }
+
+        if ($waskeepingimage && $existing->value !== '') {
+            return $existing->value;
+        }
+
+        throw new invalid_parameter_exception('An image must be uploaded');
     }
 }

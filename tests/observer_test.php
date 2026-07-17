@@ -16,6 +16,7 @@
 
 namespace format_smartcards;
 
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 
 /**
@@ -75,5 +76,43 @@ final class observer_test extends \advanced_testcase {
         course_delete_section($course, 1, true, false);
 
         $this->assertNull($repository->get_for_section((int)$sectionid));
+    }
+
+    /**
+     * Deleting a single course section must also delete its stored card image, if any —
+     * unlike a deleted course module, the course context (where a section image lives,
+     * see appearance_image_store's class docblock) is not destroyed just because one of
+     * its sections is, so this cleanup cannot happen for free via context teardown.
+     *
+     * @covers ::course_section_deleted
+     */
+    public function test_deleting_section_removes_its_stored_image(): void {
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/course/lib.php');
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['numsections' => 2]);
+        $sectionid = (int)$DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 1]);
+
+        $fileid = appearance_image_store::store_for_section(
+            $sectionid,
+            $course->id,
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        );
+        (new appearance_repository())->save_for_section(
+            $sectionid,
+            appearance_repository::TYPE_IMAGE,
+            (string)$fileid,
+            null,
+            null,
+            null
+        );
+
+        course_delete_section($course, 1, true, false);
+
+        $this->assertNull(
+            appearance_image_store::resolve_for_serving_section($sectionid, $course->id, 'sectioncardimage')
+        );
     }
 }

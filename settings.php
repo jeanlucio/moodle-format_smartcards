@@ -96,10 +96,11 @@ if ($ADMIN->fulltree) {
         new lang_string('navstyle_desc', 'format_smartcards'),
         'default',
         [
-            'default'   => new lang_string('navstyle_default', 'format_smartcards'),
-            'accordion' => new lang_string('navstyle_accordion', 'format_smartcards'),
-            'tabs'      => new lang_string('navstyle_tabs', 'format_smartcards'),
-            'sticky'    => new lang_string('navstyle_sticky', 'format_smartcards'),
+            'default'      => new lang_string('navstyle_default', 'format_smartcards'),
+            'accordion'    => new lang_string('navstyle_accordion', 'format_smartcards'),
+            'tabs'         => new lang_string('navstyle_tabs', 'format_smartcards'),
+            'sticky'       => new lang_string('navstyle_sticky', 'format_smartcards'),
+            'sectioncards' => new lang_string('navstyle_sectioncards', 'format_smartcards'),
         ]
     ));
 

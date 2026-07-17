@@ -22,12 +22,10 @@ use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
-use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\card_builder;
 use format_smartcards\local\cm_description_resolver;
-use invalid_parameter_exception;
 
 /**
  * Saves the custom appearance of one activity card and returns it fully re-rendered.
@@ -121,12 +119,13 @@ class save_appearance extends external_api {
 
         $repository = new appearance_repository();
         $existing   = $repository->get_for_activity($params['cmid']);
-        $resolvedvalue = self::resolve_image_value(
-            $params['cmid'],
+        $resolvedvalue = appearance_image_store::resolve_saved_value(
             $params['type'],
             $params['value'],
             $params['imagedata'],
-            $existing
+            $existing,
+            fn (string $imagedata): string => (string)appearance_image_store::store($params['cmid'], $imagedata),
+            fn () => appearance_image_store::delete($params['cmid'])
         );
 
         $repository->save_for_activity(
@@ -158,48 +157,6 @@ class save_appearance extends external_api {
         $card['badge'] = $card['badge'] ?? '';
 
         return $card;
-    }
-
-    /**
-     * Resolves the "value" to persist for the given type, handling TYPE_IMAGE's file
-     * lifecycle: a freshly uploaded image is stored (replacing any previous one), an
-     * empty upload keeps the previously stored image, and switching away from
-     * TYPE_IMAGE deletes the now-orphaned file.
-     *
-     * @param int $cmid Course module id.
-     * @param string $type Validated appearance type.
-     * @param string $value Validated value param (emoji/icon name; ignored for images).
-     * @param string $imagedata Base64-encoded image bytes, or '' when not (re)uploading.
-     * @param appearance|null $existing The activity's current appearance, if any, used
-     *        to detect a type change away from image.
-     * @return string The value to persist in format_smartcards_appearance.value.
-     * @throws invalid_parameter_exception If type is TYPE_IMAGE with nothing to store.
-     */
-    private static function resolve_image_value(
-        int $cmid,
-        string $type,
-        string $value,
-        string $imagedata,
-        ?appearance $existing
-    ): string {
-        $waskeepingimage = $existing !== null && $existing->type === appearance_repository::TYPE_IMAGE;
-
-        if ($type !== appearance_repository::TYPE_IMAGE) {
-            if ($waskeepingimage) {
-                appearance_image_store::delete($cmid);
-            }
-            return $value;
-        }
-
-        if ($imagedata !== '') {
-            return (string)appearance_image_store::store($cmid, $imagedata);
-        }
-
-        if ($waskeepingimage && $existing->value !== '') {
-            return $existing->value;
-        }
-
-        throw new invalid_parameter_exception('An image must be uploaded');
     }
 
     /**

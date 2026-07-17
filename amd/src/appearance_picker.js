@@ -15,10 +15,13 @@
 
 /**
  * Opens the "Card appearance" editor (a core/modal_save_cancel) from the native
- * per-activity edit menu entry added by content/cm/controlmenu. Fetches the activity's
- * current appearance first (format_smartcards_get_appearance) so the form opens
+ * per-activity or per-section edit menu entry added by content/cm/controlmenu and
+ * content/section/controlmenu. Fetches the current appearance first
+ * (format_smartcards_get_appearance / _get_section_appearance) so the form opens
  * pre-filled instead of always blank, keeps a live preview in sync with every field
- * change, then saves via format_smartcards_save_appearance.
+ * change, then saves via format_smartcards_save_appearance / _save_section_appearance —
+ * the same editor template and form logic serve both, branching only on which pair of
+ * web services to call and which id field to send.
  *
  * The colour and font palettes are curated and bundled with the plugin (never a free
  * colour picker or an external font), so they are declared here as plain constants —
@@ -101,17 +104,18 @@ const IMAGE_MAX_BYTES = 1048576;
 /**
  * Builds the template context for the editor form from the get_appearance response.
  *
- * @param {number} cmid Course module id being edited.
- * @param {string} name Activity name.
- * @param {object} bootstrap The format_smartcards_get_appearance response.
+ * @param {number} id Course module or section id being edited — only used for the
+ *                     form's inert data-cmid attribute, never read back by this module.
+ * @param {string} name Activity or section name.
+ * @param {object} bootstrap The format_smartcards_get_appearance/_get_section_appearance response.
  * @returns {object} Context for the appearance_editor template.
  */
-const buildEditorContext = (cmid, name, bootstrap) => {
+const buildEditorContext = (id, name, bootstrap) => {
     const bgcolorIsTransparent = bootstrap.bgcolor === 'transparent';
     const bgcolorIsDefault = bootstrap.bgcolor === '';
 
     return {
-        cmid,
+        cmid: id,
         name,
         iconurl: bootstrap.iconurl,
         isdefaulttype: bootstrap.type === 'default',
@@ -446,13 +450,19 @@ const updatePreview = (form, defaultIconUrl, existingImageUrl) => {
 };
 
 /**
- * Opens the appearance editor modal for one activity and saves the result.
+ * Opens the appearance editor modal for one activity or section and saves the result.
  *
- * @param {string} cmid Course module id, from the trigger's dataset.
- * @param {string} name Activity name, from the trigger's dataset.
+ * @param {string} id Course module or section id, from the trigger's dataset.
+ * @param {string} name Activity or section name, from the trigger's dataset.
+ * @param {boolean} isSection Whether id is a sectionid (section card) rather than a cmid
+ *                             (activity card) — picks which pair of web services to call.
  * @returns {Promise<void>}
  */
-const openEditor = async(cmid, name) => {
+const openEditor = async(id, name, isSection) => {
+    const idParam = isSection ? 'sectionid' : 'cmid';
+    const getMethod = isSection ? 'format_smartcards_get_section_appearance' : 'format_smartcards_get_appearance';
+    const saveMethod = isSection ? 'format_smartcards_save_section_appearance' : 'format_smartcards_save_appearance';
+
     const [title, savedMessage, emojiRequiredMessage, imageRequiredMessage, imageInvalidMessage, imageToobigMessage, bootstrap] =
         await Promise.all([
             Str.get_string('editappearance', 'format_smartcards'),
@@ -461,11 +471,11 @@ const openEditor = async(cmid, name) => {
             Str.get_string('appearance_image_required', 'format_smartcards'),
             Str.get_string('appearance_image_invalid', 'format_smartcards'),
             Str.get_string('appearance_image_toobig', 'format_smartcards'),
-            Ajax.call([{methodname: 'format_smartcards_get_appearance', args: {cmid: Number(cmid)}}])[0],
+            Ajax.call([{methodname: getMethod, args: {[idParam]: Number(id)}}])[0],
         ]);
     const {html, js} = await Templates.renderForPromise(
         'format_smartcards/local/appearance_editor',
-        buildEditorContext(Number(cmid), name, bootstrap)
+        buildEditorContext(Number(id), name, bootstrap)
     );
 
     const modal = await ModalSaveCancel.create({
@@ -511,8 +521,8 @@ const openEditor = async(cmid, name) => {
 
         try {
             await Ajax.call([{
-                methodname: 'format_smartcards_save_appearance',
-                args: {cmid: Number(cmid), ...values},
+                methodname: saveMethod,
+                args: {[idParam]: Number(id), ...values},
             }])[0];
             await addToast(savedMessage, {type: 'success'});
             modal.hide();
@@ -527,7 +537,8 @@ const openEditor = async(cmid, name) => {
 };
 
 /**
- * Initialises the delegated click handler for every "Card appearance" menu entry.
+ * Initialises the delegated click handler for every "Card appearance" menu entry, both
+ * the per-activity one (data-cmid) and the per-section one (data-sectionid).
  *
  * @returns {void}
  */
@@ -538,6 +549,10 @@ export const init = () => {
             return;
         }
         event.preventDefault();
-        openEditor(trigger.dataset.cmid, trigger.dataset.name ?? '');
+        if (trigger.dataset.sectionid !== undefined) {
+            openEditor(trigger.dataset.sectionid, trigger.dataset.name ?? '', true);
+        } else {
+            openEditor(trigger.dataset.cmid, trigger.dataset.name ?? '', false);
+        }
     });
 };

@@ -18,6 +18,7 @@ namespace format_smartcards;
 
 use core\event\course_module_deleted;
 use core\event\course_section_deleted;
+use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 
 /**
@@ -50,12 +51,20 @@ class observer {
     }
 
     /**
-     * Deletes the appearance row of a single deleted course section, if any.
+     * Deletes the appearance row and any stored card image of a single deleted course
+     * section, if any.
+     *
+     * Unlike a deleted course module, deleting a section does not delete the course
+     * context — the image lives in the course context (see appearance_image_store's
+     * class docblock), so it needs this explicit cleanup call rather than being taken
+     * care of by a context teardown.
      *
      * @param course_section_deleted $event The triggered event.
      * @return void
      */
     public static function course_section_deleted(course_section_deleted $event): void {
-        (new appearance_repository())->delete_for_section((int)$event->objectid);
+        $sectionid = (int)$event->objectid;
+        (new appearance_repository())->delete_for_section($sectionid);
+        appearance_image_store::delete_for_section($sectionid, (int)$event->courseid);
     }
 }

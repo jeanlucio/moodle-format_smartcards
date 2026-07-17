@@ -885,4 +885,98 @@ final class content_test extends \advanced_testcase {
         $this->assertStringContainsString((string)$page->cmid, $html);
         $this->assertStringContainsString('sc-grid', $html);
     }
+
+    /**
+     * navstyle = 'sectioncards' (SCOPE.md §16 Fase 4): one card per available section,
+     * a hidden section leaves no trace, and a restricted-but-visible section renders a
+     * locked card with the availability reason but no nested activity grid — the exact
+     * same three-way distinction the other navstyles already make (§18 v2.22), now
+     * applied to a single card instead of a heading + inline grid.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_sectioncards_renders_one_card_per_available_section(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 3]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'sectioncards']);
+
+        $free = $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $restricted = $generator->create_module('page', ['course' => $course->id, 'section' => 2]);
+        $condition  = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_sections', 'availability', json_encode($condition), [
+            'course' => $course->id,
+            'section' => 2,
+        ]);
+
+        $hidden = $generator->create_module('page', ['course' => $course->id, 'section' => 3]);
+        set_section_visible($course->id, 3, 0);
+
+        rebuild_course_cache($course->id, true);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $hiddensectionid = get_fast_modinfo($course, $student->id)->get_section_info(3)->id;
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('sc-section-card', $html);
+        $this->assertSame(2, substr_count($html, 'data-region="smartcards-section-card"'));
+
+        // The free section's activity is reachable inside its (hidden) nested grid.
+        $this->assertStringContainsString((string)$free->cmid, $html);
+
+        // The restricted section shows its lock reason but never its activity.
+        $this->assertStringContainsString('availabilityinfo', $html);
+        $this->assertStringNotContainsString((string)$restricted->cmid, $html);
+
+        // The hidden section leaves no trace at all — no card, no modal source, no cmid.
+        $this->assertStringNotContainsString('data-sectionid="' . $hiddensectionid . '"', $html);
+        $this->assertStringNotContainsString((string)$hidden->cmid, $html);
+    }
+
+    /**
+     * navstyle = 'sectioncards' never renders the accordion/tabs/plain-grid markup —
+     * only the new section-cards grid.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_sectioncards_renders_no_accordion_or_tabs_markup(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'sectioncards']);
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringNotContainsString('sc-accordion-toggle', $html);
+        $this->assertStringNotContainsString('nav-tabs', $html);
+    }
 }

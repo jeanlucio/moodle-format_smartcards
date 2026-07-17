@@ -274,6 +274,28 @@ final class appearance_repository_test extends \advanced_testcase {
     }
 
     /**
+     * Bulk-loading several sections at once must return only the ones that have a
+     * custom appearance, keyed by sectionid, mirroring get_many_for_activities().
+     *
+     * @covers ::get_many_for_sections
+     */
+    public function test_get_many_for_sections_returns_only_configured_items(): void {
+        $this->resetAfterTest();
+        $repository = new appearance_repository();
+
+        $repository->save_for_section(1, appearance_repository::TYPE_ICON, 'book', null, null, null);
+        $repository->save_for_section(2, appearance_repository::TYPE_EMOJI, '🎉', null, null, null);
+        // Sectionid 3 intentionally left unconfigured.
+
+        $many = $repository->get_many_for_sections([1, 2, 3]);
+
+        $this->assertCount(2, $many);
+        $this->assertSame('book', $many[1]->value);
+        $this->assertSame('🎉', $many[2]->value);
+        $this->assertArrayNotHasKey(3, $many);
+    }
+
+    /**
      * Bulk-deleting several activities at once must remove exactly those rows and
      * leave unrelated ones untouched.
      *

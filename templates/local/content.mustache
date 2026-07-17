@@ -18,11 +18,15 @@
     @template format_smartcards/local/content
 
     Main grid container for the SmartCards course format. Section 0 (General) always
-    renders plain, outside any special navigation. Sections 1+ render one of four ways
+    renders plain, outside any special navigation. Sections 1+ render one of five ways
     depending on navstyle: plain (default/sticky — identical markup, sticky only differs
     by a CSS class making each section heading position: sticky while scrolling),
-    collapsible (accordion), or as Bootstrap tabs (tabs) — never more than one of
-    isaccordion/istabs/issticky is true at once.
+    collapsible (accordion), as Bootstrap tabs (tabs), or as a grid of section cards
+    (sectioncards) — never more than one of isaccordion/istabs/issticky/issectioncards is
+    true at once. In sectioncards mode, each section's own cards/availability are still
+    rendered (hidden) alongside its card button, for amd/src/section_modal.js to move
+    into a full-screen modal on tap — the exact same availability+cm_grid pairing every
+    other navstyle already renders inline, just hidden instead of shown directly.
 
     Example context (json):
     {
@@ -35,6 +39,7 @@
         "isaccordion": true,
         "istabs": false,
         "issticky": false,
+        "issectioncards": false,
         "sections": [
             {
                 "id": 10,
@@ -47,6 +52,8 @@
                 "isactivetab": false,
                 "hasprogress": true,
                 "progresslabel": "Progress: 2 / 5",
+                "issectioncard": false,
+                "sectioncard": null,
                 "availability": {
                     "hasavailability": false
                 },
@@ -78,7 +85,7 @@
 }}
 <div
     id="{{uniqid}}"
-    class="sc-course {{cardsizeclass}} {{noframeclass}} {{#issticky}}sc-sticky{{/issticky}}"
+    class="sc-course {{cardsizeclass}} {{noframeclass}} {{#issticky}}sc-sticky{{/issticky}} {{#issectioncards}}sc-sectioncards{{/issectioncards}}"
     data-region="smartcards-content"
 >
     {{#hassections}}
@@ -94,99 +101,121 @@
             {{/issection0}}
         {{/sections}}
 
-        {{#istabs}}
-            <ul class="nav nav-tabs sc-tabs" role="tablist">
+        {{#issectioncards}}
+            <div class="sc-grid sc-section-cards-grid">
                 {{#sections}}
-                    {{^issection0}}
-                    <li class="nav-item" role="presentation">
-                        <button
-                            type="button"
-                            class="nav-link {{#isactivetab}}active{{/isactivetab}}"
-                            id="sc-tab-{{id}}"
-                            data-toggle="tab"
-                            data-bs-toggle="tab"
-                            data-target="#sc-tab-pane-{{id}}"
-                            data-bs-target="#sc-tab-pane-{{id}}"
-                            role="tab"
-                            aria-controls="sc-tab-pane-{{id}}"
-                            aria-selected="{{#isactivetab}}true{{/isactivetab}}{{^isactivetab}}false{{/isactivetab}}"
-                        >
-                            <span class="sc-tabs-name">{{name}}</span>
-                            {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
-                        </button>
-                    </li>
-                    {{/issection0}}
-                {{/sections}}
-            </ul>
-            <div class="tab-content">
-                {{#sections}}
-                    {{^issection0}}
-                    <div
-                        class="tab-pane fade {{#isactivetab}}show active{{/isactivetab}}"
-                        id="sc-tab-pane-{{id}}"
-                        role="tabpanel"
-                        aria-labelledby="sc-tab-{{id}}"
-                    >
-                        {{#availability}}
-                            {{> core_courseformat/local/content/section/availability }}
-                        {{/availability}}
-                        {{> format_smartcards/local/cm_grid }}
+                    {{#issectioncard}}
+                    <div class="sc-section-card-wrap">
+                        {{#sectioncard}}
+                            {{> format_smartcards/local/section_card_button }}
+                        {{/sectioncard}}
+                        <div class="sc-section-modal-source" data-region="smartcards-section-modal-source" data-sectionid="{{id}}" hidden>
+                            {{#availability}}
+                                {{> core_courseformat/local/content/section/availability }}
+                            {{/availability}}
+                            {{> format_smartcards/local/cm_grid }}
+                        </div>
                     </div>
-                    {{/issection0}}
+                    {{/issectioncard}}
                 {{/sections}}
             </div>
-        {{/istabs}}
+        {{/issectioncards}}
 
-        {{^istabs}}
-            {{#sections}}
-                {{^issection0}}
-                <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
-                    {{#iscollapsible}}
-                    <h3 class="sc-section-title sc-accordion-title" id="sc-section-title-{{id}}">
-                        <button
-                            type="button"
-                            class="sc-accordion-toggle {{^isopen}}collapsed{{/isopen}}"
-                            data-toggle="collapse"
-                            data-bs-toggle="collapse"
-                            data-target="#sc-accordion-body-{{id}}"
-                            data-bs-target="#sc-accordion-body-{{id}}"
-                            aria-expanded="{{#isopen}}true{{/isopen}}{{^isopen}}false{{/isopen}}"
-                            aria-controls="sc-accordion-body-{{id}}"
+        {{^issectioncards}}
+            {{#istabs}}
+                <ul class="nav nav-tabs sc-tabs" role="tablist">
+                    {{#sections}}
+                        {{^issection0}}
+                        <li class="nav-item" role="presentation">
+                            <button
+                                type="button"
+                                class="nav-link {{#isactivetab}}active{{/isactivetab}}"
+                                id="sc-tab-{{id}}"
+                                data-toggle="tab"
+                                data-bs-toggle="tab"
+                                data-target="#sc-tab-pane-{{id}}"
+                                data-bs-target="#sc-tab-pane-{{id}}"
+                                role="tab"
+                                aria-controls="sc-tab-pane-{{id}}"
+                                aria-selected="{{#isactivetab}}true{{/isactivetab}}{{^isactivetab}}false{{/isactivetab}}"
+                            >
+                                <span class="sc-tabs-name">{{name}}</span>
+                                {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
+                            </button>
+                        </li>
+                        {{/issection0}}
+                    {{/sections}}
+                </ul>
+                <div class="tab-content">
+                    {{#sections}}
+                        {{^issection0}}
+                        <div
+                            class="tab-pane fade {{#isactivetab}}show active{{/isactivetab}}"
+                            id="sc-tab-pane-{{id}}"
+                            role="tabpanel"
+                            aria-labelledby="sc-tab-{{id}}"
                         >
-                            <span class="sc-accordion-chevron-collapsed" aria-hidden="true">
-                                {{#pix}} t/collapsedchevron, core {{/pix}}
-                            </span>
-                            <span class="sc-accordion-chevron-expanded" aria-hidden="true">
-                                {{#pix}} t/expandedchevron, core {{/pix}}
-                            </span>
-                            <span class="sc-accordion-name">{{name}}</span>
-                            {{#hasprogress}}
-                            <span class="sc-progress-label">{{progresslabel}}</span>
-                            {{/hasprogress}}
-                        </button>
-                    </h3>
-                    {{/iscollapsible}}
-                    {{^iscollapsible}}
-                    <h3 class="sc-section-title" id="sc-section-title-{{id}}">
-                        <span class="sc-section-name">{{name}}</span>
-                        {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
-                    </h3>
-                    {{/iscollapsible}}
+                            {{#availability}}
+                                {{> core_courseformat/local/content/section/availability }}
+                            {{/availability}}
+                            {{> format_smartcards/local/cm_grid }}
+                        </div>
+                        {{/issection0}}
+                    {{/sections}}
+                </div>
+            {{/istabs}}
 
-                    <div{{#iscollapsible}}
-                        id="sc-accordion-body-{{id}}"
-                        class="collapse {{#isopen}}show{{/isopen}}"
-                        data-region="smartcards-accordion-body"
-                        data-sectionid="{{id}}"
-                    {{/iscollapsible}}>
-                        {{#availability}}
-                            {{> core_courseformat/local/content/section/availability }}
-                        {{/availability}}
-                        {{> format_smartcards/local/cm_grid }}
-                    </div>
-                </section>
-                {{/issection0}}
-            {{/sections}}
-        {{/istabs}}
+            {{^istabs}}
+                {{#sections}}
+                    {{^issection0}}
+                    <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
+                        {{#iscollapsible}}
+                        <h3 class="sc-section-title sc-accordion-title" id="sc-section-title-{{id}}">
+                            <button
+                                type="button"
+                                class="sc-accordion-toggle {{^isopen}}collapsed{{/isopen}}"
+                                data-toggle="collapse"
+                                data-bs-toggle="collapse"
+                                data-target="#sc-accordion-body-{{id}}"
+                                data-bs-target="#sc-accordion-body-{{id}}"
+                                aria-expanded="{{#isopen}}true{{/isopen}}{{^isopen}}false{{/isopen}}"
+                                aria-controls="sc-accordion-body-{{id}}"
+                            >
+                                <span class="sc-accordion-chevron-collapsed" aria-hidden="true">
+                                    {{#pix}} t/collapsedchevron, core {{/pix}}
+                                </span>
+                                <span class="sc-accordion-chevron-expanded" aria-hidden="true">
+                                    {{#pix}} t/expandedchevron, core {{/pix}}
+                                </span>
+                                <span class="sc-accordion-name">{{name}}</span>
+                                {{#hasprogress}}
+                                <span class="sc-progress-label">{{progresslabel}}</span>
+                                {{/hasprogress}}
+                            </button>
+                        </h3>
+                        {{/iscollapsible}}
+                        {{^iscollapsible}}
+                        <h3 class="sc-section-title" id="sc-section-title-{{id}}">
+                            <span class="sc-section-name">{{name}}</span>
+                            {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
+                        </h3>
+                        {{/iscollapsible}}
+
+                        <div{{#iscollapsible}}
+                            id="sc-accordion-body-{{id}}"
+                            class="collapse {{#isopen}}show{{/isopen}}"
+                            data-region="smartcards-accordion-body"
+                            data-sectionid="{{id}}"
+                        {{/iscollapsible}}>
+                            {{#availability}}
+                                {{> core_courseformat/local/content/section/availability }}
+                            {{/availability}}
+                            {{> format_smartcards/local/cm_grid }}
+                        </div>
+                    </section>
+                    {{/issection0}}
+                {{/sections}}
+            {{/istabs}}
+        {{/issectioncards}}
     {{/hassections}}
 </div>

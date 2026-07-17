@@ -18,52 +18,53 @@ namespace format_smartcards\external;
 
 use core_external\external_api;
 use format_smartcards\local\appearance_image_store;
-use format_smartcards\local\appearance_repository;
 use format_smartcards\local\appearance_palette;
+use format_smartcards\local\appearance_repository;
 use invalid_parameter_exception;
 
 /**
- * Tests for the SmartCards save_appearance external function.
+ * Tests for the SmartCards save_section_appearance external function.
  *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\external\save_appearance
+ * @coversDefaultClass \format_smartcards\external\save_section_appearance
  */
-final class save_appearance_test extends \advanced_testcase {
+final class save_section_appearance_test extends \advanced_testcase {
     /** @var string Base64-encoded 1x1 transparent PNG, small enough to always pass the size check. */
     private const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
     /**
-     * Creates a course with one page activity and a teacher enrolled in it.
+     * Creates a course with one section and a teacher enrolled in it.
      *
-     * @return array{0: \stdClass, 1: \stdClass, 2: \stdClass} Course, page cm record, teacher.
+     * @return array{0: \stdClass, 1: int, 2: \stdClass} Course, sectionid, teacher.
      */
     private function create_course_with_teacher(): array {
         $generator = $this->getDataGenerator();
-        $course    = $generator->create_course();
-        $page      = $generator->create_module('page', ['course' => $course->id]);
+        $course    = $generator->create_course(['numsections' => 1]);
         $teacher   = $generator->create_and_enrol($course, 'editingteacher');
-        return [$course, $page, $teacher];
+        $sectionid = (int)get_fast_modinfo($course)->get_section_info(1)->id;
+        return [$course, $sectionid, $teacher];
     }
 
     /**
-     * A teacher saving an emoji appearance must get back a fully rendered card whose
-     * emoji fields reflect what was just saved.
+     * A teacher saving an emoji appearance must get back a fully rendered section card
+     * whose emoji fields reflect what was just saved.
      *
      * @covers ::execute
      */
     public function test_teacher_can_save_emoji_appearance(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
-        $result = save_appearance::execute($page->cmid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
-        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+        $result = save_section_appearance::execute($sectionid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+        $result = external_api::clean_returnvalue(save_section_appearance::execute_returns(), $result);
 
-        $this->assertSame($page->cmid, $result['cmid']);
+        $this->assertSame($sectionid, $result['id']);
         $this->assertTrue($result['isemoji']);
         $this->assertSame('🎉', $result['emoji']);
+        $this->assertFalse($result['islocked']);
     }
 
     /**
@@ -73,50 +74,44 @@ final class save_appearance_test extends \advanced_testcase {
      */
     public function test_colour_and_font_are_reflected_in_returned_styles(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
         $bgcolor    = '#e0f2ff';
         $labelcolor = appearance_palette::LABEL_COLORS['blue'];
 
-        $result = save_appearance::execute(
-            $page->cmid,
+        $result = save_section_appearance::execute(
+            $sectionid,
             appearance_repository::TYPE_ICON,
             'book',
             $bgcolor,
             $labelcolor,
             'nunito'
         );
-        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+        $result = external_api::clean_returnvalue(save_section_appearance::execute_returns(), $result);
 
         $this->assertStringContainsString($bgcolor, $result['iconstyle']);
         $this->assertStringContainsString($labelcolor, $result['titlestyle']);
         $this->assertStringContainsString('Nunito', $result['titlestyle']);
-        // Icon glyph rendering is not wired into the card yet (bundled in a later
-        // step), so the icon type must not be reported as an emoji.
-        $this->assertFalse($result['isemoji']);
     }
 
     /**
-     * A user with the capability in a completely different course must be rejected for
-     * a cmid outside that course — the check must be bound to the specific course the
-     * cmid resolves to server-side, never a global check. validate_context() rejects
-     * this even earlier than a capability check would, since the teacher is not even
-     * enrolled in the module's real course.
+     * A user with the capability in a completely different course must be rejected for a
+     * sectionid outside that course.
      *
      * @covers ::execute
      */
-    public function test_rejects_user_without_access_to_the_modules_course(): void {
+    public function test_rejects_user_without_access_to_the_sections_course(): void {
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();
 
-        [, $pageincourseb] = $this->create_course_with_teacher();
+        [, $sectionidincourseb] = $this->create_course_with_teacher();
         $coursea  = $generator->create_course();
         $teachera = $generator->create_and_enrol($coursea, 'editingteacher');
 
         $this->setUser($teachera);
         $this->expectException(\require_login_exception::class);
-        save_appearance::execute($pageincourseb->cmid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+        save_section_appearance::execute($sectionidincourseb, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
     }
 
     /**
@@ -127,56 +122,55 @@ final class save_appearance_test extends \advanced_testcase {
     public function test_rejects_student(): void {
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();
-        $course    = $generator->create_course();
-        $page      = $generator->create_module('page', ['course' => $course->id]);
+        $course    = $generator->create_course(['numsections' => 1]);
+        $sectionid = (int)get_fast_modinfo($course)->get_section_info(1)->id;
         $student   = $generator->create_and_enrol($course, 'student');
 
         $this->setUser($student);
         $this->expectException(\required_capability_exception::class);
-        save_appearance::execute($page->cmid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+        save_section_appearance::execute($sectionid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
     }
 
     /**
-     * An invalid value for the given type (e.g. plain text for an emoji) must be
-     * rejected server-side, not just trusted from the client.
+     * An invalid value for the given type must be rejected server-side.
      *
      * @covers ::execute
      */
     public function test_rejects_invalid_value_for_type(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
         $this->expectException(\invalid_parameter_exception::class);
-        save_appearance::execute($page->cmid, appearance_repository::TYPE_EMOJI, 'not an emoji', '', '', '');
+        save_section_appearance::execute($sectionid, appearance_repository::TYPE_EMOJI, 'not an emoji', '', '', '');
     }
 
     /**
-     * A non-existent cmid must be rejected before any capability check or write.
+     * A non-existent sectionid must be rejected before any capability check or write.
      *
      * @covers ::execute
      */
-    public function test_rejects_nonexistent_cmid(): void {
+    public function test_rejects_nonexistent_sectionid(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
         $this->expectException(\dml_exception::class);
-        save_appearance::execute(999999, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+        save_section_appearance::execute(999999, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
     }
 
     /**
-     * Uploading an image must store it via the File API and return a card whose custom
-     * icon fields point at it.
+     * Uploading an image must store it via the File API (course context, section-scoped
+     * file area) and return a card whose custom icon fields point at it.
      *
      * @covers ::execute
      */
     public function test_teacher_can_upload_image_appearance(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [$course, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
-        $result = save_appearance::execute(
-            $page->cmid,
+        $result = save_section_appearance::execute(
+            $sectionid,
             appearance_repository::TYPE_IMAGE,
             '',
             '',
@@ -184,29 +178,39 @@ final class save_appearance_test extends \advanced_testcase {
             '',
             self::TINY_PNG_BASE64
         );
-        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+        $result = external_api::clean_returnvalue(save_section_appearance::execute_returns(), $result);
 
         $this->assertTrue($result['iscustomicon']);
         $this->assertNotSame('', $result['customiconurl']);
-        $this->assertNotNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
+        $this->assertNotNull(
+            appearance_image_store::resolve_for_serving_section($sectionid, $course->id, 'sectioncardimage')
+        );
     }
 
     /**
-     * Re-saving an image appearance (e.g. only to tweak the title colour) without
-     * uploading a new file must keep the previously stored image untouched.
+     * Re-saving an image appearance without uploading a new file must keep the previously
+     * stored image untouched.
      *
      * @covers ::execute
      */
     public function test_resaving_without_a_new_upload_keeps_the_existing_image(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [$course, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
-        save_appearance::execute($page->cmid, appearance_repository::TYPE_IMAGE, '', '', '', '', self::TINY_PNG_BASE64);
-        $firstfile = appearance_image_store::resolve_for_serving($page->cmid, 'cardimage');
+        save_section_appearance::execute(
+            $sectionid,
+            appearance_repository::TYPE_IMAGE,
+            '',
+            '',
+            '',
+            '',
+            self::TINY_PNG_BASE64
+        );
+        $firstfile = appearance_image_store::resolve_for_serving_section($sectionid, $course->id, 'sectioncardimage');
 
-        save_appearance::execute(
-            $page->cmid,
+        save_section_appearance::execute(
+            $sectionid,
             appearance_repository::TYPE_IMAGE,
             '',
             '',
@@ -214,42 +218,52 @@ final class save_appearance_test extends \advanced_testcase {
             '',
             ''
         );
-        $secondfile = appearance_image_store::resolve_for_serving($page->cmid, 'cardimage');
+        $secondfile = appearance_image_store::resolve_for_serving_section($sectionid, $course->id, 'sectioncardimage');
 
         $this->assertSame($firstfile->get_id(), $secondfile->get_id());
     }
 
     /**
-     * Choosing image type without ever uploading anything must be rejected — there is
-     * nothing to render.
+     * Choosing image type without ever uploading anything must be rejected.
      *
      * @covers ::execute
      */
     public function test_image_type_without_any_upload_is_rejected(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
         $this->expectException(invalid_parameter_exception::class);
-        save_appearance::execute($page->cmid, appearance_repository::TYPE_IMAGE, '', '', '', '', '');
+        save_section_appearance::execute($sectionid, appearance_repository::TYPE_IMAGE, '', '', '', '', '');
     }
 
     /**
-     * Switching an activity away from image type must delete the now-orphaned stored
-     * file, not leave it behind.
+     * Switching a section away from image type must delete the now-orphaned stored file.
      *
      * @covers ::execute
      */
     public function test_switching_away_from_image_deletes_the_stored_file(): void {
         $this->resetAfterTest();
-        [, $page, $teacher] = $this->create_course_with_teacher();
+        [$course, $sectionid, $teacher] = $this->create_course_with_teacher();
         $this->setUser($teacher);
 
-        save_appearance::execute($page->cmid, appearance_repository::TYPE_IMAGE, '', '', '', '', self::TINY_PNG_BASE64);
-        $this->assertNotNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
+        save_section_appearance::execute(
+            $sectionid,
+            appearance_repository::TYPE_IMAGE,
+            '',
+            '',
+            '',
+            '',
+            self::TINY_PNG_BASE64
+        );
+        $this->assertNotNull(
+            appearance_image_store::resolve_for_serving_section($sectionid, $course->id, 'sectioncardimage')
+        );
 
-        save_appearance::execute($page->cmid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '', '');
+        save_section_appearance::execute($sectionid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '', '');
 
-        $this->assertNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
+        $this->assertNull(
+            appearance_image_store::resolve_for_serving_section($sectionid, $course->id, 'sectioncardimage')
+        );
     }
 }

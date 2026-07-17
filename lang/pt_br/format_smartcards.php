@@ -62,6 +62,7 @@ $string['navstyle'] = 'Estilo de navegação';
 $string['navstyle_accordion'] = 'Acordeão com progresso';
 $string['navstyle_default'] = 'Padrão';
 $string['navstyle_desc'] = 'Como as seções são exibidas e navegadas. Professores podem sobrescrever isso por curso.';
+$string['navstyle_sectioncards'] = 'Cards de seção';
 $string['navstyle_sticky'] = 'Cabeçalhos fixos ao rolar';
 $string['navstyle_tabs'] = 'Abas';
 $string['plugin_description'] = 'Exibe as atividades como botões/cards, reaproveitando a disponibilidade nativa do Moodle — sem atividades stealth.';
