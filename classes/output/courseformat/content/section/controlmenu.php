@@ -20,6 +20,7 @@ use core\output\action_menu\link_secondary;
 use core\output\pix_icon;
 use core\url;
 use core_courseformat\output\local\content\section\controlmenu as controlmenu_base;
+use format_smartcards\output\courseformat\content\controlmenu_insert;
 
 /**
  * Adds a "Card appearance" entry to the native per-section edit menu.
@@ -29,11 +30,21 @@ use core_courseformat\output\local\content\section\controlmenu as controlmenu_ba
  * edit mode, so the appearance editor is exposed through this menu instead, which core
  * already renders per section regardless of that fallback.
  *
+ * Computes the course context via {@see \core_courseformat\base::get_context()} (never
+ * $this->coursecontext, nor core's own {@see \core_courseformat\output\local\content\
+ * basecontrolmenu::add_control_after()}): both are Moodle 5.x-only additions to the
+ * base class the plugin's minimum-supported Moodle 4.5 does not have — this class was
+ * fatal on every edit-mode page load on a 4.5 site since it was first added, never
+ * caught because no test exercised this code path until the one added alongside this
+ * fix.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class controlmenu extends controlmenu_base {
+    use controlmenu_insert;
+
     /**
      * Returns the parent's edit control items plus a "Card appearance" entry, when the
      * current user can manage appearance in this section's course.
@@ -53,22 +64,56 @@ class controlmenu extends controlmenu_base {
     public function section_control_items(): array {
         $controls = parent::section_control_items();
 
-        if ($this->section->sectionnum == 0 || !has_capability('format/smartcards:manageappearance', $this->coursecontext)) {
+        $hascapability = has_capability('format/smartcards:manageappearance', $this->format->get_context());
+        if ($this->section->sectionnum == 0 || !$hascapability) {
             return $controls;
         }
 
-        $item = new link_secondary(
-            url: new url('#'),
-            icon: new pix_icon('t/edit', ''),
-            text: get_string('editappearance', 'format_smartcards'),
-            attributes: [
-                'class' => 'sc-edit-appearance-action',
-                'data-action' => 'smartcardsEditAppearance',
-                'data-sectionid' => (string)$this->section->id,
-                'data-name' => $this->format->get_section_name($this->section),
-            ],
-        );
+        $item = $this->build_appearance_item([
+            'class' => 'sc-edit-appearance-action',
+            'data-action' => 'smartcardsEditAppearance',
+            'data-sectionid' => (string)$this->section->id,
+            'data-name' => $this->format->get_section_name($this->section),
+        ]);
 
-        return $this->add_control_after($controls, 'edit', 'smartcardsappearance', $item);
+        return $this->insert_control_after($controls, 'edit', 'smartcardsappearance', $item);
+    }
+
+    /**
+     * Builds the "Card appearance" menu item, in whichever shape the running Moodle
+     * version's control-menu pipeline actually understands.
+     *
+     * Moodle 5.x's {@see \core_courseformat\output\local\content\basecontrolmenu::
+     * format_controls()} accepts a real menu-item object, normalizing a legacy array
+     * only as a fallback (with a debugging() notice — which fails PHPUnit's
+     * unexpected-debugging-call check, so it cannot be relied on here). Moodle 4.5's
+     * version of the same method has no such normalization: it unconditionally treats
+     * every item as an array (`$value['url']`), so passing an object there fails with
+     * "Cannot use object ... as array". method_exists() on add_control_after() (itself
+     * a Moodle 5.x-only addition to basecontrolmenu) is used as the version signal,
+     * since it correlates exactly with which format_controls() implementation is
+     * active — unlike the cm-level menu, which never goes through format_controls()
+     * and therefore always needs the object form regardless of version.
+     *
+     * @param array $attributes HTML attributes for the menu item's link.
+     * @return array|link_secondary
+     */
+    private function build_appearance_item(array $attributes): array|link_secondary {
+        if (method_exists($this, 'add_control_after')) {
+            return new link_secondary(
+                url: new url('#'),
+                icon: new pix_icon('t/edit', ''),
+                text: get_string('editappearance', 'format_smartcards'),
+                attributes: $attributes,
+            );
+        }
+
+        return [
+            'url' => '#',
+            'icon' => 't/edit',
+            'name' => get_string('editappearance', 'format_smartcards'),
+            'pixattr' => ['class' => ''],
+            'attr' => $attributes,
+        ];
     }
 }

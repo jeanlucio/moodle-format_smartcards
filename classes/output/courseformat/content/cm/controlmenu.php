@@ -20,6 +20,7 @@ use core\output\action_menu\link_secondary;
 use core\output\pix_icon;
 use core\url;
 use core_courseformat\output\local\content\cm\controlmenu as controlmenu_base;
+use format_smartcards\output\courseformat\content\controlmenu_insert;
 
 /**
  * Adds a "Card appearance" entry to the native per-activity edit menu.
@@ -31,22 +32,66 @@ use core_courseformat\output\local\content\cm\controlmenu as controlmenu_base;
  * on the card itself while editing; it is exposed instead through this menu, which core
  * already renders per activity regardless of that fallback.
  *
+ * Reads the module context off {@see cm_info::$context} (never $this->modcontext, nor
+ * core's own {@see \core_courseformat\output\local\content\basecontrolmenu::
+ * add_control_after()}): both are Moodle 5.x-only additions to the base class the
+ * plugin's minimum-supported Moodle 4.5 does not have, a real bug this class shipped
+ * with since it was first added — fatal on every edit-mode page load on a 4.5 site,
+ * never caught because nothing exercised this code path in a test until the section
+ * counterpart's own test found the same landmine there.
+ *
+ * Overrides two differently-named methods, not one, for the same reason:
+ * get_cm_control_items() (public) is Moodle 5.x's real path, taken whenever a format
+ * opts into supports_components() (format_smartcards always does); cm_control_items()
+ * (protected) is Moodle 4.5's *only* method for this — it has no get_cm_control_items()
+ * at all — and is kept on 5.x too, deprecated, purely as a fallback for formats that
+ * opt out of components (format_smartcards never does, so that override is simply dead
+ * code there, but costs nothing and keeps Moodle 4.5 working without a second class).
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class controlmenu extends controlmenu_base {
+    use controlmenu_insert;
+
     /**
      * Returns the parent's edit control items plus a "Card appearance" entry, when the
-     * current user can manage appearance in this module's course.
+     * current user can manage appearance in this module's course. Moodle 5.x path.
+     *
+     * Deliberately not marked #[\Override]: this method does not exist anywhere in the
+     * Moodle 4.5 class hierarchy (see this class's docblock), so the attribute would be
+     * a hard class-load error there under PHP 8.3+, where #[\Override] is actually
+     * enforced (a no-op on the PHP 8.2 this plugin's own CI runs, which is exactly why
+     * that risk went unnoticed until reasoned through here).
+     *
+     * @return array|null Edit control items, keyed by action name.
+     */
+    public function get_cm_control_items(): ?array {
+        return $this->add_appearance_control(parent::get_cm_control_items());
+    }
+
+    /**
+     * Same as {@see get_cm_control_items()}, but for Moodle 4.5's differently-named,
+     * non-deprecated equivalent (and 5.x's deprecated fallback for the same method —
+     * see this class's docblock).
      *
      * @return array|null Edit control items, keyed by action name.
      */
     #[\Override]
-    public function get_cm_control_items(): ?array {
-        $controls = parent::get_cm_control_items();
+    protected function cm_control_items() {
+        return $this->add_appearance_control(parent::cm_control_items());
+    }
 
-        if (!has_capability('format/smartcards:manageappearance', $this->modcontext)) {
+    /**
+     * Adds the "Card appearance" entry to an already-built control array, when the
+     * current user can manage appearance in this module's course.
+     *
+     * @param array|null $controls Edit control items, keyed by action name.
+     * @return array|null
+     */
+    private function add_appearance_control(?array $controls): ?array {
+        if (!has_capability('format/smartcards:manageappearance', $this->mod->context)) {
             return $controls;
         }
 
@@ -62,6 +107,6 @@ class controlmenu extends controlmenu_base {
             ],
         );
 
-        return $this->add_control_after($controls, 'update', 'smartcardsappearance', $item);
+        return $this->insert_control_after($controls ?? [], 'update', 'smartcardsappearance', $item);
     }
 }
