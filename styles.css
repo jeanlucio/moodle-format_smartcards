@@ -149,7 +149,16 @@
 
 .format-smartcards .sc-course.sc-sticky .sc-section-title {
     position: sticky;
-    inset-block-start: 0;
+    /*
+     * Boost's own fixed top navbar ($navbar-height, theme/boost/scss/moodle/variables.scss)
+     * is 60px and painted above everything else on the page (core itself offsets by the
+     * same amount for its own sticky elements, e.g. #quiz-timer-wrapper and the mod_assign
+     * grading table header, theme/boost/scss/moodle/modules.scss) — inset-block-start: 0
+     * sticks this heading exactly behind that navbar instead of below it, so it never
+     * visibly holds in place. This file is plain CSS, not SCSS, so the $navbar-height
+     * variable itself isn't reachable; 60px mirrors its default value.
+     */
+    inset-block-start: 60px;
     z-index: 2;
     background-color: var(--body-bg, #fff);
     padding-block: 0.5rem;
