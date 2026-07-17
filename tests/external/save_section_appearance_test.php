@@ -25,10 +25,14 @@ use invalid_parameter_exception;
 /**
  * Tests for the SmartCards save_section_appearance external function.
  *
+ * Coverage is declared once at class level (not per test method) so that execute_parameters()
+ * and execute_returns() are correctly attributed to this test suite instead of being silently
+ * excluded by php-code-coverage's per-method coverage-annotation line filtering.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\external\save_section_appearance
+ * @covers \format_smartcards\external\save_section_appearance
  */
 final class save_section_appearance_test extends \advanced_testcase {
     /** @var string Base64-encoded 1x1 transparent PNG, small enough to always pass the size check. */
@@ -50,8 +54,6 @@ final class save_section_appearance_test extends \advanced_testcase {
     /**
      * A teacher saving an emoji appearance must get back a fully rendered section card
      * whose emoji fields reflect what was just saved.
-     *
-     * @covers ::execute
      */
     public function test_teacher_can_save_emoji_appearance(): void {
         $this->resetAfterTest();
@@ -69,8 +71,6 @@ final class save_section_appearance_test extends \advanced_testcase {
 
     /**
      * Colour and font fields must round-trip into the returned card's inline styles.
-     *
-     * @covers ::execute
      */
     public function test_colour_and_font_are_reflected_in_returned_styles(): void {
         $this->resetAfterTest();
@@ -98,8 +98,6 @@ final class save_section_appearance_test extends \advanced_testcase {
     /**
      * A user with the capability in a completely different course must be rejected for a
      * sectionid outside that course.
-     *
-     * @covers ::execute
      */
     public function test_rejects_user_without_access_to_the_sections_course(): void {
         $this->resetAfterTest();
@@ -116,8 +114,6 @@ final class save_section_appearance_test extends \advanced_testcase {
 
     /**
      * A plain student, who never has the capability, must be rejected.
-     *
-     * @covers ::execute
      */
     public function test_rejects_student(): void {
         $this->resetAfterTest();
@@ -138,8 +134,6 @@ final class save_section_appearance_test extends \advanced_testcase {
      * the first place (content/section/controlmenu.php), but that is a UI-only
      * guarantee; this proves the server itself refuses a direct call too, not just the
      * menu hiding the entry.
-     *
-     * @covers ::execute
      */
     public function test_rejects_section_zero(): void {
         $this->resetAfterTest();
@@ -157,8 +151,6 @@ final class save_section_appearance_test extends \advanced_testcase {
      * When the course's generalinstyle option opts section 0 into the active navstyle,
      * saving its appearance must succeed — the opposite of test_rejects_section_zero()'s
      * default-off behaviour.
-     *
-     * @covers ::execute
      */
     public function test_allows_section_zero_when_generalinstyle_enabled(): void {
         $this->resetAfterTest();
@@ -178,8 +170,6 @@ final class save_section_appearance_test extends \advanced_testcase {
 
     /**
      * An invalid value for the given type must be rejected server-side.
-     *
-     * @covers ::execute
      */
     public function test_rejects_invalid_value_for_type(): void {
         $this->resetAfterTest();
@@ -192,8 +182,6 @@ final class save_section_appearance_test extends \advanced_testcase {
 
     /**
      * A non-existent sectionid must be rejected before any capability check or write.
-     *
-     * @covers ::execute
      */
     public function test_rejects_nonexistent_sectionid(): void {
         $this->resetAfterTest();
@@ -206,8 +194,6 @@ final class save_section_appearance_test extends \advanced_testcase {
     /**
      * Uploading an image must store it via the File API (course context, section-scoped
      * file area) and return a card whose custom icon fields point at it.
-     *
-     * @covers ::execute
      */
     public function test_teacher_can_upload_image_appearance(): void {
         $this->resetAfterTest();
@@ -235,8 +221,6 @@ final class save_section_appearance_test extends \advanced_testcase {
     /**
      * Re-saving an image appearance without uploading a new file must keep the previously
      * stored image untouched.
-     *
-     * @covers ::execute
      */
     public function test_resaving_without_a_new_upload_keeps_the_existing_image(): void {
         $this->resetAfterTest();
@@ -270,8 +254,6 @@ final class save_section_appearance_test extends \advanced_testcase {
 
     /**
      * Choosing image type without ever uploading anything must be rejected.
-     *
-     * @covers ::execute
      */
     public function test_image_type_without_any_upload_is_rejected(): void {
         $this->resetAfterTest();
@@ -284,8 +266,6 @@ final class save_section_appearance_test extends \advanced_testcase {
 
     /**
      * Switching a section away from image type must delete the now-orphaned stored file.
-     *
-     * @covers ::execute
      */
     public function test_switching_away_from_image_deletes_the_stored_file(): void {
         $this->resetAfterTest();

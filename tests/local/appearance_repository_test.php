@@ -21,17 +21,19 @@ use invalid_parameter_exception;
 /**
  * Tests for the SmartCards appearance_repository.
  *
+ * Coverage is declared once at class level (not per test method) so that private helpers
+ * reached only via delegation from these public methods (e.g. save_for_item()) are correctly
+ * attributed to this test suite instead of being silently excluded by php-code-coverage's
+ * per-method coverage-annotation line filtering.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\appearance_repository
+ * @covers \format_smartcards\local\appearance_repository
  */
 final class appearance_repository_test extends \advanced_testcase {
     /**
      * Saving a new activity appearance, then reading it back, must return the same values.
-     *
-     * @covers ::save_for_activity
-     * @covers ::get_for_activity
      */
     public function test_save_and_get_roundtrip(): void {
         $this->resetAfterTest();
@@ -63,8 +65,6 @@ final class appearance_repository_test extends \advanced_testcase {
      * Saving a second time for the same cmid must update the existing row (upsert),
      * never insert a duplicate — the table's unique key on (contextlevel, itemid)
      * would otherwise be violated.
-     *
-     * @covers ::save_for_activity
      */
     public function test_save_twice_upserts_same_row(): void {
         $this->resetAfterTest();
@@ -79,8 +79,6 @@ final class appearance_repository_test extends \advanced_testcase {
 
     /**
      * An unknown appearance type must be rejected before anything is written.
-     *
-     * @covers ::save_for_activity
      */
     public function test_invalid_type_is_rejected(): void {
         $this->resetAfterTest();
@@ -91,8 +89,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * A value that is not a single emoji grapheme must be rejected for type=emoji —
      * the browser's native picker is not trusted as the only validation (SCOPE.md §8).
-     *
-     * @covers ::save_for_activity
      */
     public function test_emoji_type_rejects_plain_text(): void {
         $this->resetAfterTest();
@@ -102,8 +98,6 @@ final class appearance_repository_test extends \advanced_testcase {
 
     /**
      * A single emoji grapheme, including a multi-codepoint ZWJ sequence, must be accepted.
-     *
-     * @covers ::save_for_activity
      */
     public function test_emoji_type_accepts_single_emoji(): void {
         $this->resetAfterTest();
@@ -122,8 +116,6 @@ final class appearance_repository_test extends \advanced_testcase {
      * TYPE_DEFAULT must be accepted with an empty value, so a teacher can customise
      * only bgcolor/labelcolor/labelfont while keeping the activity's default
      * per-module-type icon, without being forced to also pick an emoji or icon.
-     *
-     * @covers ::save_for_activity
      */
     public function test_default_type_accepts_empty_value_with_colours(): void {
         $this->resetAfterTest();
@@ -145,8 +137,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * An icon name containing anything other than lowercase letters, digits and
      * hyphens must be rejected.
-     *
-     * @covers ::save_for_activity
      */
     public function test_icon_type_rejects_unsafe_value(): void {
         $this->resetAfterTest();
@@ -163,8 +153,6 @@ final class appearance_repository_test extends \advanced_testcase {
 
     /**
      * An image value that is not a plain numeric fileid must be rejected.
-     *
-     * @covers ::save_for_activity
      */
     public function test_image_type_rejects_non_numeric_value(): void {
         $this->resetAfterTest();
@@ -182,8 +170,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * A malformed bgcolor must be rejected, even though bgcolor is not restricted to
      * the curated palette (unlike labelcolor).
-     *
-     * @covers ::save_for_activity
      */
     public function test_malformed_bgcolor_is_rejected(): void {
         $this->resetAfterTest();
@@ -194,8 +180,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * The literal 'transparent' is not a #RRGGBB value but must still be accepted, so a
      * teacher can make the icon circle blend into the card instead of picking a colour.
-     *
-     * @covers ::save_for_activity
      */
     public function test_transparent_bgcolor_is_accepted(): void {
         $this->resetAfterTest();
@@ -215,8 +199,6 @@ final class appearance_repository_test extends \advanced_testcase {
      * A labelcolor outside the curated palette must be rejected, even if it is a
      * well-formed #RRGGBB value — the palette is the whole point (pre-validated
      * contrast, never a free colour picker).
-     *
-     * @covers ::save_for_activity
      */
     public function test_labelcolor_outside_palette_is_rejected(): void {
         $this->resetAfterTest();
@@ -226,8 +208,6 @@ final class appearance_repository_test extends \advanced_testcase {
 
     /**
      * A labelfont slug outside the curated palette must be rejected.
-     *
-     * @covers ::save_for_activity
      */
     public function test_labelfont_outside_palette_is_rejected(): void {
         $this->resetAfterTest();
@@ -238,8 +218,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * Deleting an activity's appearance must remove the row and leave get_for_activity()
      * returning null.
-     *
-     * @covers ::delete_for_activity
      */
     public function test_delete_for_activity_removes_row(): void {
         $this->resetAfterTest();
@@ -254,8 +232,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * Bulk-loading several activities at once must return only the ones that have a
      * custom appearance, keyed by cmid, without issuing one query per cmid.
-     *
-     * @covers ::get_many_for_activities
      */
     public function test_get_many_for_activities_returns_only_configured_items(): void {
         $this->resetAfterTest();
@@ -276,8 +252,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * Bulk-loading several sections at once must return only the ones that have a
      * custom appearance, keyed by sectionid, mirroring get_many_for_activities().
-     *
-     * @covers ::get_many_for_sections
      */
     public function test_get_many_for_sections_returns_only_configured_items(): void {
         $this->resetAfterTest();
@@ -298,8 +272,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * Bulk-deleting several activities at once must remove exactly those rows and
      * leave unrelated ones untouched.
-     *
-     * @covers ::delete_for_activities
      */
     public function test_delete_for_activities_removes_only_given_items(): void {
         $this->resetAfterTest();
@@ -319,9 +291,6 @@ final class appearance_repository_test extends \advanced_testcase {
     /**
      * Activity and section appearance rows must be isolated by contextlevel, even
      * when they share the same itemid value.
-     *
-     * @covers ::save_for_activity
-     * @covers ::get_for_section
      */
     public function test_activity_and_section_contexts_are_isolated(): void {
         $this->resetAfterTest();

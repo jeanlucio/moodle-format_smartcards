@@ -21,10 +21,15 @@ use invalid_parameter_exception;
 /**
  * Tests for the SmartCards appearance_image_store.
  *
+ * Coverage is declared once at class level (not per test method) so that private helpers
+ * reached only via delegation from these public methods are correctly attributed to this
+ * test suite instead of being silently excluded by php-code-coverage's per-method
+ * coverage-annotation line filtering.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\appearance_image_store
+ * @covers \format_smartcards\local\appearance_image_store
  */
 final class appearance_image_store_test extends \advanced_testcase {
     /** @var string Base64-encoded 1x1 transparent PNG, small enough to always pass the size check. */
@@ -44,9 +49,6 @@ final class appearance_image_store_test extends \advanced_testcase {
 
     /**
      * A valid small image must be stored and become servable straight after.
-     *
-     * @covers ::store
-     * @covers ::resolve_for_serving
      */
     public function test_store_and_resolve_for_serving_roundtrip(): void {
         $this->resetAfterTest();
@@ -63,8 +65,6 @@ final class appearance_image_store_test extends \advanced_testcase {
     /**
      * url() must build a deterministic pluginfile URL without needing a file to exist,
      * so the grid renderer never needs an extra File API call per card.
-     *
-     * @covers ::url
      */
     public function test_url_does_not_require_a_stored_file(): void {
         $this->resetAfterTest();
@@ -81,8 +81,6 @@ final class appearance_image_store_test extends \advanced_testcase {
      * A $rev value must change the URL, so a replaced image never keeps serving a
      * browser-cached copy of the old one at an unchanged URL (the fixed filename/itemid
      * pluginfile URL is otherwise byte-identical before and after a re-upload).
-     *
-     * @covers ::url
      */
     public function test_url_with_rev_changes_when_rev_changes(): void {
         $this->resetAfterTest();
@@ -102,8 +100,6 @@ final class appearance_image_store_test extends \advanced_testcase {
     /**
      * Storing a new image for the same module must replace the old one, not create a
      * second file alongside it.
-     *
-     * @covers ::store
      */
     public function test_store_replaces_the_previous_image(): void {
         $this->resetAfterTest();
@@ -120,8 +116,6 @@ final class appearance_image_store_test extends \advanced_testcase {
     /**
      * delete() must remove the stored image; calling it again (or when nothing was ever
      * stored) must be a harmless no-op.
-     *
-     * @covers ::delete
      */
     public function test_delete_removes_the_image_and_is_idempotent(): void {
         $this->resetAfterTest();
@@ -138,8 +132,6 @@ final class appearance_image_store_test extends \advanced_testcase {
 
     /**
      * Malformed base64 must be rejected before any File API write is attempted.
-     *
-     * @covers ::store
      */
     public function test_store_rejects_invalid_base64(): void {
         $this->resetAfterTest();
@@ -151,8 +143,6 @@ final class appearance_image_store_test extends \advanced_testcase {
 
     /**
      * Well-formed base64 that does not decode to a real image must be rejected.
-     *
-     * @covers ::store
      */
     public function test_store_rejects_non_image_data(): void {
         $this->resetAfterTest();
@@ -165,8 +155,6 @@ final class appearance_image_store_test extends \advanced_testcase {
     /**
      * An upload larger than the configured maximum must be rejected, even before the
      * bytes are checked for being a valid image.
-     *
-     * @covers ::store
      */
     public function test_store_rejects_oversized_upload(): void {
         $this->resetAfterTest();
@@ -180,8 +168,6 @@ final class appearance_image_store_test extends \advanced_testcase {
 
     /**
      * resolve_for_serving() must reject any file area other than its own.
-     *
-     * @covers ::resolve_for_serving
      */
     public function test_resolve_for_serving_rejects_unknown_filearea(): void {
         $this->resetAfterTest();
