@@ -17,8 +17,10 @@
 {{!
     @template format_smartcards/local/content
 
-    Main grid container for the SmartCards course format. Section 0 (General) always
-    renders plain, outside any special navigation. Sections 1+ render one of six ways
+    Main grid container for the SmartCards course format. Section 0 (General) renders
+    plain, outside any special navigation, unless generalinstyle opted it into the
+    active navstyle instead (per-section 'plainsection' field — true only for section 0
+    when it has not opted in). Every other section always renders one of six ways
     depending on navstyle: plain (default/sticky — identical markup, sticky only differs
     by a CSS class making each section heading position: sticky while scrolling),
     collapsible (accordion), as Bootstrap tabs (tabs), as a winding single-column trail
@@ -49,6 +51,7 @@
                 "num": 1,
                 "name": "Topic 1",
                 "issection0": false,
+                "plainsection": false,
                 "hascards": true,
                 "iscollapsible": true,
                 "isopen": true,
@@ -93,7 +96,7 @@
 >
     {{#hassections}}
         {{#sections}}
-            {{#issection0}}
+            {{#plainsection}}
                 <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
                     <h3 class="sc-section-title" id="sc-section-title-{{id}}">{{name}}</h3>
                     {{#availability}}
@@ -101,7 +104,7 @@
                     {{/availability}}
                     {{> format_smartcards/local/cm_grid }}
                 </section>
-            {{/issection0}}
+            {{/plainsection}}
         {{/sections}}
 
         {{#issectioncards}}
@@ -128,7 +131,7 @@
             {{#istabs}}
                 <ul class="nav nav-tabs sc-tabs" role="tablist">
                     {{#sections}}
-                        {{^issection0}}
+                        {{^plainsection}}
                         <li class="nav-item" role="presentation">
                             <button
                                 type="button"
@@ -146,12 +149,12 @@
                                 {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
                             </button>
                         </li>
-                        {{/issection0}}
+                        {{/plainsection}}
                     {{/sections}}
                 </ul>
                 <div class="tab-content">
                     {{#sections}}
-                        {{^issection0}}
+                        {{^plainsection}}
                         <div
                             class="tab-pane fade {{#isactivetab}}show active{{/isactivetab}}"
                             id="sc-tab-pane-{{id}}"
@@ -163,14 +166,14 @@
                             {{/availability}}
                             {{> format_smartcards/local/cm_grid }}
                         </div>
-                        {{/issection0}}
+                        {{/plainsection}}
                     {{/sections}}
                 </div>
             {{/istabs}}
 
             {{^istabs}}
                 {{#sections}}
-                    {{^issection0}}
+                    {{^plainsection}}
                     <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
                         {{#iscollapsible}}
                         <h3 class="sc-section-title sc-accordion-title" id="sc-section-title-{{id}}">
@@ -221,7 +224,7 @@
                             {{/istrail}}
                         </div>
                     </section>
-                    {{/issection0}}
+                    {{/plainsection}}
                 {{/sections}}
             {{/istabs}}
         {{/issectioncards}}

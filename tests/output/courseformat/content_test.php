@@ -1027,4 +1027,159 @@ final class content_test extends \advanced_testcase {
         $this->assertStringNotContainsString('sc-accordion-toggle', $html);
         $this->assertStringNotContainsString('nav-tabs', $html);
     }
+
+    /**
+     * With generalinstyle enabled, section 0 (General) becomes collapsible in the
+     * accordion just like any other section — instead of always rendering as the plain,
+     * non-collapsible heading it gets by default (test_accordion_opens_the_section_with_
+     * a_pending_activity() and friends, which never set this option, cover that default).
+     *
+     * @covers ::export_for_template
+     */
+    public function test_accordion_includes_general_when_generalinstyle_enabled(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options([
+            'navstyle' => 'accordion',
+            'generalinstyle' => 1,
+        ]);
+        $generator->create_module('forum', ['course' => $course->id, 'section' => 0]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $sectionzeroid = get_fast_modinfo($course)->get_section_info(0)->id;
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('sc-accordion-toggle', $html);
+        $this->assertStringContainsString('data-target="#sc-accordion-body-' . $sectionzeroid . '"', $html);
+    }
+
+    /**
+     * With generalinstyle enabled, section 0 (General) becomes a real, selectable tab
+     * instead of always rendering above the tab bar — the opposite of
+     * test_tabs_activates_the_tab_with_a_pending_activity()'s default-off assertion that
+     * no tab/pane id ever references section 0.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_tabs_includes_general_as_a_real_tab_when_generalinstyle_enabled(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options([
+            'navstyle' => 'tabs',
+            'generalinstyle' => 1,
+        ]);
+        $generator->create_module('forum', ['course' => $course->id, 'section' => 0]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $sectionzeroid = get_fast_modinfo($course)->get_section_info(0)->id;
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('id="sc-tab-' . $sectionzeroid . '"', $html);
+        $this->assertStringContainsString('id="sc-tab-pane-' . $sectionzeroid . '"', $html);
+    }
+
+    /**
+     * With generalinstyle enabled, section 0 (General) gets its own card and modal
+     * source in sectioncards mode, on top of every other available section — the
+     * opposite of test_sectioncards_renders_one_card_per_available_section()'s
+     * default-off count.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_sectioncards_includes_general_as_a_card_when_generalinstyle_enabled(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options([
+            'navstyle' => 'sectioncards',
+            'generalinstyle' => 1,
+        ]);
+        $generator->create_module('forum', ['course' => $course->id, 'section' => 0]);
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $sectionzeroid = get_fast_modinfo($course)->get_section_info(0)->id;
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertSame(2, substr_count($html, 'data-region="smartcards-section-card"'));
+        $this->assertStringContainsString('data-sectionid="' . $sectionzeroid . '"', $html);
+    }
+
+    /**
+     * With generalinstyle enabled, section 0 (General)'s activities render inside the
+     * winding sc-trail column, the same as any other section in navstyle=trail, instead
+     * of the always-plain top block test_trail_renders_every_card_in_a_single_column()
+     * covers for its default-off sibling section.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_trail_includes_general_in_the_zigzag_when_generalinstyle_enabled(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 0]);
+        course_get_format($course)->update_course_format_options([
+            'navstyle' => 'trail',
+            'generalinstyle' => 1,
+        ]);
+        $generator->create_module('page', ['course' => $course->id, 'section' => 0, 'name' => 'Announcement page']);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('class="sc-trail"', $html);
+        $this->assertStringContainsString('Announcement page', $html);
+        // The always-plain top block never fires: section 0's own cm_grid rendering is
+        // gone, only the trail's cm_trail one remains.
+        $this->assertStringNotContainsString('class="sc-grid"', $html);
+    }
 }

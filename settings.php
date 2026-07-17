@@ -105,6 +105,13 @@ if ($ADMIN->fulltree) {
         ]
     ));
 
+    $settings->add(new admin_setting_configcheckbox(
+        'format_smartcards/generalinstyle',
+        new lang_string('generalinstyle', 'format_smartcards'),
+        new lang_string('generalinstyle_desc', 'format_smartcards'),
+        0
+    ));
+
     $settings->add(new admin_setting_configselect(
         'format_smartcards/progressdisplay',
         new lang_string('progressdisplay', 'format_smartcards'),

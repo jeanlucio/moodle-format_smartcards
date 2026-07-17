@@ -99,6 +99,10 @@ class content extends content_base {
         $issticky        = $navstyle === 'sticky';
         $issectioncards  = $navstyle === 'sectioncards';
         $istrail         = $navstyle === 'trail';
+        // Whether section 0 (General) participates in the navstyle above instead of
+        // always rendering as a plain section outside it (its default, unchanged
+        // behaviour when this is off) — see the 'plainsection' field below.
+        $includegeneral  = !empty($formatoptions['generalinstyle']);
         $progressdisplay = $formatoptions['progressdisplay'] ?? '';
         // Positive match (show only for a recognised value), not a negative one against
         // 'none' — an unset/empty/unrecognised option value must default to hidden, the
@@ -190,23 +194,28 @@ class content extends content_base {
             // already rely on elsewhere in this class.
             $availability = new availability($format, $sectioninfo);
 
-            $iscollapsible = $isaccordion && $sectioninfo->section > 0;
-            // Resolved for every non-General available section regardless of
+            // A section participates in the navstyle's own treatment (collapsible,
+            // tabbable, its own card, part of the trail) when it is not section 0, or
+            // when it is and $includegeneral opted it in — see this method's docblock.
+            $joinsstyle = ($sectioninfo->section > 0 || $includegeneral);
+
+            $iscollapsible = $isaccordion && $joinsstyle;
+            // Resolved for every available section that joins the style, regardless of
             // navstyle/progressdisplay — the accordion/tabs default-section logic below
             // needs it even when the label itself stays hidden (see the $completioninfo
             // docblock note above). Never resolved for a restricted section: it would
             // report progress on activities the student cannot see or reach.
-            $progress = ($sectionavailable && $sectioninfo->section > 0)
+            $progress = ($sectionavailable && $joinsstyle)
                 ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo)
                 : null;
             $hastracking = $progress !== null && $progress->has_tracking();
             $hasprogress = $hastracking && $showprogress;
             $progresslabel = $hasprogress ? $progress->format_label($progressdisplay) : '';
 
-            // Built only for a real (non-General) section in sectioncards mode — reuses
-            // $cards/$sectionavailable/$hasprogress/$progresslabel computed above rather
-            // than recomputing anything, per section_card_builder's own docblock.
-            $sectioncard = ($issectioncards && $sectioninfo->section > 0)
+            // Built only for a section that joins the style in sectioncards mode —
+            // reuses $cards/$sectionavailable/$hasprogress/$progresslabel computed above
+            // rather than recomputing anything, per section_card_builder's own docblock.
+            $sectioncard = ($issectioncards && $joinsstyle)
                 ? section_card_builder::build(
                     $sectioninfo,
                     $format->get_section_name($sectioninfo),
@@ -243,6 +252,10 @@ class content extends content_base {
                 'num'           => $sectioninfo->section,
                 'name'          => $format->get_section_name($sectioninfo),
                 'issection0'    => ($sectioninfo->section === 0),
+                // Renders via the always-plain top block, outside any navstyle: true
+                // only for section 0 when it has not opted into the style (the default,
+                // unchanged behaviour). Every other section always joins its style.
+                'plainsection'  => ($sectioninfo->section === 0 && !$includegeneral),
                 'cards'         => $cards,
                 'hascards'      => !empty($cards),
                 'availability'  => $availability->export_for_template($output),
@@ -259,7 +272,7 @@ class content extends content_base {
             if ($sectionavailable && $iscollapsible && $explicitopen === null) {
                 $untouchedbyindex[$lastindex] = $progress;
             }
-            if ($sectionavailable && $istabs && $sectioninfo->section > 0) {
+            if ($sectionavailable && $istabs && $joinsstyle) {
                 $tabbableindexes[$lastindex] = $progress;
             }
         }

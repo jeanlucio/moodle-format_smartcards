@@ -72,4 +72,29 @@ final class controlmenu_test extends \advanced_testcase {
 
         $this->assertArrayHasKey('smartcardsappearance', $controls);
     }
+
+    /**
+     * When the course's generalinstyle option opts section 0 into the active navstyle,
+     * it becomes a real card too — so the entry that lets a teacher configure its
+     * appearance must become available, the opposite of the default-off behaviour
+     * covered by test_section_zero_never_gets_the_appearance_entry().
+     *
+     * @covers ::section_control_items
+     */
+    public function test_section_zero_gets_the_appearance_entry_when_generalinstyle_enabled(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options(['generalinstyle' => 1]);
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $format = course_get_format($course);
+        $sectionzero = get_fast_modinfo($course)->get_section_info(0);
+
+        $menu = new controlmenu($format, $sectionzero);
+        $controls = $menu->section_control_items();
+
+        $this->assertArrayHasKey('smartcardsappearance', $controls);
+    }
 }

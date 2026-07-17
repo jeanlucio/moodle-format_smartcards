@@ -132,11 +132,12 @@ final class save_section_appearance_test extends \advanced_testcase {
     }
 
     /**
-     * Section 0 (General) must be rejected — it never renders as a card, in any
-     * navstyle, so nothing this action configures could ever be seen. The section-0
-     * edit menu never offers this action in the first place (content/section/
-     * controlmenu.php), but that is a UI-only guarantee; this proves the server itself
-     * refuses a direct call too, not just the menu hiding the entry.
+     * Section 0 (General) must be rejected by default — it never renders as a card in
+     * any navstyle unless generalinstyle opts it in, so nothing this action configures
+     * could ever be seen otherwise. The section-0 edit menu never offers this action in
+     * the first place (content/section/controlmenu.php), but that is a UI-only
+     * guarantee; this proves the server itself refuses a direct call too, not just the
+     * menu hiding the entry.
      *
      * @covers ::execute
      */
@@ -150,6 +151,29 @@ final class save_section_appearance_test extends \advanced_testcase {
 
         $this->expectException(invalid_parameter_exception::class);
         save_section_appearance::execute($sectionzero, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+    }
+
+    /**
+     * When the course's generalinstyle option opts section 0 into the active navstyle,
+     * saving its appearance must succeed — the opposite of test_rejects_section_zero()'s
+     * default-off behaviour.
+     *
+     * @covers ::execute
+     */
+    public function test_allows_section_zero_when_generalinstyle_enabled(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options(['generalinstyle' => 1]);
+        $teacher     = $generator->create_and_enrol($course, 'editingteacher');
+        $sectionzero = (int)get_fast_modinfo($course)->get_section_info(0)->id;
+        $this->setUser($teacher);
+
+        $result = save_section_appearance::execute($sectionzero, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+
+        $this->assertSame($sectionzero, (int)$result['id']);
+        $this->assertTrue($result['isemoji']);
+        $this->assertSame('🎉', $result['emoji']);
     }
 
     /**

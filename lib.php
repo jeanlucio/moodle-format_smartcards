@@ -241,12 +241,15 @@ class format_smartcards extends core_courseformat\base {
     /**
      * Returns the format options for this course.
      *
-     * Six options, each with a site-wide default (settings.php) overridable per
+     * Eight options, each with a site-wide default (settings.php) overridable per
      * course: cardsize and showcardframe control the grid's visual density; the three
      * "default" colour/font options give the whole course a fallback that an
      * individual activity's own appearance still takes priority over (see
      * card_builder::build()); navstyle controls the section navigation layout (view
-     * mode only, see classes/output/courseformat/content.php).
+     * mode only, see classes/output/courseformat/content.php); generalinstyle decides
+     * whether section 0 (General) participates in that layout at all, instead of
+     * always rendering as a plain, unstyled section (its historical default — this
+     * option preserves that as the default, off).
      *
      * @param bool $foreditform Whether this is being called to populate the course edit form.
      * @return array
@@ -279,6 +282,10 @@ class format_smartcards extends core_courseformat\base {
                 'navstyle' => [
                     'default' => get_config('format_smartcards', 'navstyle'),
                     'type' => PARAM_ALPHA,
+                ],
+                'generalinstyle' => [
+                    'default' => get_config('format_smartcards', 'generalinstyle'),
+                    'type' => PARAM_INT,
                 ],
                 'progressdisplay' => [
                     'default' => get_config('format_smartcards', 'progressdisplay'),
@@ -354,6 +361,16 @@ class format_smartcards extends core_courseformat\base {
                             'sticky' => new lang_string('navstyle_sticky', 'format_smartcards'),
                             'sectioncards' => new lang_string('navstyle_sectioncards', 'format_smartcards'),
                             'trail' => new lang_string('navstyle_trail', 'format_smartcards'),
+                        ],
+                    ],
+                ],
+                'generalinstyle' => [
+                    'label' => new lang_string('generalinstyle', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [
+                        [
+                            0 => new lang_string('no'),
+                            1 => new lang_string('yes'),
                         ],
                     ],
                 ],

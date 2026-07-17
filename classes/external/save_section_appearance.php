@@ -121,12 +121,16 @@ class save_section_appearance extends external_api {
         self::validate_context($context);
         require_capability('format/smartcards:manageappearance', $context);
 
-        // The section-0/General edit menu never offers this action (content/section/
-        // controlmenu.php excludes it there — it never renders as a card, in any
-        // navstyle, so nothing it configures is ever visible), but that is a UI-only
-        // guarantee; re-validated here so a direct call cannot create a row nothing
-        // will ever read.
-        if ($sectioninfo->section === 0) {
+        $format = course_get_format($course);
+        $includegeneral = !empty($format->get_format_options()['generalinstyle']);
+
+        // The section-0/General edit menu only offers this action when the course's
+        // generalinstyle option opted that section into the active navstyle (content/
+        // section/controlmenu.php mirrors this same check) — by default it never
+        // renders as a card, in any navstyle, so nothing it configures would ever be
+        // visible. That is a UI-only guarantee though; re-validated here so a direct
+        // call cannot create a row nothing will ever read.
+        if ($sectioninfo->section === 0 && !$includegeneral) {
             throw new invalid_parameter_exception('Section 0 has no card appearance to configure');
         }
 
@@ -154,7 +158,6 @@ class save_section_appearance extends external_api {
             $params['labelfont'] !== '' ? $params['labelfont'] : null,
         );
 
-        $format        = course_get_format($course);
         $modinfo       = get_fast_modinfo($course);
         $sectioninfo   = $modinfo->get_section_info_by_id($params['sectionid'], MUST_EXIST);
         $renderer      = $PAGE->get_renderer('format_smartcards');
@@ -166,7 +169,7 @@ class save_section_appearance extends external_api {
         $progressdisplay = $formatoptions['progressdisplay'] ?? '';
         $showprogress     = in_array($progressdisplay, ['count', 'percent'], true);
 
-        $progress = $sectioninfo->section > 0
+        $progress = ($sectioninfo->section > 0 || $includegeneral)
             ? section_progress_resolver::resolve(new completion_info($course), $modinfo, $sectioninfo)
             : null;
         $hastracking = $progress !== null && $progress->has_tracking();
