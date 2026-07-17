@@ -228,8 +228,8 @@ class content extends content_base {
      * @param appearance[] $appearances Custom appearance keyed by cmid, from get_many_for_activities().
      * @param array $formatoptions The course's resolved format options.
      * @param int $userid User id to resolve completion state for.
-     * @param array<int, string> $descriptions Rendered description HTML keyed by cmid,
-     *                                          from cm_description_resolver::resolve_many().
+     * @param string[] $descriptions Rendered description HTML keyed by cmid, from
+     *                                cm_description_resolver::resolve_many().
      * @return array<int, array<string, mixed>> Card data, one entry per visible module.
      */
     private function build_cards_data(
