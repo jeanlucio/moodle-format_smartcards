@@ -38,13 +38,22 @@ class controlmenu extends controlmenu_base {
      * Returns the parent's edit control items plus a "Card appearance" entry, when the
      * current user can manage appearance in this section's course.
      *
+     * Never added for section 0 (General): that section always renders as a plain
+     * inline heading, in every navstyle, never as a card of its own — the same reason
+     * core itself excludes section 0 from its own section-specific actions
+     * (get_section_duplicate_item()/get_section_visibility_item()/
+     * get_section_movesection_item() all check sectionnum == 0). Configuring an
+     * appearance nothing ever displays would silently mislead the teacher, which is
+     * exactly what happened before this guard existed (a real report: an emoji set via
+     * this menu for "Geral" saved correctly, but could never be seen anywhere).
+     *
      * @return array Edit control items, keyed by action name.
      */
     #[\Override]
     public function section_control_items(): array {
         $controls = parent::section_control_items();
 
-        if (!has_capability('format/smartcards:manageappearance', $this->coursecontext)) {
+        if ($this->section->sectionnum == 0 || !has_capability('format/smartcards:manageappearance', $this->coursecontext)) {
             return $controls;
         }
 

@@ -132,6 +132,27 @@ final class save_section_appearance_test extends \advanced_testcase {
     }
 
     /**
+     * Section 0 (General) must be rejected — it never renders as a card, in any
+     * navstyle, so nothing this action configures could ever be seen. The section-0
+     * edit menu never offers this action in the first place (content/section/
+     * controlmenu.php), but that is a UI-only guarantee; this proves the server itself
+     * refuses a direct call too, not just the menu hiding the entry.
+     *
+     * @covers ::execute
+     */
+    public function test_rejects_section_zero(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course      = $generator->create_course(['numsections' => 1]);
+        $teacher     = $generator->create_and_enrol($course, 'editingteacher');
+        $sectionzero = (int)get_fast_modinfo($course)->get_section_info(0)->id;
+        $this->setUser($teacher);
+
+        $this->expectException(invalid_parameter_exception::class);
+        save_section_appearance::execute($sectionzero, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+    }
+
+    /**
      * An invalid value for the given type must be rejected server-side.
      *
      * @covers ::execute

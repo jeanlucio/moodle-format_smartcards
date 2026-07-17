@@ -26,6 +26,7 @@ use format_smartcards\local\appearance_image_store;
 use format_smartcards\local\appearance_repository;
 use format_smartcards\local\section_card_builder;
 use format_smartcards\local\section_progress_resolver;
+use invalid_parameter_exception;
 
 /**
  * Saves the custom appearance of one section card and returns it fully re-rendered.
@@ -119,6 +120,15 @@ class save_section_appearance extends external_api {
         $context     = context_course::instance($course->id);
         self::validate_context($context);
         require_capability('format/smartcards:manageappearance', $context);
+
+        // The section-0/General edit menu never offers this action (content/section/
+        // controlmenu.php excludes it there — it never renders as a card, in any
+        // navstyle, so nothing it configures is ever visible), but that is a UI-only
+        // guarantee; re-validated here so a direct call cannot create a row nothing
+        // will ever read.
+        if ($sectioninfo->section === 0) {
+            throw new invalid_parameter_exception('Section 0 has no card appearance to configure');
+        }
 
         $repository = new appearance_repository();
         $existing   = $repository->get_for_section($params['sectionid']);
