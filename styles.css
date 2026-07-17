@@ -200,8 +200,8 @@
 }
 
 .format-smartcards .sc-card-iconimg {
-    max-inline-size: 70%;
-    max-block-size: 70%;
+    inline-size: 75%;
+    block-size: 75%;
 }
 
 .format-smartcards .sc-card-emoji {
@@ -219,8 +219,8 @@
 
 .format-smartcards .sc-card-completionicon {
     position: absolute;
-    inset-block-end: -0.25rem;
-    inset-inline-start: -0.25rem;
+    inset-block-start: -0.25rem;
+    inset-inline-end: -0.25rem;
     font-size: 1rem;
     line-height: 1;
 }
