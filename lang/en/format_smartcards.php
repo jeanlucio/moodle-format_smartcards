@@ -66,6 +66,7 @@ $string['navstyle_desc'] = 'How sections are displayed and navigated. Teachers c
 $string['navstyle_sectioncards'] = 'Section cards';
 $string['navstyle_sticky'] = 'Sticky section headers';
 $string['navstyle_tabs'] = 'Tabs';
+$string['navstyle_trail'] = 'Trail';
 $string['plugin_description'] = 'Shows activities as buttons/cards, reusing Moodle\'s native availability logic — no stealth activities.';
 $string['pluginname'] = 'SmartCards';
 $string['privacy:metadata'] = 'The SmartCards course format does not store any personal data. It only displays activity availability information that is already computed by Moodle core.';

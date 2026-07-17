@@ -202,6 +202,33 @@
     gap: var(--sc-card-gap);
 }
 
+/*
+ * navstyle=trail (§16 Fase "trilha"): a single non-wrapping column, each card offset
+ * horizontally by :nth-child in a repeating 4-step wave (0% / 12% / 24% / 12%) — no
+ * connecting line between cards, and no CSS `order` reshuffle, so DOM order (course
+ * order) always matches both visual order and tab/screen-reader order. Percentages
+ * (not fixed px) keep the offset proportional to the section's own width, so it never
+ * overflows a narrow viewport regardless of cardsize.
+ */
+.format-smartcards .sc-trail {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sc-card-gap);
+}
+
+.format-smartcards .sc-trail .sc-card:nth-child(4n+2) {
+    margin-inline-start: 12%;
+}
+
+.format-smartcards .sc-trail .sc-card:nth-child(4n+3) {
+    margin-inline-start: 24%;
+}
+
+.format-smartcards .sc-trail .sc-card:nth-child(4n) {
+    margin-inline-start: 12%;
+}
+
 .format-smartcards .sc-card {
     display: flex;
     flex-direction: column;

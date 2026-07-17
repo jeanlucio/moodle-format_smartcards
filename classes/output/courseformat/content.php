@@ -98,6 +98,7 @@ class content extends content_base {
         $istabs          = $navstyle === 'tabs';
         $issticky        = $navstyle === 'sticky';
         $issectioncards  = $navstyle === 'sectioncards';
+        $istrail         = $navstyle === 'trail';
         $progressdisplay = $formatoptions['progressdisplay'] ?? '';
         // Positive match (show only for a recognised value), not a negative one against
         // 'none' — an unset/empty/unrecognised option value must default to hidden, the
@@ -299,6 +300,7 @@ class content extends content_base {
             'istabs'         => $istabs,
             'issticky'       => $issticky,
             'issectioncards' => $issectioncards,
+            'istrail'        => $istrail,
         ];
     }
 

@@ -18,15 +18,17 @@
     @template format_smartcards/local/content
 
     Main grid container for the SmartCards course format. Section 0 (General) always
-    renders plain, outside any special navigation. Sections 1+ render one of five ways
+    renders plain, outside any special navigation. Sections 1+ render one of six ways
     depending on navstyle: plain (default/sticky — identical markup, sticky only differs
     by a CSS class making each section heading position: sticky while scrolling),
-    collapsible (accordion), as Bootstrap tabs (tabs), or as a grid of section cards
-    (sectioncards) — never more than one of isaccordion/istabs/issticky/issectioncards is
-    true at once. In sectioncards mode, each section's own cards/availability are still
-    rendered (hidden) alongside its card button, for amd/src/section_modal.js to move
-    into a full-screen modal on tap — the exact same availability+cm_grid pairing every
-    other navstyle already renders inline, just hidden instead of shown directly.
+    collapsible (accordion), as Bootstrap tabs (tabs), as a winding single-column trail
+    (trail — same cards, cm_trail.mustache instead of cm_grid.mustache, CSS-only zigzag),
+    or as a grid of section cards (sectioncards) — never more than one of
+    isaccordion/istabs/issticky/issectioncards/istrail is true at once. In sectioncards
+    mode, each section's own cards/availability are still rendered (hidden) alongside its
+    card button, for amd/src/section_modal.js to move into a full-screen modal on tap —
+    the exact same availability+cm_grid pairing every other navstyle already renders
+    inline, just hidden instead of shown directly.
 
     Example context (json):
     {
@@ -40,6 +42,7 @@
         "istabs": false,
         "issticky": false,
         "issectioncards": false,
+        "istrail": false,
         "sections": [
             {
                 "id": 10,
@@ -210,7 +213,12 @@
                             {{#availability}}
                                 {{> core_courseformat/local/content/section/availability }}
                             {{/availability}}
-                            {{> format_smartcards/local/cm_grid }}
+                            {{#istrail}}
+                                {{> format_smartcards/local/cm_trail }}
+                            {{/istrail}}
+                            {{^istrail}}
+                                {{> format_smartcards/local/cm_grid }}
+                            {{/istrail}}
                         </div>
                     </section>
                     {{/issection0}}

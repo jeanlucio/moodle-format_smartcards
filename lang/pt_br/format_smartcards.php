@@ -66,6 +66,7 @@ $string['navstyle_desc'] = 'Como as seções são exibidas e navegadas. Professo
 $string['navstyle_sectioncards'] = 'Cards de seção';
 $string['navstyle_sticky'] = 'Cabeçalhos fixos ao rolar';
 $string['navstyle_tabs'] = 'Abas';
+$string['navstyle_trail'] = 'Trilha';
 $string['plugin_description'] = 'Exibe as atividades como botões/cards, reaproveitando a disponibilidade nativa do Moodle — sem atividades stealth.';
 $string['pluginname'] = 'SmartCards';
 $string['privacy:metadata'] = 'O formato de curso SmartCards não armazena nenhum dado pessoal. Ele apenas exibe informação de disponibilidade de atividade já calculada pelo núcleo do Moodle.';

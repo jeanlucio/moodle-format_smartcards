@@ -622,6 +622,54 @@ final class content_test extends \advanced_testcase {
     }
 
     /**
+     * With navstyle=trail, every section's cards render inside a single sc-trail column
+     * (cm_trail.mustache) instead of the wrapping sc-grid — the zigzag positioning itself
+     * is pure CSS (styles.css), so this only asserts the right container/partial was
+     * chosen and that every card is still present, in course order (the DOM order the
+     * CSS-only zigzag relies on for tab/screen-reader order to stay correct).
+     *
+     * @covers ::export_for_template
+     */
+    public function test_trail_renders_every_card_in_a_single_column(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'trail']);
+
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1, 'name' => 'First stop']);
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1, 'name' => 'Second stop']);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('class="sc-trail"', $html);
+        $this->assertStringNotContainsString('class="sc-grid"', $html);
+        // No accordion/tab/section-card markup at all — trail is a plain, always-visible
+        // layout, same as default/sticky in that respect.
+        $this->assertStringNotContainsString('sc-accordion-toggle', $html);
+        $this->assertStringNotContainsString('nav-tabs', $html);
+        $this->assertStringNotContainsString('smartcards-section-card', $html);
+
+        $firstpos = strpos($html, 'First stop');
+        $secondpos = strpos($html, 'Second stop');
+        $this->assertIsInt($firstpos);
+        $this->assertIsInt($secondpos);
+        $this->assertLessThan($secondpos, $firstpos);
+    }
+
+    /**
      * progressdisplay defaults to hidden when the course never set it explicitly — this
      * plugin has no installed base yet (confirmed with the user), so there is no legacy
      * behaviour to preserve; a section with pending completion-tracked activities must

@@ -101,6 +101,7 @@ if ($ADMIN->fulltree) {
             'tabs'         => new lang_string('navstyle_tabs', 'format_smartcards'),
             'sticky'       => new lang_string('navstyle_sticky', 'format_smartcards'),
             'sectioncards' => new lang_string('navstyle_sectioncards', 'format_smartcards'),
+            'trail'        => new lang_string('navstyle_trail', 'format_smartcards'),
         ]
     ));
 
