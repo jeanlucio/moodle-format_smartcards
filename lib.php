@@ -409,15 +409,16 @@ function format_smartcards_inplace_editable(string $itemtype, int $itemid, mixed
  * The card image is purely decorative — the same icon a locked/restricted activity or
  * section still shows on its card, alongside the 'locked' badge, so a student can see
  * what the card looks like without being able to open the activity/section itself. It
- * must therefore stay servable whenever the card itself is visible ({@see
- * cm_info::is_visible_on_course_page()} for an activity; {@see
- * \core_courseformat\base::is_section_visible()} for a section — the same two gates
- * status_resolver::resolve() and content.php's export_for_template() already use to
- * decide whether a card renders at all), never gated behind the stricter {@see
- * cm_info::$uservisible}/{@see section_info::$uservisible} that governs the activity's
- * or section's own content. require_course_login() with a $cm argument enforces exactly
- * that stricter rule for an activity (it redirects when $cm->uservisible is false), so
- * the course-level login check and the card-visibility check are done separately here.
+ * must therefore stay servable whenever the card itself is visible
+ * ({@see cm_info::is_visible_on_course_page()} for an activity;
+ * {@see \core_courseformat\base::is_section_visible()} for a section — the same two
+ * gates status_resolver::resolve() and content.php's export_for_template() already use
+ * to decide whether a card renders at all), never gated behind the stricter
+ * {@see cm_info::$uservisible} / {@see section_info::$uservisible} that governs the
+ * activity's or section's own content. require_course_login() with a $cm argument
+ * enforces exactly that stricter rule for an activity (it redirects when
+ * $cm->uservisible is false), so the course-level login check and the card-visibility
+ * check are done separately here.
  *
  * @param stdClass $course Course the file's module or section belongs to.
  * @param stdClass|null $cm Course module owning the requested context, null for a section image.

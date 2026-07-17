@@ -52,7 +52,7 @@ final class section_card_builder {
      * @param string $name Resolved section name (course_format::get_section_name()).
      * @param renderer_base $output Renderer used to resolve icon URLs.
      * @param appearance|null $item The section's own custom appearance, or null.
-     * @param array<int, appearance> $activityappearances Appearance of the section's
+     * @param appearance[] $activityappearances Appearance of the section's
      *                                 activities, keyed by cmid (already bulk-loaded by
      *                                 the caller), used for the icon fallback chain
      *                                 (SCOPE.md §4) when the section has none of its own.
@@ -180,7 +180,7 @@ final class section_card_builder {
      * a custom appearance configured, or neither (SCOPE.md §4's fallback chain).
      *
      * @param appearance|null $item The section's own custom appearance, or null.
-     * @param array<int, appearance> $activityappearances Appearance of the section's
+     * @param appearance[] $activityappearances Appearance of the section's
      *                                 activities, keyed by cmid.
      * @param int[] $sectioncmids Ids of this section's visible activities, in course order.
      * @return array{0: appearance|null, 1: int|null} The appearance to render (or null
