@@ -189,7 +189,7 @@ class card_builder {
             && in_array($item->type, [appearance_repository::TYPE_ICON, appearance_repository::TYPE_IMAGE], true);
         $customiconurl = match ($item?->type) {
             appearance_repository::TYPE_ICON => $output->image_url('bsicons/' . $item->value, 'format_smartcards')->out(false),
-            appearance_repository::TYPE_IMAGE => appearance_image_store::url($cmid)->out(false),
+            appearance_repository::TYPE_IMAGE => appearance_image_store::url($cmid, (int)$item->value)->out(false),
             default => '',
         };
 

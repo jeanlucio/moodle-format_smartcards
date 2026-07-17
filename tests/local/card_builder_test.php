@@ -226,7 +226,7 @@ final class card_builder_test extends \advanced_testcase {
         );
 
         $this->assertTrue($card['iscustomicon']);
-        $this->assertSame(appearance_image_store::url($page->cmid)->out(false), $card['customiconurl']);
+        $this->assertSame(appearance_image_store::url($page->cmid, $fileid)->out(false), $card['customiconurl']);
     }
 
     /**

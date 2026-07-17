@@ -90,7 +90,7 @@ class get_appearance extends external_api {
             'labelcolor' => $item?->labelcolor ?? '',
             'labelfont'  => $item?->labelfont ?? '',
             'iconurl'    => $renderer->image_url('icon', $cminfo->modname)->out(false),
-            'imageurl'   => $hasimage ? appearance_image_store::url($params['cmid'])->out(false) : '',
+            'imageurl'   => $hasimage ? appearance_image_store::url($params['cmid'], (int)$item->value)->out(false) : '',
             'icons'      => $icons,
         ];
     }

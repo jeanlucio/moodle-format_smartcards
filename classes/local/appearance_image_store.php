@@ -112,13 +112,24 @@ final class appearance_image_store {
      * every card without an N+1 query — callers only call it when the appearance row's
      * own type/value already say a file was stored.
      *
+     * The URL is otherwise identical before and after re-uploading a replacement image
+     * (fixed itemid/filename, one file per module), and send_stored_file() sends a long
+     * browser cache lifetime for it — without a cache-busting rev, a browser that already
+     * fetched the old image keeps showing it after a real, successful replacement. $rev
+     * should be the appearance row's own value (the image's fileid, already in memory at
+     * every real call site, and guaranteed to change on every store() call — see
+     * store()'s docblock), never a fresh File API lookup just for this.
+     *
      * @param int $cmid Course module id.
+     * @param int $rev Cache-busting revision, appended as a query param when > 0.
+     *                  0 (the default) omits it entirely, for callers with no fileid to
+     *                  hand (e.g. building the URL before any file has been stored).
      * @return moodle_url
      */
-    public static function url(int $cmid): moodle_url {
+    public static function url(int $cmid, int $rev = 0): moodle_url {
         $context = context_module::instance($cmid);
 
-        return moodle_url::make_pluginfile_url(
+        $url = moodle_url::make_pluginfile_url(
             $context->id,
             'format_smartcards',
             self::FILEAREA,
@@ -126,6 +137,11 @@ final class appearance_image_store {
             '/',
             self::FILENAME
         );
+        if ($rev > 0) {
+            $url->param('rev', $rev);
+        }
+
+        return $url;
     }
 
     /**

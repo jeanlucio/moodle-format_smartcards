@@ -74,6 +74,29 @@ final class appearance_image_store_test extends \advanced_testcase {
 
         $this->assertStringContainsString('format_smartcards', $url->out(false));
         $this->assertStringContainsString('cardimage', $url->out(false));
+        $this->assertStringNotContainsString('rev=', $url->out(false));
+    }
+
+    /**
+     * A $rev value must change the URL, so a replaced image never keeps serving a
+     * browser-cached copy of the old one at an unchanged URL (the fixed filename/itemid
+     * pluginfile URL is otherwise byte-identical before and after a re-upload).
+     *
+     * @covers ::url
+     */
+    public function test_url_with_rev_changes_when_rev_changes(): void {
+        $this->resetAfterTest();
+        $cmid = $this->create_activity();
+
+        $firstid  = appearance_image_store::store($cmid, self::TINY_PNG_BASE64);
+        $secondid = appearance_image_store::store($cmid, self::TINY_PNG_BASE64);
+
+        $firsturl  = appearance_image_store::url($cmid, $firstid)->out(false);
+        $secondurl = appearance_image_store::url($cmid, $secondid)->out(false);
+
+        $this->assertStringContainsString('rev=' . $firstid, $firsturl);
+        $this->assertStringContainsString('rev=' . $secondid, $secondurl);
+        $this->assertNotSame($firsturl, $secondurl);
     }
 
     /**
