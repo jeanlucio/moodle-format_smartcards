@@ -47,6 +47,9 @@
                 "isactivetab": false,
                 "hasprogress": true,
                 "progresslabel": "Progress: 2 / 5",
+                "availability": {
+                    "hasavailability": false
+                },
                 "cards": [
                     {
                         "cmid": 5,
@@ -83,6 +86,9 @@
             {{#issection0}}
                 <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
                     <h3 class="sc-section-title" id="sc-section-title-{{id}}">{{name}}</h3>
+                    {{#availability}}
+                        {{> core_courseformat/local/content/section/availability }}
+                    {{/availability}}
                     {{> format_smartcards/local/cm_grid }}
                 </section>
             {{/issection0}}
@@ -121,6 +127,9 @@
                         role="tabpanel"
                         aria-labelledby="sc-tab-{{id}}"
                     >
+                        {{#availability}}
+                            {{> core_courseformat/local/content/section/availability }}
+                        {{/availability}}
                         {{> format_smartcards/local/cm_grid }}
                     </div>
                     {{/issection0}}
@@ -170,6 +179,9 @@
                         data-region="smartcards-accordion-body"
                         data-sectionid="{{id}}"
                     {{/iscollapsible}}>
+                        {{#availability}}
+                            {{> core_courseformat/local/content/section/availability }}
+                        {{/availability}}
                         {{> format_smartcards/local/cm_grid }}
                     </div>
                 </section>

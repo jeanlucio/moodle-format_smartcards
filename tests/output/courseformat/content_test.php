@@ -759,4 +759,130 @@ final class content_test extends \advanced_testcase {
         $this->assertStringContainsString('>50%<', $html);
         $this->assertStringNotContainsString('Progress:', $html);
     }
+
+    /**
+     * A section the teacher explicitly hid (the section's own visibility toggle, not a
+     * restriction) must leave no trace for a student — same "fully hidden" contract a
+     * hidden activity already has (test_grid_renders_one_card_per_visible_activity).
+     *
+     * @covers ::export_for_template
+     */
+    public function test_section_hidden_by_teacher_is_not_visible_to_student(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $page      = $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        set_section_visible($course->id, 1, 0);
+        rebuild_course_cache($course->id, true);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $sectionid = get_fast_modinfo($course, $student->id)->get_section_info(1)->id;
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringNotContainsString((string)$page->cmid, $html);
+        $this->assertStringNotContainsString('sc-section-title-' . $sectionid, $html);
+    }
+
+    /**
+     * A section restricted by an unmet condition, with the condition's own "eye" left
+     * open, must still render its header and explain the restriction to the student —
+     * the bug reported by the user: the previous uservisible-only check could not tell
+     * this case apart from a fully hidden section (visible = 0) and silently dropped the
+     * whole section instead of showing it greyed out with the reason, the way core
+     * course formats already do (core_courseformat\output\local\base::
+     * is_section_visible()). No cards render for the section either: core gates the
+     * activity list the same way (section::add_cm_data()'s $showcmlist = uservisible).
+     *
+     * @covers ::export_for_template
+     */
+    public function test_restricted_section_shows_header_and_reason_but_no_cards(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $page      = $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $condition = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_sections', 'availability', json_encode($condition), [
+            'course' => $course->id,
+            'section' => 1,
+        ]);
+        rebuild_course_cache($course->id, true);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('sc-section-title-', $html);
+        $this->assertStringContainsString('availabilityinfo', $html);
+        $this->assertStringNotContainsString((string)$page->cmid, $html);
+        $this->assertStringNotContainsString('sc-grid', $html);
+    }
+
+    /**
+     * A teacher bypasses a section's restriction (moodle/course:
+     * ignoreavailabilityrestrictions) the same way they already bypass an activity's own
+     * restriction (test_teacher_sees_locked_badge_with_working_link): the section's cards
+     * still render normally for them, on top of core's own restriction preview banner.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_teacher_bypasses_section_restriction_and_still_sees_cards(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $page      = $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $condition = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_sections', 'availability', json_encode($condition), [
+            'course' => $course->id,
+            'section' => 1,
+        ]);
+        rebuild_course_cache($course->id, true);
+
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString((string)$page->cmid, $html);
+        $this->assertStringContainsString('sc-grid', $html);
+    }
 }

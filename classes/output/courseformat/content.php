@@ -20,6 +20,7 @@ use cm_info;
 use completion_info;
 use context_course;
 use core_courseformat\output\local\content as content_base;
+use core_courseformat\output\local\content\section\availability;
 use format_smartcards\external\toggle_section;
 use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_repository;
@@ -133,26 +134,54 @@ class content extends content_base {
         $untouchedbyindex = [];
         $tabbableindexes = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
-            if (!$sectioninfo->uservisible && $sectioninfo->section > 0) {
+            // Only a section the student truly cannot know about — hidden outright by the
+            // teacher, or blocked by a restriction whose own "eye" is closed — is skipped
+            // entirely. This is exactly the check every core course format makes
+            // (core_courseformat\output\local\base::is_section_visible()): it is already
+            // true whenever uservisible is true, and additionally true for a restricted
+            // section that is still visible with its condition text showing — that
+            // second case is what $sectioninfo->uservisible alone (the previous check
+            // here) could never distinguish from "fully hidden", hiding the section from
+            // the student instead of showing it greyed out with the restriction reason.
+            if ($sectioninfo->section > 0 && !$format->is_section_visible($sectioninfo)) {
                 continue;
             }
 
-            $cards = $this->build_cards_data(
-                $modinfo,
-                $sectioninfo,
-                $course,
-                $output,
-                $appearances,
-                $formatoptions,
-                $userid,
-                $descriptions
-            );
+            // A restricted-but-visible section (see above) still gets a header, but never
+            // its own cards or progress: core itself gates the activity list the same way
+            // ($showcmlist = $section->uservisible in core_courseformat\output\local\
+            // content\section::add_cm_data()), because an individual activity's own
+            // cm_info::uservisible has no idea it belongs to a blocked section — leaving
+            // the grid/progress alone here would leak content the section itself gates.
+            $sectionavailable = $sectioninfo->section === 0 || $sectioninfo->uservisible;
+
+            $cards = $sectionavailable
+                ? $this->build_cards_data(
+                    $modinfo,
+                    $sectioninfo,
+                    $course,
+                    $output,
+                    $appearances,
+                    $formatoptions,
+                    $userid,
+                    $descriptions
+                )
+                : [];
+
+            // Reuses core's own section availability component wholesale (never
+            // recomputed here) — it already produces the right message for a student
+            // (short restriction text) versus a teacher previewing it (fuller detail via
+            // moodle/course:viewhiddensections), the same bypass cm_info-based badges
+            // already rely on elsewhere in this class.
+            $availability = new availability($format, $sectioninfo);
 
             $iscollapsible = $isaccordion && $sectioninfo->section > 0;
-            // Resolved for every non-General section regardless of navstyle/progressdisplay
-            // — the accordion/tabs default-section logic below needs it even when the
-            // label itself stays hidden (see the $completioninfo docblock note above).
-            $progress = $sectioninfo->section > 0
+            // Resolved for every non-General available section regardless of
+            // navstyle/progressdisplay — the accordion/tabs default-section logic below
+            // needs it even when the label itself stays hidden (see the $completioninfo
+            // docblock note above). Never resolved for a restricted section: it would
+            // report progress on activities the student cannot see or reach.
+            $progress = ($sectionavailable && $sectioninfo->section > 0)
                 ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo)
                 : null;
             $hastracking = $progress !== null && $progress->has_tracking();
@@ -178,6 +207,7 @@ class content extends content_base {
                 'issection0'    => ($sectioninfo->section === 0),
                 'cards'         => $cards,
                 'hascards'      => !empty($cards),
+                'availability'  => $availability->export_for_template($output),
                 'iscollapsible' => $iscollapsible,
                 'isopen'        => $iscollapsible && ($explicitopen ?? false),
                 'isactivetab'   => false,
@@ -188,10 +218,10 @@ class content extends content_base {
             ];
 
             $lastindex = array_key_last($sectionsdata);
-            if ($iscollapsible && $explicitopen === null) {
+            if ($sectionavailable && $iscollapsible && $explicitopen === null) {
                 $untouchedbyindex[$lastindex] = $progress;
             }
-            if ($istabs && $sectioninfo->section > 0) {
+            if ($sectionavailable && $istabs && $sectioninfo->section > 0) {
                 $tabbableindexes[$lastindex] = $progress;
             }
         }
