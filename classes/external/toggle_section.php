@@ -24,7 +24,7 @@ use core_external\external_value;
 /**
  * Persists a manual expand/collapse of one section in the "Acordeão com progresso"
  * navigation style (navstyle=accordion), so the choice survives a page reload instead of
- * always resetting to content::find_default_open_section_index()'s "resume where you
+ * always resetting to content::find_default_active_section_index()'s "resume where you
  * left off" default.
  *
  * Deliberately its own preference pair (scaccordioncollapsed/scaccordionexpanded)

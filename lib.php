@@ -346,6 +346,8 @@ class format_smartcards extends core_courseformat\base {
                         [
                             'default' => new lang_string('navstyle_default', 'format_smartcards'),
                             'accordion' => new lang_string('navstyle_accordion', 'format_smartcards'),
+                            'tabs' => new lang_string('navstyle_tabs', 'format_smartcards'),
+                            'sticky' => new lang_string('navstyle_sticky', 'format_smartcards'),
                         ],
                     ],
                 ],

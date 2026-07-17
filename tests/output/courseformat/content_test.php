@@ -262,7 +262,7 @@ final class content_test extends \advanced_testcase {
      * accordion style exists to provide.
      *
      * @covers ::export_for_template
-     * @covers ::find_default_open_section_index
+     * @covers ::find_default_active_section_index
      */
     public function test_accordion_opens_the_section_with_a_pending_activity(): void {
         global $DB, $PAGE;
@@ -328,7 +328,7 @@ final class content_test extends \advanced_testcase {
      * has touched yet.
      *
      * @covers ::export_for_template
-     * @covers ::find_default_open_section_index
+     * @covers ::find_default_active_section_index
      */
     public function test_accordion_respects_a_manually_collapsed_section_over_pending_progress(): void {
         global $DB, $PAGE;
@@ -394,7 +394,7 @@ final class content_test extends \advanced_testcase {
      * instead of only tracking explicit collapses.
      *
      * @covers ::export_for_template
-     * @covers ::find_default_open_section_index
+     * @covers ::find_default_active_section_index
      */
     public function test_accordion_keeps_a_manually_expanded_default_closed_section_open(): void {
         global $DB, $PAGE;
@@ -502,5 +502,119 @@ final class content_test extends \advanced_testcase {
         $html = $renderer->render($widget);
 
         $this->assertStringContainsString(get_string('sectionname', 'format_smartcards') . ' 2', $html);
+    }
+
+    /**
+     * With navstyle=tabs, section 0 (General) always renders outside the tab system, and
+     * the tab for the section with a pending completion-tracked activity opens active by
+     * default — same "resume where you left off" rule as the accordion (§18 v2.7), just
+     * with no per-section preference to respect since a tab switch is never persisted.
+     *
+     * @covers ::export_for_template
+     * @covers ::find_default_active_section_index
+     */
+    public function test_tabs_activates_the_tab_with_a_pending_activity(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 2,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'tabs']);
+
+        $generator->create_module('forum', ['course' => $course->id, 'section' => 0]);
+        $pending = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $done = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 2,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $completioninfo = new \completion_info($course);
+        $completioninfo->update_state(
+            get_fast_modinfo($course, $student->id)->get_cm($done->cmid),
+            COMPLETION_COMPLETE,
+            $student->id
+        );
+        $section0id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 0]);
+        $section1id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 1]);
+        $section2id = $DB->get_field('course_sections', 'id', ['course' => $course->id, 'section' => 2]);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        // Section 0 has no tab of its own: no nav-link/tab-pane id references it.
+        $this->assertStringNotContainsString('sc-tab-' . $section0id . '"', $html);
+        $this->assertStringNotContainsString('sc-tab-pane-' . $section0id . '"', $html);
+
+        $this->assertMatchesRegularExpression(
+            '~class="nav-link active"[^>]*id="sc-tab-' . $section1id . '"~',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '~class="nav-link "[^>]*id="sc-tab-' . $section2id . '"~',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '~class="tab-pane fade show active"[^>]*id="sc-tab-pane-' . $section1id . '"~',
+            $html
+        );
+    }
+
+    /**
+     * With navstyle=sticky, the grid renders exactly like the default plain layout (every
+     * section always expanded, no collapsing, no tabs) — the only difference is the
+     * sc-sticky wrapper class that makes each section heading stick while scrolling
+     * through it (CSS-only behaviour, not something a server-rendered HTML string can
+     * assert beyond the class itself being present).
+     *
+     * @covers ::export_for_template
+     */
+    public function test_sticky_renders_the_wrapper_class_and_every_section_expanded(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['format' => 'smartcards', 'numsections' => 2]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'sticky']);
+
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+        $generator->create_module('page', ['course' => $course->id, 'section' => 2]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression('~class="sc-course[^"]*\bsc-sticky\b~', $html);
+        // No accordion/tab markup at all — a plain, always-expanded grid underneath.
+        $this->assertStringNotContainsString('sc-accordion-toggle', $html);
+        $this->assertStringNotContainsString('nav-tabs', $html);
+        $this->assertSame(2, substr_count($html, 'class="sc-grid"'));
     }
 }

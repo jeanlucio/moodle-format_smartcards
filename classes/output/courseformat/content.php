@@ -91,7 +91,11 @@ class content extends content_base {
         $descriptions  = cm_description_resolver::resolve_many($modinfo->get_cms());
         $userid        = (int)$USER->id;
 
-        $isaccordion = ($formatoptions['navstyle'] ?? 'default') === 'accordion';
+        $navstyle    = $formatoptions['navstyle'] ?? 'default';
+        $isaccordion = $navstyle === 'accordion';
+        $istabs      = $navstyle === 'tabs';
+        $issticky    = $navstyle === 'sticky';
+
         $completioninfo = null;
         $collapsedids = [];
         $expandedids = [];
@@ -108,10 +112,18 @@ class content extends content_base {
             // never match any section id (the exact bug a real course hit).
             $collapsedids   = array_map('intval', $preferences[toggle_section::PREFERENCE_COLLAPSED] ?? []);
             $expandedids    = array_map('intval', $preferences[toggle_section::PREFERENCE_EXPANDED] ?? []);
+        } else if ($istabs) {
+            // No preference to persist: unlike the accordion, a manual tab switch is never
+            // expected to survive a reload (confirmed with the user) — every load simply
+            // recomputes the same "first pending" default, so activating the native
+            // Bootstrap tab machinery is the only setup needed.
+            $PAGE->requires->js_call_amd('format_smartcards/tabs', 'init');
+            $completioninfo = new completion_info($course);
         }
 
         $sectionsdata = [];
         $untouchedbyindex = [];
+        $tabbableindexes = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
             if (!$sectioninfo->uservisible && $sectioninfo->section > 0) {
                 continue;
@@ -129,13 +141,16 @@ class content extends content_base {
             );
 
             $iscollapsible = $isaccordion && $sectioninfo->section > 0;
-            $progress = $iscollapsible ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
+            $needsprogress = ($iscollapsible || $istabs) && $sectioninfo->section > 0;
+            $progress = $needsprogress ? section_progress_resolver::resolve($completioninfo, $modinfo, $sectioninfo) : null;
 
             // A section is either explicitly collapsed, explicitly expanded, or genuinely
             // untouched (null) — tracking both directions (see toggle_section's docblock)
             // means an explicit expand of a section the accordion had closed by its own
             // default is never confused with a section the student never touched.
-            if (in_array((int)$sectioninfo->id, $collapsedids, true)) {
+            if (!$isaccordion) {
+                $explicitopen = null;
+            } else if (in_array((int)$sectioninfo->id, $collapsedids, true)) {
                 $explicitopen = false;
             } else if (in_array((int)$sectioninfo->id, $expandedids, true)) {
                 $explicitopen = true;
@@ -152,6 +167,7 @@ class content extends content_base {
                 'hascards'      => !empty($cards),
                 'iscollapsible' => $iscollapsible,
                 'isopen'        => $iscollapsible && ($explicitopen ?? false),
+                'isactivetab'   => false,
                 'hasprogress'   => $progress !== null && $progress->has_tracking(),
                 'progresslabel' => ($progress !== null && $progress->has_tracking())
                     ? get_string('progresstotal', 'completion', (object)[
@@ -161,8 +177,12 @@ class content extends content_base {
                     : '',
             ];
 
+            $lastindex = array_key_last($sectionsdata);
             if ($iscollapsible && $explicitopen === null) {
-                $untouchedbyindex[array_key_last($sectionsdata)] = $progress;
+                $untouchedbyindex[$lastindex] = $progress;
+            }
+            if ($istabs && $sectioninfo->section > 0) {
+                $tabbableindexes[$lastindex] = $progress;
             }
         }
 
@@ -170,9 +190,18 @@ class content extends content_base {
             // Among the sections the student has never touched, let the pending
             // activity pick the one that opens by default — a section already
             // explicitly collapsed or expanded above always keeps that choice.
-            $openindex = $this->find_default_open_section_index($untouchedbyindex);
+            $openindex = $this->find_default_active_section_index($untouchedbyindex);
             if ($openindex !== null) {
                 $sectionsdata[$openindex]['isopen'] = true;
+            }
+        } else if ($istabs) {
+            // Same "first pending, else first" rule as the accordion (§18 v2.7), just
+            // recomputed fresh on every load across every tabbable section — tabs have no
+            // per-section preference to respect, so there is no "untouched" subset to
+            // narrow down to first.
+            $activeindex = $this->find_default_active_section_index($tabbableindexes);
+            if ($activeindex !== null) {
+                $sectionsdata[$activeindex]['isactivetab'] = true;
             }
         }
 
@@ -190,26 +219,33 @@ class content extends content_base {
             'cardsizeclass'  => 'sc-size-' . $cardsize,
             'noframeclass'   => empty($formatoptions['showcardframe']) ? 'sc-noframe' : '',
             'isaccordion'    => $isaccordion,
+            'istabs'         => $istabs,
+            'issticky'       => $issticky,
         ];
     }
 
     /**
-     * Picks which never-manually-toggled section the accordion opens by default: the
-     * first one (in course order) with at least one completion-tracked activity the user
-     * has not finished yet, so a returning student lands where they left off. Falls back
-     * to the first untouched section when nothing is pending (completion disabled
-     * entirely, or everything already complete) rather than leaving it collapsed.
+     * Picks which section a "pending activity picks the default" navstyle should activate:
+     * the first one (in course order) with at least one completion-tracked activity the
+     * user has not finished yet, so a returning student lands where they left off. Falls
+     * back to the first candidate section when nothing is pending (completion disabled
+     * entirely, or everything already complete) rather than leaving nothing active.
      *
-     * @param section_progress[] $untouchedbyindex Progress of sections with no explicit
-     *                                              collapse/expand preference yet, keyed
+     * Shared by two navstyles with different candidate sets: the accordion only considers
+     * sections with no explicit collapse/expand preference yet (a manual choice always
+     * wins — see toggle_section's docblock); tabs have no such preference to persist (§18
+     * v2.18), so every non-section-0 section is always a candidate.
+     *
+     * @param section_progress[] $candidatesbyindex Progress of candidate sections, keyed
      *                                              by the section's index in
      *                                              $sectionsdata, in course order.
-     * @return int|null Index into $sectionsdata to mark open, or null when every
-     *                   collapsible section already has an explicit preference.
+     * @return int|null Index into $sectionsdata to mark active, or null when there were no
+     *                   candidate sections at all (e.g. every accordion section already has
+     *                   an explicit preference).
      */
-    private function find_default_open_section_index(array $untouchedbyindex): ?int {
+    private function find_default_active_section_index(array $candidatesbyindex): ?int {
         $firstindex = null;
-        foreach ($untouchedbyindex as $index => $progress) {
+        foreach ($candidatesbyindex as $index => $progress) {
             $firstindex ??= $index;
             if ($progress->has_pending()) {
                 return $index;

@@ -147,6 +147,38 @@
     display: none;
 }
 
+.format-smartcards .sc-course.sc-sticky .sc-section-title {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background-color: var(--body-bg, #fff);
+    padding-block: 0.5rem;
+    border-block-end: 1px solid var(--border-color, #dee2e6);
+}
+
+.format-smartcards .sc-tabs {
+    margin-block-end: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.format-smartcards .sc-tabs .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.format-smartcards .sc-tabs-progress {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--secondary, #6c757d);
+    white-space: nowrap;
+}
+
+.format-smartcards .sc-tabs .nav-link.active .sc-tabs-progress {
+    color: inherit;
+}
+
 .format-smartcards .sc-accordion-toggle:not(.collapsed) .sc-accordion-chevron-collapsed {
     display: none;
 }
