@@ -33,7 +33,13 @@ import Modal from 'core/modal';
 const SELECTORS = {
     CARD: '[data-region="smartcards-section-card"]',
     SOURCE: '[data-region="smartcards-section-modal-source"]',
+    CONTENT: '[data-region="smartcards-content"]',
 };
+
+// Matches the cardsize/showcardframe modifier classes content.mustache puts on
+// .sc-course (sc-size-medium, sc-size-large, sc-noframe) — the only ones the cards
+// moved into the modal need to keep looking the same as they do inline.
+const SIZE_FRAME_CLASS = /^sc-(size-\w+|noframe)$/;
 
 /**
  * Opens the full-screen modal for one section card.
@@ -54,7 +60,26 @@ const openModal = async(card) => {
         removeOnClose: true,
         large: true,
     });
-    modal.getRoot()[0].classList.add('sc-section-modal');
+
+    const modalRoot = modal.getRoot()[0];
+    modalRoot.classList.add('sc-section-modal');
+
+    // The core/modal module hoists its root to <body>, so the cm_grid moved into the
+    // modal body no longer sits under the page's own .sc-course — losing both its cardsize/
+    // showcardframe modifier classes and the --sc-card-size/--sc-card-icon-size custom
+    // properties that only .sc-course defines (styles.css), which made every card in
+    // the modal render at the small/framed default regardless of the course's real
+    // settings. Re-adding .sc-course plus those same modifier classes to the modal's
+    // own root restores that CSS scope without duplicating any rule.
+    const content = document.querySelector(SELECTORS.CONTENT);
+    if (content) {
+        modalRoot.classList.add('sc-course');
+        content.classList.forEach((className) => {
+            if (SIZE_FRAME_CLASS.test(className)) {
+                modalRoot.classList.add(className);
+            }
+        });
+    }
 };
 
 /**
