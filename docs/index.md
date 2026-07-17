@@ -10,8 +10,8 @@ lang: en
 ![Status](https://img.shields.io/badge/Status-Alpha-red?style=flat-square)
 
 **SmartCards** is a Moodle course format that renders activities and sections as a grid of
-icon-based cards instead of a plain list, reusing Moodle's native availability logic end to end —
-never a "button image + stealth activity" workaround.
+icon-based cards instead of a plain list, reusing Moodle's native availability logic end to end,
+so restriction reasons and open/close dates are always shown to students.
 
 Use the sidebar to jump to any section on this page.
 

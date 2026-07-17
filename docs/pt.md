@@ -11,7 +11,8 @@ lang: pt
 
 O **SmartCards** é um formato de curso do Moodle que exibe atividades e seções como uma grade de
 cards baseados em ícone em vez de uma lista simples, reaproveitando de ponta a ponta a lógica
-nativa de disponibilidade do Moodle — nunca o hack de "imagem-botão + atividade stealth".
+nativa de disponibilidade do Moodle, então motivos de restrição e datas de abertura/fechamento
+sempre aparecem para o estudante.
 
 Use a barra lateral para pular direto a qualquer seção desta página.
 

@@ -13,12 +13,11 @@
 
 **SmartCards** is a course format for Moodle that renders activities and sections as a grid of
 icon-based cards instead of a plain list, reusing Moodle's native availability logic (`cm_info`)
-end to end — never a "button image + stealth activity" workaround, so restriction reasons and
-open/close dates are never lost.
+end to end, so restriction reasons and open/close dates are always shown to students, never lost.
 
 Teachers can customise each card's icon (uploaded image, emoji, or a curated library icon) and
 colours, and choose from six navigation styles — default, accordion, tabs, sticky headers,
-section cards, or a Duolingo-style trail.
+section cards, or a winding trail, well suited to gamified courses.
 
 📚 **[Full documentation](https://jeanlucio.github.io/moodle-format_smartcards/)** — features,
 educational purpose, usage guide, the full test suite, and security details.
@@ -63,12 +62,12 @@ Maintained by [Jean Lúcio](https://github.com/jeanlucio).
 
 O **SmartCards** é um formato de curso para o Moodle que exibe atividades e seções como uma grade
 de cards baseados em ícone em vez de uma lista simples, reaproveitando de ponta a ponta a lógica
-nativa de disponibilidade do Moodle (`cm_info`) — nunca o hack de "imagem-botão + atividade
-stealth", então motivos de restrição e datas de abertura/fechamento nunca se perdem.
+nativa de disponibilidade do Moodle (`cm_info`), então motivos de restrição e datas de
+abertura/fechamento sempre aparecem para o estudante, nunca se perdem.
 
 Professores podem customizar o ícone de cada card (imagem enviada, emoji, ou um ícone de
 biblioteca curada) e as cores, e escolher entre seis estilos de navegação — padrão, acordeão,
-abas, cabeçalhos sticky, cards de seção, ou uma trilha estilo Duolingo.
+abas, cabeçalhos sticky, cards de seção, ou uma trilha sinuosa, indicada para cursos gamificados.
 
 📚 **[Documentação completa](https://jeanlucio.github.io/moodle-format_smartcards/pt.html)** —
 funcionalidades, finalidade educacional, guia de uso, a suíte completa de testes, e detalhes de
