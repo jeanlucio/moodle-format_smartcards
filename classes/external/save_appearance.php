@@ -257,7 +257,7 @@ class save_appearance extends external_api {
             'completiontype'       => new external_value(PARAM_RAW, "'none', 'manual' or 'automatic'"),
             'completioncriteria'   => new external_value(
                 PARAM_RAW,
-                'JSON array of localised automatic criteria descriptions'
+                'JSON array of automatic criteria, core_course/completion_automatic-shaped'
             ),
             'cantoggle'            => new external_value(PARAM_BOOL, 'Whether the manual completion toggle applies'),
             'hasdescription'       => new external_value(PARAM_BOOL, 'Whether a "Display description" intro is present'),

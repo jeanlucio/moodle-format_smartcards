@@ -269,8 +269,9 @@
 }
 
 .format-smartcards .sc-sheet-criteria {
-    margin-block-end: 0;
-    padding-inline-start: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .format-smartcards .sc-sheet-description {

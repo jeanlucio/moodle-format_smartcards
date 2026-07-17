@@ -117,7 +117,8 @@ final class cm_completion_resolver_test extends \advanced_testcase {
 
     /**
      * An automatic-tracking activity resolves TRACKING_AUTOMATIC and populates criteria
-     * with core's own already-localised descriptions.
+     * with core's own already-localised descriptions, shaped exactly like
+     * core_course/completion_automatic's template context so the sheet can reuse it as-is.
      *
      * @covers ::resolve
      */
@@ -137,6 +138,16 @@ final class cm_completion_resolver_test extends \advanced_testcase {
 
         $this->assertSame(cm_completion::TRACKING_AUTOMATIC, $completion->tracking);
         $this->assertNotEmpty($completion->criteria);
+
+        $criterion = $completion->criteria[0];
+        $this->assertArrayHasKey('description', $criterion);
+        $this->assertArrayHasKey('statuscomplete', $criterion);
+        $this->assertArrayHasKey('statuscompletefail', $criterion);
+        $this->assertArrayHasKey('statusincomplete', $criterion);
+        $this->assertTrue($criterion['istrackeduser']);
+        // The student has not viewed the activity yet, so "View" starts incomplete.
+        $this->assertFalse($criterion['statuscomplete']);
+        $this->assertTrue($criterion['statusincomplete']);
         $this->assertFalse($completion->iscomplete);
     }
 }

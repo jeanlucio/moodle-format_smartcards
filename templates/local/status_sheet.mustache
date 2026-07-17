@@ -41,7 +41,9 @@
         "cantoggle": true,
         "markcompletelabel": "Mark as done",
         "markincompletelabel": "Mark as not done",
-        "criteria": ["Receive a grade"],
+        "criteria": [
+            {"description": "Receive a grade", "statuscomplete": false, "statuscompletefail": false, "statusincomplete": true, "istrackeduser": true}
+        ],
         "hasdescription": true,
         "statusdescriptionlabel": "Description",
         "description": "<p>Read chapters 1-3 before attempting this quiz.</p>",
@@ -89,9 +91,14 @@
                 {{/cantoggle}}
             {{/ismanual}}
             {{#isautomatic}}
-                <ul class="sc-sheet-criteria">
-                    {{#criteria}}<li>{{.}}</li>{{/criteria}}
-                </ul>
+                {{! Reuses core's own core_course/completion_automatic template — the same
+                    "Done: View" / "To do: Receive a grade" pill the course page shows —
+                    instead of redrawing an equivalent status indicator. }}
+                <div class="sc-sheet-criteria" role="list">
+                    {{#criteria}}
+                        {{> core_course/completion_automatic }}
+                    {{/criteria}}
+                </div>
             {{/isautomatic}}
         </div>
     {{/hascompletion}}

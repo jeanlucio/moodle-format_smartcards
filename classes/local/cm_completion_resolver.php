@@ -59,7 +59,23 @@ final class cm_completion_resolver {
         $criteria = [];
         if ($tracking === cm_completion::TRACKING_AUTOMATIC) {
             foreach ($details->get_details() as $detail) {
-                $criteria[] = $detail->description;
+                // A manually overridden criterion carries $completiondata->completionstate as
+                // its status, which comes back as a string when sourced from a real DB row
+                // (the same class of bug already fixed in section_progress_resolver.php) — cast
+                // before the strict comparisons below, or an overridden-complete criterion would
+                // wrongly render as incomplete.
+                $status = (int)$detail->status;
+
+                // Same status → badge-shape mapping as core_course\output\activity_completion,
+                // so core's own core_course/completion_automatic template (reused as-is by
+                // status_sheet.mustache) renders identically to the course page.
+                $criteria[] = [
+                    'description' => $detail->description,
+                    'statuscomplete' => in_array($status, [COMPLETION_COMPLETE, COMPLETION_COMPLETE_PASS], true),
+                    'statuscompletefail' => $status === COMPLETION_COMPLETE_FAIL,
+                    'statusincomplete' => $status === COMPLETION_INCOMPLETE,
+                    'istrackeduser' => true,
+                ];
             }
         }
 

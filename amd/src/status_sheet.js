@@ -192,6 +192,9 @@ const openSheet = async(card) => {
         body: html,
         show: true,
         removeOnClose: true,
+        // A description can embed arbitrary rich content (images, widgets); give it the
+        // extra width so it isn't cramped, same as any other sheet content stays compact.
+        large: context.hasdescription,
     });
     Templates.runTemplateJS(js);
 

@@ -42,9 +42,13 @@ final class cm_completion {
     public readonly bool $iscomplete;
 
     /**
-     * @var string[] Human-readable automatic completion criteria descriptions (e.g.
-     *               "Receive a grade"), already localised by core. Always empty for
-     *               TRACKING_NONE/TRACKING_MANUAL.
+     * @var array Automatic completion criteria, one entry per condition (e.g. "View",
+     *            "Receive a grade"), each shaped exactly like core's own
+     *            core_course/completion_automatic template context — {description:
+     *            string, statuscomplete: bool, statuscompletefail: bool, statusincomplete:
+     *            bool} — so the status sheet can render the same badge core itself shows
+     *            on the course page, reused via that same template, never redrawn.
+     *            Always empty for TRACKING_NONE/TRACKING_MANUAL.
      */
     public readonly array $criteria;
 
@@ -53,7 +57,7 @@ final class cm_completion {
      *
      * @param string $tracking One of TRACKING_NONE, TRACKING_MANUAL or TRACKING_AUTOMATIC.
      * @param bool $iscomplete Whether the activity is currently complete.
-     * @param string[] $criteria Automatic completion criteria descriptions.
+     * @param array $criteria Automatic completion criteria, core_course/completion_automatic-shaped.
      */
     public function __construct(string $tracking, bool $iscomplete, array $criteria) {
         $this->tracking   = $tracking;
