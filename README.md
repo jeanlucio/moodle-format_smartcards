@@ -1,68 +1,109 @@
-# SmartCards — Moodle Course Format
+# Moodle Course Format SmartCards
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![Moodle 4.5+](https://img.shields.io/badge/Moodle-4.5%2B-orange)
-![Maturity: Alpha](https://img.shields.io/badge/Maturity-Alpha-red)
+[![Moodle Plugin CI](https://github.com/jeanlucio/moodle-format_smartcards/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-format_smartcards/actions/workflows/ci.yml)
+![Moodle](https://img.shields.io/badge/Moodle-4.5%E2%80%935.2-orange?style=flat-square&logo=moodle&logoColor=white)
+![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Alpha-red?style=flat-square)
 
-A course format that renders activities as a grid of buttons/cards while
-reusing Moodle's native availability logic (`cm_info`) — replacing the
-common "button image + stealth activity" workaround without losing
-restriction reasons or open/close dates.
-
-Um formato de curso que exibe as atividades como um grid de botões/cards
-reaproveitando a lógica de disponibilidade nativa do Moodle (`cm_info`) —
-substituindo o hack comum de "imagem-botão + atividade stealth" sem perder
-o motivo da restrição nem as datas de abertura/fechamento.
+[English](#english) | [Português](#português)
 
 ---
 
-## Features / Funcionalidades
+## English
 
-- **Native availability badges** — 🔒 restricted, 🕒 has a deadline, no
-  badge means the activity is freely accessible.
-  **Badges de disponibilidade nativos** — 🔒 restrito, 🕒 com prazo, sem
-  badge significa acesso livre.
-- **Status sheet** — tapping a badged card opens a sheet with the reason
-  and date, computed entirely from `cm_info` (never recalculated).
-  **Bandeja de status** — tocar num card com badge abre uma bandeja com o
-  motivo e a data, calculados inteiramente a partir do `cm_info` (nunca
-  recalculados).
-- **No stealth mode** — hidden activities never leave a trace for students;
-  teachers see them dimmed.
-  **Sem modo stealth** — atividades ocultas não deixam vestígio para o
-  estudante; professores as veem esmaecidas.
-- **Real, accessible titles** — the activity name is always real text
-  (never drawn inside an image), so it zooms, is read by screen readers,
-  and is localized.
-  **Títulos reais e acessíveis** — o nome da atividade é sempre texto real
-  (nunca desenhado numa imagem), então acompanha zoom, leitor de tela e
-  localização.
+**SmartCards** is a course format for Moodle that renders activities and sections as a grid of
+icon-based cards instead of a plain list, reusing Moodle's native availability logic (`cm_info`)
+end to end — never a "button image + stealth activity" workaround, so restriction reasons and
+open/close dates are never lost.
+
+Teachers can customise each card's icon (uploaded image, emoji, or a curated library icon) and
+colours, and choose from six navigation styles — default, accordion, tabs, sticky headers,
+section cards, or a Duolingo-style trail.
+
+📚 **[Full documentation](https://jeanlucio.github.io/moodle-format_smartcards/)** — features,
+educational purpose, usage guide, the full test suite, and security details.
+
+### 📦 Requirements
+
+| Component | Version |
+|-----------|---------|
+| Moodle    | 4.5 – 5.2 |
+| PHP       | 8.2+    |
+
+### 🛠️ Installation
+
+1. Download the `.zip` file or clone this repository.
+2. Extract the folder into your Moodle `course/format/` directory.
+3. Rename the folder to `smartcards` (if necessary).
+   Final path:
+   `your-moodle/course/format/smartcards/`
+4. Visit **Site administration > Notifications** to complete installation.
+5. Create or edit a course and choose **SmartCards** as its course format.
+
+### 🆘 Support
+
+Found a bug or have a question? Open an issue on the
+[issue tracker](https://github.com/jeanlucio/moodle-format_smartcards/issues).
+
+### 📄 License
+
+This project is licensed under the **GNU General Public License v3 (GPLv3)**.
+
+**Copyright:** 2026 Jean Lúcio
+
+### 👤 Maintainer
+
+Maintained by [Jean Lúcio](https://github.com/jeanlucio).
+
+[⬆️ Back to top](#english)
 
 ---
 
-## Requirements / Requisitos
+## Português
 
-| Requirement | Version |
-|---|---|
-| Moodle | 4.5, 5.0, 5.1, 5.2 |
-| PHP | 8.1+ |
+O **SmartCards** é um formato de curso para o Moodle que exibe atividades e seções como uma grade
+de cards baseados em ícone em vez de uma lista simples, reaproveitando de ponta a ponta a lógica
+nativa de disponibilidade do Moodle (`cm_info`) — nunca o hack de "imagem-botão + atividade
+stealth", então motivos de restrição e datas de abertura/fechamento nunca se perdem.
 
----
+Professores podem customizar o ícone de cada card (imagem enviada, emoji, ou um ícone de
+biblioteca curada) e as cores, e escolher entre seis estilos de navegação — padrão, acordeão,
+abas, cabeçalhos sticky, cards de seção, ou uma trilha estilo Duolingo.
 
-## Roadmap
+📚 **[Documentação completa](https://jeanlucio.github.io/moodle-format_smartcards/pt.html)** —
+funcionalidades, finalidade educacional, guia de uso, a suíte completa de testes, e detalhes de
+segurança.
 
-This is an early, alpha-stage release. Custom activity appearance
-(image/emoji/icon upload), configurable navigation styles, and section
-cards are planned for future versions — see `SCOPE.md` (internal, not
-shipped in the plugin package).
+### 📦 Requisitos
 
-Esta é uma versão inicial, em fase alpha. Aparência customizada de
-atividade (upload de imagem/emoji/ícone), estilos de navegação
-configuráveis e cards de seção estão planejados para versões futuras —
-ver `SCOPE.md` (documento interno, não incluído no pacote do plugin).
+| Componente | Versão |
+|------------|--------|
+| Moodle     | 4.5 – 5.2 |
+| PHP        | 8.2+   |
 
----
+### 🛠️ Instalação
 
-## License / Licença
+1. Baixe o arquivo `.zip` ou clone este repositório.
+2. Extraia na pasta `course/format/` do seu Moodle.
+3. Renomeie para `smartcards` (se necessário).
+   Caminho final:
+   `seu-moodle/course/format/smartcards/`
+4. Acesse **Administração do site > Notificações** para concluir a instalação.
+5. Crie ou edite um curso e escolha **SmartCards** como formato de curso.
 
-GPLv3 or later. / GPLv3 ou posterior.
+### 🆘 Suporte
+
+Encontrou um bug ou tem alguma dúvida? Abra uma issue no
+[rastreador de issues](https://github.com/jeanlucio/moodle-format_smartcards/issues).
+
+### 📄 Licença
+
+Este projeto é licenciado sob a **GNU General Public License v3 (GPLv3)**.
+
+**Copyright:** 2026 Jean Lúcio
+
+### 👤 Mantenedor
+
+Mantido por [Jean Lúcio](https://github.com/jeanlucio).
+
+[⬆️ Voltar ao topo](#português)
