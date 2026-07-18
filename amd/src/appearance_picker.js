@@ -55,12 +55,16 @@ const SELECTORS = {
     ICONCOLOR_FIELD: '[data-region="smartcards-iconcolor-field"]',
     ICONCOLOR_INPUT: '[data-region="smartcards-iconcolor-input"]',
     ICONCOLOR_CLEAR: '[data-region="smartcards-iconcolor-clear"]',
+    ICONCOLOR_OK: '[data-region="smartcards-iconcolor-ok"]',
+    ICONCOLOR_CANCEL: '[data-region="smartcards-iconcolor-cancel"]',
     IMAGE_FIELD: '[data-region="smartcards-image-field"]',
     IMAGE_INPUT: '[data-region="smartcards-image-input"]',
     IMAGE_FEEDBACK: '[data-region="smartcards-image-feedback"]',
     BGCOLOR_INPUT: '[data-region="smartcards-bgcolor-input"]',
     BGCOLOR_CLEAR: '[data-region="smartcards-bgcolor-clear"]',
     BGCOLOR_TRANSPARENT: '[data-region="smartcards-bgcolor-transparent"]',
+    BGCOLOR_OK: '[data-region="smartcards-bgcolor-ok"]',
+    BGCOLOR_CANCEL: '[data-region="smartcards-bgcolor-cancel"]',
     LABELCOLOR_SWATCH: '[data-region="smartcards-labelcolor-swatch"]',
     LABELFONT_SELECT: '[data-region="smartcards-labelfont-select"]',
     PREVIEW_ICONWRAP: '[data-region="smartcards-preview-iconwrap"]',
@@ -270,7 +274,46 @@ const wireTypeToggle = (form) => {
 };
 
 /**
- * Wires the background colour input and its "Default"/"Transparent" buttons.
+ * Adds an explicit "OK"/"Cancel" pair to a native colour input, next to its own
+ * Default/Transparent buttons. Browsers close a native colour-picker popup on an
+ * outside click, but that click has to actually reach the page for the popup to
+ * notice — nested inside a modal dialog, it does not always get there reliably, and
+ * the popup can hang open (or reappear mispositioned on the next attempt). OK/Cancel
+ * give the teacher a button inside the modal that is guaranteed to receive the click,
+ * calling input.blur() to force the popup closed either way.
+ *
+ * @param {HTMLElement} input The native colour input.
+ * @param {HTMLElement} okBtn Confirms the value currently showing and closes the popup.
+ * @param {HTMLElement} cancelBtn Restores the value/mode the field had when it was last
+ *                                  focused, then closes the popup.
+ * @param {Function} setMode Same setMode closure the caller already uses for its own
+ *                            Default/Transparent buttons, so Cancel restores it too.
+ * @param {Function} refreshPreview Re-renders the live preview after a Cancel restores
+ *                                    the previous value (no native 'input' event fires
+ *                                    for a value set directly from JavaScript).
+ * @returns {void}
+ */
+const wireColorConfirmButtons = (input, okBtn, cancelBtn, setMode, refreshPreview) => {
+    let snapshotValue = input.value;
+    let snapshotMode = input.dataset.mode;
+
+    input.addEventListener('focus', () => {
+        snapshotValue = input.value;
+        snapshotMode = input.dataset.mode;
+    });
+
+    okBtn.addEventListener('click', () => input.blur());
+
+    cancelBtn.addEventListener('click', () => {
+        input.value = snapshotValue;
+        setMode(snapshotMode);
+        input.blur();
+        refreshPreview();
+    });
+};
+
+/**
+ * Wires the background colour input and its "Default"/"Transparent"/"OK"/"Cancel" buttons.
  *
  * A native colour input cannot represent "no value" or "transparent", so a
  * tri-state data-mode flag ('default'|'transparent'|'custom') tracks which of the
@@ -278,9 +321,11 @@ const wireTypeToggle = (form) => {
  *
  * @param {HTMLElement} form The editor form.
  * @param {string} initialBgcolor The activity's current bgcolor ('', 'transparent', or a hex value).
+ * @param {Function} refreshPreview Re-renders the live preview, passed through to
+ *                                    wireColorConfirmButtons() for its Cancel button.
  * @returns {void}
  */
-const wireBgcolor = (form, initialBgcolor) => {
+const wireBgcolor = (form, initialBgcolor, refreshPreview) => {
     const input = form.querySelector(SELECTORS.BGCOLOR_INPUT);
     const defaultBtn = form.querySelector(SELECTORS.BGCOLOR_CLEAR);
     const transparentBtn = form.querySelector(SELECTORS.BGCOLOR_TRANSPARENT);
@@ -302,18 +347,28 @@ const wireBgcolor = (form, initialBgcolor) => {
     input.addEventListener('input', () => setMode('custom'));
     defaultBtn.addEventListener('click', () => setMode('default'));
     transparentBtn.addEventListener('click', () => setMode('transparent'));
+
+    wireColorConfirmButtons(
+        input,
+        form.querySelector(SELECTORS.BGCOLOR_OK),
+        form.querySelector(SELECTORS.BGCOLOR_CANCEL),
+        setMode,
+        refreshPreview
+    );
 };
 
 /**
- * Wires the icon glyph colour input and its "Default" button. Bi-state only (no
- * "transparent" leg, unlike wireBgcolor): an invisible icon glyph is never a useful
- * choice, so only 'default'|'custom' apply here.
+ * Wires the icon glyph colour input and its "Default"/"OK"/"Cancel" buttons. Bi-state
+ * only (no "transparent" leg, unlike wireBgcolor): an invisible icon glyph is never a
+ * useful choice, so only 'default'|'custom' apply here.
  *
  * @param {HTMLElement} form The editor form.
  * @param {string} initialIconcolor The activity's current iconcolor ('' or a hex value).
+ * @param {Function} refreshPreview Re-renders the live preview, passed through to
+ *                                    wireColorConfirmButtons() for its Cancel button.
  * @returns {void}
  */
-const wireIconcolor = (form, initialIconcolor) => {
+const wireIconcolor = (form, initialIconcolor, refreshPreview) => {
     const input = form.querySelector(SELECTORS.ICONCOLOR_INPUT);
     const defaultBtn = form.querySelector(SELECTORS.ICONCOLOR_CLEAR);
 
@@ -326,6 +381,14 @@ const wireIconcolor = (form, initialIconcolor) => {
 
     input.addEventListener('input', () => setMode('custom'));
     defaultBtn.addEventListener('click', () => setMode('default'));
+
+    wireColorConfirmButtons(
+        input,
+        form.querySelector(SELECTORS.ICONCOLOR_OK),
+        form.querySelector(SELECTORS.ICONCOLOR_CANCEL),
+        setMode,
+        refreshPreview
+    );
 };
 
 /**
@@ -538,16 +601,17 @@ const openEditor = async(id, name, isSection) => {
     Templates.runTemplateJS(js);
 
     const form = modal.getBody()[0].querySelector(SELECTORS.FORM);
+    const refreshPreview = () => updatePreview(form, bootstrap.iconurl, bootstrap.imageurl);
+
     wireTypeToggle(form);
-    wireBgcolor(form, bootstrap.bgcolor);
-    wireIconcolor(form, bootstrap.iconcolor);
+    wireBgcolor(form, bootstrap.bgcolor, refreshPreview);
+    wireIconcolor(form, bootstrap.iconcolor, refreshPreview);
     wireExclusivePressedGroup(form, SELECTORS.LABELCOLOR_SWATCH);
     wireExclusivePressedGroup(form, SELECTORS.ICON_BTN);
     wireEmojiQuickpicks(form);
     wireImageInput(form, imageInvalidMessage, imageToobigMessage);
     form.querySelector(SELECTORS.EMOJI_INPUT).addEventListener('input', () => clearEmojiError(form));
 
-    const refreshPreview = () => updatePreview(form, bootstrap.iconurl, bootstrap.imageurl);
     form.addEventListener('input', refreshPreview);
     form.addEventListener('change', refreshPreview);
     form.addEventListener('click', (event) => {
