@@ -77,3 +77,50 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
 | **Overall** | **65%** |
+
+## Behat Acceptance Tests
+
+SmartCards also ships a Behat suite driving the format end-to-end in a real browser: the
+card grid, availability/completion badges, the status sheet, every navigation style, the
+teacher-facing appearance editor, course settings, and a full backup/restore round trip.
+Every CI push runs the full suite against the same Moodle 4.5 → 5.2 matrix as PHPUnit.
+
+### Core Rendering (`tests/behat/`)
+
+| Feature file | Scenarios |
+|--------------|----------:|
+| `grid_rendering.feature` | 3 |
+| `availability_badges.feature` | 3 |
+| `status_sheet.feature` | 4 |
+| `completion_badges.feature` | 2 |
+| **Subtotal** | **12** |
+
+### Navigation Styles & Display Options
+
+| Feature file | Scenarios |
+|--------------|----------:|
+| `navstyle_accordion.feature` | 3 |
+| `navstyle_tabs.feature` | 2 |
+| `navstyle_sticky.feature` | 1 |
+| `navstyle_sectioncards.feature` | 2 |
+| `navstyle_trail.feature` | 1 |
+| `generalinstyle_option.feature` | 2 |
+| `progress_display.feature` | 3 |
+| **Subtotal** | **14** |
+
+### Appearance Editor, Settings & Backup
+
+| Feature file | Scenarios |
+|--------------|----------:|
+| `appearance_activity.feature` | 2 |
+| `appearance_section.feature` | 2 |
+| `appearance_course_defaults.feature` | 1 |
+| `course_settings.feature` | 2 |
+| `backup_restore.feature` | 1 |
+| **Subtotal** | **8** |
+
+| **Grand Total** | **34** |
+
+```bash
+moodle-plugin-ci behat --profile chrome
+```
