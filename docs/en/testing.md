@@ -8,11 +8,12 @@ backup/restore, and Privacy API compliance. Every CI push runs against the full 
 
 | Test file | Cases |
 |-----------|------:|
-| `output/courseformat/content_test.php` | 24 |
+| `output/courseformat/content_test.php` | 25 |
+| `output/courseformat/content/cm/controlmenu_test.php` | 2 |
 | `output/courseformat/content/section/controlmenu_test.php` | 3 |
 | `observer_test.php` | 3 |
 | `hook_listener_test.php` | 1 |
-| **Subtotal** | **31** |
+| **Subtotal** | **34** |
 
 ### Local Business-Logic Tests (`tests/local/`)
 
@@ -47,7 +48,7 @@ backup/restore, and Privacy API compliance. Every CI push runs against the full 
 | `privacy/provider_test.php` | 2 |
 | **Subtotal** | **4** |
 
-| **Grand Total** | **133** |
+| **Grand Total** | **136** |
 
 ```bash
 vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcards

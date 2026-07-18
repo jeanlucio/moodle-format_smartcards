@@ -8,11 +8,12 @@ matriz completa (Moodle 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL e MariaDB).
 
 | Arquivo de teste | Casos |
 |-------------------|------:|
-| `output/courseformat/content_test.php` | 24 |
+| `output/courseformat/content_test.php` | 25 |
+| `output/courseformat/content/cm/controlmenu_test.php` | 2 |
 | `output/courseformat/content/section/controlmenu_test.php` | 3 |
 | `observer_test.php` | 3 |
 | `hook_listener_test.php` | 1 |
-| **Subtotal** | **31** |
+| **Subtotal** | **34** |
 
 ### Testes de Lógica de Negócio Local (`tests/local/`)
 
@@ -47,7 +48,7 @@ matriz completa (Moodle 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL e MariaDB).
 | `privacy/provider_test.php` | 2 |
 | **Subtotal** | **4** |
 
-| **Total geral** | **133** |
+| **Total geral** | **136** |
 
 ```bash
 vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcards
