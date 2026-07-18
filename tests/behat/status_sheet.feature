@@ -31,7 +31,7 @@ Feature: SmartCards status sheet explains what a badge alone cannot show
     And I am on the "Course 1" "Course" page logged in as "student1"
     When I click on "Restricted 1" "button"
     Then I should see "Reason" in the ".modal-body" "css_element"
-    And I should see "Not available" in the ".sc-sheet-reason" "css_element"
+    And I should see "Available from" in the ".sc-sheet-reason" "css_element"
 
   @javascript
   Scenario: The sheet shows the due date row for a timed activity
