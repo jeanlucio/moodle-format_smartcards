@@ -212,14 +212,23 @@
  * horizontally by :nth-child in a repeating 4-step wave (0% / 12% / 24% / 12%) — no
  * connecting line between cards, and no CSS `order` reshuffle, so DOM order (course
  * order) always matches both visual order and tab/screen-reader order. Percentages
- * (not fixed px) keep the offset proportional to the section's own width, so it never
+ * (not fixed px) keep the offset proportional to the trail's own width, so it never
  * overflows a narrow viewport regardless of cardsize.
+ *
+ * The trail's own width is capped to a multiple of --sc-card-size (not the full section
+ * width) and centered with margin-inline: auto — on a wide course content column, the
+ * 0%-24% wave computed against the full section width left every card hugging the left
+ * edge instead of reading as a centered path. Scaling the cap off --sc-card-size keeps
+ * it proportioned the same way across every cardsize preset; min(100%, ...) still lets
+ * it shrink to fit a narrow viewport instead of overflowing.
  */
 .format-smartcards .sc-trail {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--sc-card-gap);
+    max-width: min(100%, calc(var(--sc-card-size) * 3));
+    margin-inline: auto;
 }
 
 .format-smartcards .sc-trail .sc-card:nth-child(4n+2) {
