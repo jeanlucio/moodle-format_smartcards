@@ -69,7 +69,7 @@ final class controlmenu_test extends \advanced_testcase {
 
         $this->assertNotNull($actionmenu);
         $html = $renderer->render($actionmenu);
-        $this->assertStringContainsString('smartcardsEditAppearance', $html);
+        $this->assertStringContainsString('editAppearance', $html);
         $this->assertStringContainsString('data-cmid="' . $cm->cmid . '"', $html);
     }
 
@@ -112,6 +112,6 @@ final class controlmenu_test extends \advanced_testcase {
         // menu) — confirmed by this test failing on the MOODLE_405_STABLE CI leg before
         // this was accounted for. Only the appearance entry itself is ours to assert on.
         $html = $actionmenu !== null ? $renderer->render($actionmenu) : '';
-        $this->assertStringNotContainsString('smartcardsEditAppearance', $html);
+        $this->assertStringNotContainsString('editAppearance', $html);
     }
 }
