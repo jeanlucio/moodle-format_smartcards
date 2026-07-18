@@ -80,6 +80,7 @@
     data-completioncriteria="{{completioncriteria}}"
     data-cantoggle="{{#cantoggle}}1{{/cantoggle}}{{^cantoggle}}0{{/cantoggle}}"
     data-iscompletioncomplete="{{#iscompletioncomplete}}1{{/iscompletioncomplete}}{{^iscompletioncomplete}}0{{/iscompletioncomplete}}"
+    data-ispending="{{#iscompletionpending}}1{{/iscompletionpending}}{{^iscompletionpending}}0{{/iscompletionpending}}"
     data-hasdescription="{{#hasdescription}}1{{/hasdescription}}{{^hasdescription}}0{{/hasdescription}}"
     data-description="{{description}}"
     aria-label="{{name}}{{#hasstatuslabel}} — {{statuslabel}}{{/hasstatuslabel}}"
@@ -102,6 +103,7 @@
         class="sc-card{{#dimmed}} sc-card-dimmed{{/dimmed}}"
         data-region="smartcards-card"
         data-cmid="{{cmid}}"
+        data-ispending="{{#iscompletionpending}}1{{/iscompletionpending}}{{^iscompletionpending}}0{{/iscompletionpending}}"
         aria-label="{{name}}{{#hasstatuslabel}} — {{statuslabel}}{{/hasstatuslabel}}"
     >
         <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>
@@ -119,6 +121,7 @@
         class="sc-card sc-card-static{{#dimmed}} sc-card-dimmed{{/dimmed}}"
         data-region="smartcards-card"
         data-cmid="{{cmid}}"
+        data-ispending="{{#iscompletionpending}}1{{/iscompletionpending}}{{^iscompletionpending}}0{{/iscompletionpending}}"
         aria-label="{{name}}{{#hasstatuslabel}} — {{statuslabel}}{{/hasstatuslabel}}"
     >
         <span class="sc-card-icon" aria-hidden="true"{{#hasiconstyle}} style="{{iconstyle}}"{{/hasiconstyle}}>

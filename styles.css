@@ -154,6 +154,11 @@
     display: none;
 }
 
+/*
+ * Also the trail's own section header: navstyle=trail always carries the sc-sticky
+ * wrapper class too (content.php export_for_template()), since a long single-column
+ * zigzag is exactly the case a sticky heading helps most.
+ */
 .format-smartcards .sc-course.sc-sticky .sc-section-title {
     position: sticky;
     /*
@@ -227,6 +232,16 @@
 
 .format-smartcards .sc-trail .sc-card:nth-child(4n) {
     margin-inline-start: 12%;
+}
+
+/*
+ * Landing spot for trail.js's own auto-scroll to the first pending activity: keeps the
+ * card clear of the sticky section header sitting above it (60px navbar + roughly its
+ * own padding/line-height/border, see the sc-sticky rule above) when the browser's
+ * native scrollIntoView() lands on it.
+ */
+.format-smartcards .sc-trail .sc-card {
+    scroll-margin-top: 130px;
 }
 
 .format-smartcards .sc-card {

@@ -626,7 +626,10 @@ final class content_test extends \advanced_testcase {
      * (cm_trail.mustache) instead of the wrapping sc-grid — the zigzag positioning itself
      * is pure CSS (styles.css), so this only asserts the right container/partial was
      * chosen and that every card is still present, in course order (the DOM order the
-     * CSS-only zigzag relies on for tab/screen-reader order to stay correct).
+     * CSS-only zigzag relies on for tab/screen-reader order to stay correct). Trail also
+     * always carries the sc-sticky wrapper class, same as navstyle=sticky itself — a long
+     * single-column trail is exactly the case a sticky section header helps most, and
+     * there is no separate 'sticky' + 'trail' combination to opt into.
      *
      * @covers ::export_for_template
      */
@@ -654,6 +657,7 @@ final class content_test extends \advanced_testcase {
 
         $html = $renderer->render($widget);
 
+        $this->assertMatchesRegularExpression('~class="sc-course[^"]*\bsc-sticky\b~', $html);
         $this->assertStringContainsString('class="sc-trail"', $html);
         $this->assertStringNotContainsString('class="sc-grid"', $html);
         // No accordion/tab/section-card markup at all — trail is a plain, always-visible
@@ -667,6 +671,61 @@ final class content_test extends \advanced_testcase {
         $this->assertIsInt($firstpos);
         $this->assertIsInt($secondpos);
         $this->assertLessThan($secondpos, $firstpos);
+    }
+
+    /**
+     * Every trail card carries data-ispending, the marker trail.js's own "jump to the
+     * first pending activity" auto-scroll (§20) queries for — a completed activity must
+     * render data-ispending="0" so the scroll never lands on it instead of the real
+     * first-pending card after it in course order.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_trail_cards_carry_the_ispending_marker(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 1,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['navstyle' => 'trail']);
+
+        $done = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $pending = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $completioninfo = new \completion_info($course);
+        $completioninfo->update_state(
+            get_fast_modinfo($course)->get_cm($done->cmid),
+            COMPLETION_COMPLETE,
+            $student->id
+        );
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression('~data-cmid="' . $done->cmid . '"[^>]*data-ispending="0"~', $html);
+        $this->assertMatchesRegularExpression('~data-cmid="' . $pending->cmid . '"[^>]*data-ispending="1"~', $html);
     }
 
     /**

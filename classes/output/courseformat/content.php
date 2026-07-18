@@ -96,9 +96,13 @@ class content extends content_base {
         $navstyle        = $formatoptions['navstyle'] ?? 'default';
         $isaccordion     = $navstyle === 'accordion';
         $istabs          = $navstyle === 'tabs';
-        $issticky        = $navstyle === 'sticky';
         $issectioncards  = $navstyle === 'sectioncards';
         $istrail         = $navstyle === 'trail';
+        // Trail is a long single-column scroll, so it always gets the sticky section
+        // header too (the sc-sticky wrapper class and its CSS are shared verbatim with
+        // navstyle=sticky) — there is no separate 'sticky' + 'trail' combination to
+        // offer since navstyle is a single exclusive choice.
+        $issticky        = ($navstyle === 'sticky') || $istrail;
         // Whether section 0 (General) participates in the navstyle above instead of
         // always rendering as a plain section outside it (its default, unchanged
         // behaviour when this is off) — see the 'plainsection' field below.
@@ -139,6 +143,11 @@ class content extends content_base {
             // No default-active section either: every card is static until tapped, no
             // "first pending" section to pick for the student ahead of time.
             $PAGE->requires->js_call_amd('format_smartcards/section_modal', 'init');
+        } else if ($istrail) {
+            // Card-level "first pending" default (see trail.js's own docblock) — the
+            // section-level equivalent accordion/tabs apply above has no section to open
+            // or activate here, since every trail section is always fully expanded.
+            $PAGE->requires->js_call_amd('format_smartcards/trail', 'init');
         }
 
         // Only queried in sectioncards mode: every other navstyle never renders a

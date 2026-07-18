@@ -26,11 +26,14 @@
     collapsible (accordion), as Bootstrap tabs (tabs), as a winding single-column trail
     (trail — same cards, cm_trail.mustache instead of cm_grid.mustache, CSS-only zigzag),
     or as a grid of section cards (sectioncards) — never more than one of
-    isaccordion/istabs/issticky/issectioncards/istrail is true at once. In sectioncards
-    mode, each section's own cards/availability are still rendered (hidden) alongside its
-    card button, for amd/src/section_modal.js to move into a full-screen modal on tap —
-    the exact same availability+cm_grid pairing every other navstyle already renders
-    inline, just hidden instead of shown directly.
+    isaccordion/istabs/issectioncards/istrail is true at once. issticky is the one
+    exception: it is also true whenever istrail is, since the trail always gets sticky
+    section headers baked in (see content.php export_for_template()), so the sc-sticky
+    wrapper class and its CSS apply to both. In sectioncards mode, each section's own
+    cards/availability are still rendered (hidden) alongside its card button, for
+    amd/src/section_modal.js to move into a full-screen modal on tap — the exact same
+    availability+cm_grid pairing every other navstyle already renders inline, just
+    hidden instead of shown directly.
 
     Example context (json):
     {
