@@ -42,7 +42,7 @@ import * as Templates from 'core/templates';
 import {add as addToast} from 'core/toast';
 
 const SELECTORS = {
-    TRIGGER: '[data-action="smartcardsEditAppearance"]',
+    TRIGGER: '[data-smartcards-action="editAppearance"]',
     FORM: '[data-region="smartcards-appearance-form"]',
     FORM_ERROR: '[data-region="smartcards-form-error"]',
     TYPE_RADIO: '[data-region="smartcards-type-radio"]',

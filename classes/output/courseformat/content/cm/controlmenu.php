@@ -101,7 +101,7 @@ class controlmenu extends controlmenu_base {
             text: get_string('editappearance', 'format_smartcards'),
             attributes: [
                 'class' => 'sc-edit-appearance-action',
-                'data-action' => 'smartcardsEditAppearance',
+                'data-smartcards-action' => 'editAppearance',
                 'data-cmid' => (string)$this->mod->id,
                 'data-name' => $this->mod->get_formatted_name(),
             ],

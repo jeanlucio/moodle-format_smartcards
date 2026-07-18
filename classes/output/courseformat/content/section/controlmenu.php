@@ -72,9 +72,17 @@ class controlmenu extends controlmenu_base {
             return $controls;
         }
 
+        // Deliberately not 'data-action': core/amd/src/actions.js binds a body-level click
+        // handler on every '[data-sectionid] a[data-action]' (the section actions menu
+        // core itself marks with data-sectionid) and forwards *any* data-action value,
+        // unrecognised or not, straight to the core_course_edit_section web service —
+        // unlike the equivalent cm-level handler, which only acts on an explicit allow-
+        // list and silently ignores anything else. Without this, clicking the item threw
+        // a fatal "sectionactionnotsupported" exception (course/format/classes/base.php)
+        // before format_smartcards's own click handler ever ran.
         $item = $this->build_appearance_item([
             'class' => 'sc-edit-appearance-action',
-            'data-action' => 'smartcardsEditAppearance',
+            'data-smartcards-action' => 'editAppearance',
             'data-sectionid' => (string)$this->section->id,
             'data-name' => $this->format->get_section_name($this->section),
         ]);
