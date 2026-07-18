@@ -25,13 +25,19 @@ Feature: SmartCards custom appearance survives backup and restore
     And I am on "Course 1" course homepage with editing mode on
     And I open "Page 1" actions menu
     And I choose "Card appearance" in the open action menu
-    And I click on "Emoji" "radio"
+    And I click on "//input[@id='sc-appearance-type-emoji']" "xpath_element"
     And I set the field with xpath "//input[@id='sc-appearance-emoji-input']" to "⭐"
     And I click on "Save changes" "button"
+    And I log out
+    # Restoring into a new course needs moodle/course:create, which editingteacher
+    # does not have by default — the rest of this scenario runs as admin, matching
+    # every core feature that exercises this exact restore destination.
+    And I log in as "admin"
+    And I am on "Course 1" course homepage
     And I backup "Course 1" course using this options:
       | Confirmation | Filename | test_backup.mbz |
     And I restore "test_backup.mbz" backup into a new course using this options:
       | Schema | Course name       | Course 2 |
       | Schema | Course short name | C2       |
-    When I am on the "Course 2" "Course" page logged in as "teacher1"
+    When I am on the "Course 2" "Course" page logged in as "admin"
     Then I should see "⭐" in the ".sc-card-emoji" "css_element"

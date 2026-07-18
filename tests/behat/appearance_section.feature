@@ -26,7 +26,7 @@ Feature: SmartCards custom section card appearance
     And I am on "Course 1" course homepage with editing mode on
     And I open section "1" edit menu
     And I choose "Card appearance" in the open action menu
-    And I click on "Emoji" "radio"
+    And I click on "//input[@id='sc-appearance-type-emoji']" "xpath_element"
     And I set the field with xpath "//input[@id='sc-appearance-emoji-input']" to "⭐"
     And I click on "Save changes" "button"
     And I am on "Course 1" course homepage with editing mode off
