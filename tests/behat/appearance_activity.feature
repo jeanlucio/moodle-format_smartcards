@@ -27,10 +27,10 @@ Feature: SmartCards custom activity card appearance
     And I open "Page 1" actions menu
     And I choose "Card appearance" in the open action menu
     And I click on "Emoji" "radio"
-    And I set the field with xpath "//input[@id='sc-appearance-emoji-input']" to "🎯"
+    And I set the field with xpath "//input[@id='sc-appearance-emoji-input']" to "⭐"
     And I click on "Save changes" "button"
     And I am on "Course 1" course homepage with editing mode off
-    Then I should see "🎯" in the ".sc-card-emoji" "css_element"
+    Then I should see "⭐" in the ".sc-card-emoji" "css_element"
 
   Scenario: A teacher without the manageappearance capability does not see the action
     Given the following "permission overrides" exist:
