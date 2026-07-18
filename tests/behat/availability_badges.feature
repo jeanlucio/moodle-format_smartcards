@@ -26,7 +26,7 @@ Feature: SmartCards shows native availability and deadline badges
     And I expand all fieldsets
     And I click on "Add restriction..." "button"
     And I click on "Date" "button" in the "Add restriction..." "dialogue"
-    And I set the field "year" to "2099"
+    And I set the field "year" to "2040"
     And I press "Save and return to course"
     When I am on the "Course 1" "Course" page logged in as "student1"
     Then I should see "🔒" in the ".sc-card-badgeicon" "css_element"

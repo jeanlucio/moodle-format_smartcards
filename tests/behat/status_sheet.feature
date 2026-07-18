@@ -26,7 +26,7 @@ Feature: SmartCards status sheet explains what a badge alone cannot show
     And I expand all fieldsets
     And I click on "Add restriction..." "button"
     And I click on "Date" "button" in the "Add restriction..." "dialogue"
-    And I set the field "year" to "2099"
+    And I set the field "year" to "2040"
     And I press "Save and return to course"
     And I am on the "Course 1" "Course" page logged in as "student1"
     When I click on "Restricted 1" "button"
