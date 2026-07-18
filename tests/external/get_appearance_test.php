@@ -63,6 +63,7 @@ final class get_appearance_test extends \advanced_testcase {
         $this->assertSame('', $result['bgcolor']);
         $this->assertSame('', $result['labelcolor']);
         $this->assertSame('', $result['labelfont']);
+        $this->assertSame('', $result['iconcolor']);
         $this->assertNotSame('', $result['iconurl']);
         $this->assertSame('', $result['imageurl']);
     }
@@ -84,7 +85,8 @@ final class get_appearance_test extends \advanced_testcase {
             'rocket',
             '#fff3e0',
             appearance_palette::LABEL_COLORS['blue'],
-            'fredoka'
+            'fredoka',
+            '#ffffff'
         );
 
         $result = get_appearance::execute($page->cmid);
@@ -95,6 +97,7 @@ final class get_appearance_test extends \advanced_testcase {
         $this->assertSame('#fff3e0', $result['bgcolor']);
         $this->assertSame(appearance_palette::LABEL_COLORS['blue'], $result['labelcolor']);
         $this->assertSame('fredoka', $result['labelfont']);
+        $this->assertSame('#ffffff', $result['iconcolor']);
     }
 
     /**

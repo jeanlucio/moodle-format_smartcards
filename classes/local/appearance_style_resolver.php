@@ -41,14 +41,14 @@ final class appearance_style_resolver {
      * @param appearance|null $item The item's custom appearance, or null.
      * @param renderer_base $output Renderer used to resolve the curated icon's URL.
      * @param array $formatoptions The course's resolved format options, for the
-     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont fallback.
+     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont/defaulticoncolor fallback.
      * @param Closure $imageurl Resolves the uploaded card image URL from its fileid
      *                          (appearance::$value cast to int), only called when
      *                          $item->type is TYPE_IMAGE. Lets each caller point at its
      *                          own appearance_image_store method (module vs course
      *                          context) without this class knowing which.
-     * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string}
-     *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle.
+     * @return array{0: bool, 1: string, 2: bool, 3: string, 4: string, 5: string, 6: bool, 7: string}
+     *         isemoji, emoji, iscustomicon, customiconurl, iconstyle, titlestyle, isbsicon, iconcolorstyle.
      */
     public static function resolve(
         ?appearance $item,
@@ -58,6 +58,11 @@ final class appearance_style_resolver {
     ): array {
         $isemoji = $item !== null && $item->type === appearance_repository::TYPE_EMOJI;
         $emoji   = $isemoji ? $item->value : '';
+
+        // The icon glyph's colour (via CSS mask, see cm_icon.mustache) can only ever
+        // tint a bundled monochrome bsicon — never an uploaded photo or the default
+        // per-module-type icon, both of which carry their own real colours.
+        $isbsicon = $item !== null && $item->type === appearance_repository::TYPE_ICON;
 
         $iscustomicon = $item !== null
             && in_array($item->type, [appearance_repository::TYPE_ICON, appearance_repository::TYPE_IMAGE], true);
@@ -85,6 +90,10 @@ final class appearance_style_resolver {
         }
         $titlestyle = implode('; ', $titlestyleparts);
 
-        return [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle];
+        $defaulticoncolor = (string)($formatoptions['defaulticoncolor'] ?? '');
+        $iconcolor      = $item?->iconcolor ?? ($defaulticoncolor !== '' ? $defaulticoncolor : null);
+        $iconcolorstyle = ($isbsicon && $iconcolor !== null) ? 'background-color: ' . $iconcolor : '';
+
+        return [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle, $isbsicon, $iconcolorstyle];
     }
 }

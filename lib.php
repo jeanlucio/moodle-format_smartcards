@@ -241,8 +241,8 @@ class format_smartcards extends core_courseformat\base {
     /**
      * Returns the format options for this course.
      *
-     * Eight options, each with a site-wide default (settings.php) overridable per
-     * course: cardsize and showcardframe control the grid's visual density; the three
+     * Nine options, each with a site-wide default (settings.php) overridable per
+     * course: cardsize and showcardframe control the grid's visual density; the four
      * "default" colour/font options give the whole course a fallback that an
      * individual activity's own appearance still takes priority over (see
      * card_builder::build()); navstyle controls the section navigation layout (view
@@ -279,6 +279,10 @@ class format_smartcards extends core_courseformat\base {
                     'default' => get_config('format_smartcards', 'defaultlabelfont'),
                     'type' => PARAM_ALPHANUM,
                 ],
+                'defaulticoncolor' => [
+                    'default' => get_config('format_smartcards', 'defaulticoncolor'),
+                    'type' => PARAM_TEXT,
+                ],
                 'navstyle' => [
                     'default' => get_config('format_smartcards', 'navstyle'),
                     'type' => PARAM_ALPHA,
@@ -311,6 +315,11 @@ class format_smartcards extends core_courseformat\base {
             $labelfontoptions = ['' => get_string('appearance_labelfont_system', 'format_smartcards')];
             foreach (appearance_palette::LABEL_FONTS as $slug => $fontname) {
                 $labelfontoptions[$slug] = $fontname;
+            }
+
+            $iconcoloroptions = ['' => get_string('appearance_defaultcolor', 'format_smartcards')];
+            foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
+                $iconcoloroptions[$hex] = ucfirst($slug);
             }
 
             $courseformatoptionsedit = [
@@ -349,6 +358,11 @@ class format_smartcards extends core_courseformat\base {
                     'label' => new lang_string('defaultlabelfont', 'format_smartcards'),
                     'element_type' => 'select',
                     'element_attributes' => [$labelfontoptions],
+                ],
+                'defaulticoncolor' => [
+                    'label' => new lang_string('defaulticoncolor', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [$iconcoloroptions],
                 ],
                 'navstyle' => [
                     'label' => new lang_string('navstyle', 'format_smartcards'),

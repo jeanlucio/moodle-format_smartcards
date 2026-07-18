@@ -90,6 +90,18 @@ if ($ADMIN->fulltree) {
         $labelfontoptions
     ));
 
+    $iconcoloroptions = ['' => new lang_string('appearance_defaultcolor', 'format_smartcards')];
+    foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
+        $iconcoloroptions[$hex] = ucfirst($slug) . " ($hex)";
+    }
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/defaulticoncolor',
+        new lang_string('defaulticoncolor', 'format_smartcards'),
+        new lang_string('defaulticoncolor_desc', 'format_smartcards'),
+        '',
+        $iconcoloroptions
+    ));
+
     $settings->add(new admin_setting_configselect(
         'format_smartcards/navstyle',
         new lang_string('navstyle', 'format_smartcards'),

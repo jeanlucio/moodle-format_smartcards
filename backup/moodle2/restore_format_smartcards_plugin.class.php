@@ -125,6 +125,7 @@ class restore_format_smartcards_plugin extends restore_format_plugin {
             $data->bgcolor,
             $data->labelcolor,
             $data->labelfont,
+            $data->iconcolor ?? null,
         );
     }
 
@@ -169,6 +170,7 @@ class restore_format_smartcards_plugin extends restore_format_plugin {
             $data->bgcolor,
             $data->labelcolor,
             $data->labelfont,
+            $data->iconcolor ?? null,
         );
     }
 }

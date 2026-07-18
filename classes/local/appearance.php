@@ -51,6 +51,12 @@ final class appearance {
     public readonly ?string $labelfont;
 
     /**
+     * @var string|null #RRGGBB icon glyph colour, or null for the default. Only
+     *                  meaningful when type is TYPE_ICON.
+     */
+    public readonly ?string $iconcolor;
+
+    /**
      * Constructor.
      *
      * @param int $id Record id.
@@ -61,6 +67,7 @@ final class appearance {
      * @param string|null $bgcolor #RRGGBB background colour, or null.
      * @param string|null $labelcolor #RRGGBB title colour, or null.
      * @param string|null $labelfont Curated font slug, or null.
+     * @param string|null $iconcolor #RRGGBB icon glyph colour, or null.
      */
     public function __construct(
         int $id,
@@ -71,6 +78,7 @@ final class appearance {
         ?string $bgcolor,
         ?string $labelcolor,
         ?string $labelfont,
+        ?string $iconcolor,
     ) {
         $this->id           = $id;
         $this->contextlevel = $contextlevel;
@@ -80,6 +88,7 @@ final class appearance {
         $this->bgcolor      = $bgcolor;
         $this->labelcolor   = $labelcolor;
         $this->labelfont    = $labelfont;
+        $this->iconcolor    = $iconcolor;
     }
 
     /**
@@ -98,6 +107,7 @@ final class appearance {
             bgcolor: $record->bgcolor,
             labelcolor: $record->labelcolor,
             labelfont: $record->labelfont,
+            iconcolor: $record->iconcolor,
         );
     }
 }

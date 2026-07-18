@@ -60,6 +60,7 @@ final class get_section_appearance_test extends \advanced_testcase {
         $this->assertSame($sectionid, $result['sectionid']);
         $this->assertSame(appearance_repository::TYPE_DEFAULT, $result['type']);
         $this->assertSame('', $result['value']);
+        $this->assertSame('', $result['iconcolor']);
         $this->assertNotSame('', $result['iconurl']);
         $this->assertStringContainsString('i/section', $result['iconurl']);
         $this->assertSame('', $result['imageurl']);
@@ -81,7 +82,8 @@ final class get_section_appearance_test extends \advanced_testcase {
             'rocket',
             '#fff3e0',
             appearance_palette::LABEL_COLORS['blue'],
-            'fredoka'
+            'fredoka',
+            '#ffffff'
         );
 
         $result = get_section_appearance::execute($sectionid);
@@ -92,6 +94,7 @@ final class get_section_appearance_test extends \advanced_testcase {
         $this->assertSame('#fff3e0', $result['bgcolor']);
         $this->assertSame(appearance_palette::LABEL_COLORS['blue'], $result['labelcolor']);
         $this->assertSame('fredoka', $result['labelfont']);
+        $this->assertSame('#ffffff', $result['iconcolor']);
     }
 
     /**

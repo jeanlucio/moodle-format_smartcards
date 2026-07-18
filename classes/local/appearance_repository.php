@@ -118,6 +118,7 @@ class appearance_repository {
      * @param string|null $bgcolor #RRGGBB background colour of the card circle, or null.
      * @param string|null $labelcolor #RRGGBB title colour, must belong to the curated palette, or null.
      * @param string|null $labelfont Curated font slug, or null for the system font.
+     * @param string|null $iconcolor #RRGGBB icon glyph colour, or null for the default.
      * @return appearance The saved row.
      * @throws invalid_parameter_exception If any value fails validation.
      */
@@ -128,8 +129,18 @@ class appearance_repository {
         ?string $bgcolor,
         ?string $labelcolor,
         ?string $labelfont,
+        ?string $iconcolor = null,
     ): appearance {
-        return $this->save_for_item(self::CONTEXTLEVEL_ACTIVITY, $cmid, $type, $value, $bgcolor, $labelcolor, $labelfont);
+        return $this->save_for_item(
+            self::CONTEXTLEVEL_ACTIVITY,
+            $cmid,
+            $type,
+            $value,
+            $bgcolor,
+            $labelcolor,
+            $labelfont,
+            $iconcolor
+        );
     }
 
     /**
@@ -141,6 +152,7 @@ class appearance_repository {
      * @param string|null $bgcolor #RRGGBB background colour of the card circle, or null.
      * @param string|null $labelcolor #RRGGBB title colour, must belong to the curated palette, or null.
      * @param string|null $labelfont Curated font slug, or null for the system font.
+     * @param string|null $iconcolor #RRGGBB icon glyph colour, or null for the default.
      * @return appearance The saved row.
      * @throws invalid_parameter_exception If any value fails validation.
      */
@@ -151,8 +163,18 @@ class appearance_repository {
         ?string $bgcolor,
         ?string $labelcolor,
         ?string $labelfont,
+        ?string $iconcolor = null,
     ): appearance {
-        return $this->save_for_item(self::CONTEXTLEVEL_SECTION, $sectionid, $type, $value, $bgcolor, $labelcolor, $labelfont);
+        return $this->save_for_item(
+            self::CONTEXTLEVEL_SECTION,
+            $sectionid,
+            $type,
+            $value,
+            $bgcolor,
+            $labelcolor,
+            $labelfont,
+            $iconcolor
+        );
     }
 
     /**
@@ -256,6 +278,7 @@ class appearance_repository {
      * @param string|null $bgcolor #RRGGBB background colour of the card circle, or null.
      * @param string|null $labelcolor #RRGGBB title colour, must belong to the curated palette, or null.
      * @param string|null $labelfont Curated font slug, or null for the system font.
+     * @param string|null $iconcolor #RRGGBB icon glyph colour, or null for the default.
      * @return appearance The saved row.
      * @throws invalid_parameter_exception If any value fails validation.
      */
@@ -267,6 +290,7 @@ class appearance_repository {
         ?string $bgcolor,
         ?string $labelcolor,
         ?string $labelfont,
+        ?string $iconcolor = null,
     ): appearance {
         global $DB;
 
@@ -274,6 +298,7 @@ class appearance_repository {
         $this->validate_bgcolor($bgcolor);
         $this->validate_labelcolor($labelcolor);
         $this->validate_labelfont($labelfont);
+        $this->validate_iconcolor($iconcolor);
 
         $now = time();
         $existing = $DB->get_record('format_smartcards_appearance', [
@@ -289,6 +314,7 @@ class appearance_repository {
             'bgcolor'      => $bgcolor,
             'labelcolor'   => $labelcolor,
             'labelfont'    => $labelfont,
+            'iconcolor'    => $iconcolor,
             'timemodified' => $now,
         ];
 
@@ -400,6 +426,24 @@ class appearance_repository {
     private function validate_labelfont(?string $labelfont): void {
         if ($labelfont !== null && !appearance_palette::is_valid_labelfont($labelfont)) {
             throw new invalid_parameter_exception('labelfont is not part of the curated palette: ' . $labelfont);
+        }
+    }
+
+    /**
+     * Validates the free-form icon glyph colour, if provided.
+     *
+     * Like bgcolor (and unlike labelcolor), iconcolor is not restricted to a curated
+     * palette: the icon it colours is always aria-hidden and purely decorative, so WCAG
+     * text-contrast rules do not apply to it. Only meaningful when type is TYPE_ICON,
+     * but stored independently of type, same as bgcolor/labelcolor/labelfont.
+     *
+     * @param string|null $iconcolor Colour to validate.
+     * @return void
+     * @throws invalid_parameter_exception If $iconcolor is set but malformed.
+     */
+    private function validate_iconcolor(?string $iconcolor): void {
+        if ($iconcolor !== null && !appearance_palette::is_valid_hex_color($iconcolor)) {
+            throw new invalid_parameter_exception('Invalid iconcolor: ' . $iconcolor);
         }
     }
 

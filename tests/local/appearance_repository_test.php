@@ -216,6 +216,46 @@ final class appearance_repository_test extends \advanced_testcase {
     }
 
     /**
+     * A well-formed iconcolor must round-trip, and — like bgcolor, unlike labelcolor —
+     * is not restricted to the curated palette, since the icon glyph it colours is
+     * always aria-hidden and decorative.
+     */
+    public function test_iconcolor_roundtrips_and_is_not_restricted_to_the_palette(): void {
+        $this->resetAfterTest();
+        $saved = (new appearance_repository())->save_for_activity(
+            1,
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            null,
+            null,
+            '#ff00aa'
+        );
+
+        $this->assertSame('#ff00aa', $saved->iconcolor);
+    }
+
+    /**
+     * A malformed iconcolor must be rejected.
+     */
+    public function test_malformed_iconcolor_is_rejected(): void {
+        $this->resetAfterTest();
+        $this->expectException(invalid_parameter_exception::class);
+        (new appearance_repository())->save_for_activity(1, appearance_repository::TYPE_ICON, 'book', null, null, null, 'red');
+    }
+
+    /**
+     * Omitting iconcolor entirely must default to null, so every existing call site
+     * that predates this field keeps working unchanged.
+     */
+    public function test_iconcolor_defaults_to_null_when_omitted(): void {
+        $this->resetAfterTest();
+        $saved = (new appearance_repository())->save_for_activity(1, appearance_repository::TYPE_ICON, 'book', null, null, null);
+
+        $this->assertNull($saved->iconcolor);
+    }
+
+    /**
      * Deleting an activity's appearance must remove the row and leave get_for_activity()
      * returning null.
      */

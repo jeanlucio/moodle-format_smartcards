@@ -187,7 +187,9 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * An uploaded image appearance must render through the same iscustomicon/
      * customiconurl fields the library icon type uses, with a URL built by
-     * appearance_image_store (no separate File API lookup at render time).
+     * appearance_image_store (no separate File API lookup at render time). It must
+     * never be reported as a colourable bundled icon (isbsicon) — a photo has its own
+     * real colours and cannot be CSS-masked like a bundled bsicon SVG.
      *
      * @covers ::build
      */
@@ -206,7 +208,8 @@ final class card_builder_test extends \advanced_testcase {
             (string)$fileid,
             null,
             null,
-            null
+            null,
+            '#ff00aa'
         );
 
         $modinfo = get_fast_modinfo($course, $student->id);
@@ -227,6 +230,94 @@ final class card_builder_test extends \advanced_testcase {
 
         $this->assertTrue($card['iscustomicon']);
         $this->assertSame(appearance_image_store::url($page->cmid, $fileid)->out(false), $card['customiconurl']);
+        $this->assertFalse($card['isbsicon']);
+        $this->assertSame('', $card['iconcolorstyle']);
+    }
+
+    /**
+     * A library icon's own iconcolor must take priority over the course's
+     * defaulticoncolor format option, and must be reported as a colourable bundled icon.
+     *
+     * @covers ::build
+     */
+    public function test_activity_own_iconcolor_overrides_course_default(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $owniconcolor = '#ff00aa';
+        (new appearance_repository())->save_for_activity(
+            $page->cmid,
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            null,
+            null,
+            $owniconcolor
+        );
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $formatoptions = ['defaulticoncolor' => appearance_palette::LABEL_COLORS['green']];
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            (new appearance_repository())->get_for_activity($page->cmid),
+            $formatoptions,
+            (int)$student->id,
+            ''
+        );
+
+        $this->assertTrue($card['isbsicon']);
+        $this->assertStringContainsString($owniconcolor, $card['iconcolorstyle']);
+        $this->assertStringNotContainsString(appearance_palette::LABEL_COLORS['green'], $card['iconcolorstyle']);
+    }
+
+    /**
+     * With no activity appearance at all, the course's defaulticoncolor must still
+     * apply — same fallback chain already covered for bgcolor/labelcolor/labelfont.
+     *
+     * @covers ::build
+     */
+    public function test_course_default_iconcolor_applies_with_no_activity_appearance(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        (new appearance_repository())->save_for_activity(
+            $page->cmid,
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            null,
+            null
+        );
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $formatoptions = ['defaulticoncolor' => appearance_palette::LABEL_COLORS['teal']];
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            (new appearance_repository())->get_for_activity($page->cmid),
+            $formatoptions,
+            (int)$student->id,
+            ''
+        );
+
+        $this->assertStringContainsString(appearance_palette::LABEL_COLORS['teal'], $card['iconcolorstyle']);
     }
 
     /**

@@ -77,6 +77,53 @@ final class section_card_builder_test extends \advanced_testcase {
     }
 
     /**
+     * A section's own library icon and iconcolor must be reported as a colourable
+     * bundled icon, mirroring card_builder's own behaviour for activities.
+     *
+     * @covers ::build
+     */
+    public function test_own_library_icon_reports_isbsicon_and_iconcolorstyle(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['numsections' => 1]);
+
+        $repository = new appearance_repository();
+        $repository->save_for_section(
+            $this->get_sectionid($course, 1),
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            null,
+            null,
+            '#ff00aa'
+        );
+
+        $sectioninfo = get_fast_modinfo($course)->get_section_info(1);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+
+        $card = section_card_builder::build(
+            $sectioninfo,
+            'Topic 1',
+            $renderer,
+            $repository->get_for_section($sectioninfo->id),
+            [],
+            [],
+            [],
+            true,
+            true,
+            false,
+            '',
+            false,
+            false
+        );
+
+        $this->assertTrue($card['isbsicon']);
+        $this->assertStringContainsString('#ff00aa', $card['iconcolorstyle']);
+    }
+
+    /**
      * With no appearance of its own, the section falls back to the first of its visible
      * activities (in course order) that has one configured.
      *

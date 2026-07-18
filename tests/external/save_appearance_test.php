@@ -92,9 +92,41 @@ final class save_appearance_test extends \advanced_testcase {
         $this->assertStringContainsString($bgcolor, $result['iconstyle']);
         $this->assertStringContainsString($labelcolor, $result['titlestyle']);
         $this->assertStringContainsString('Nunito', $result['titlestyle']);
-        // Icon glyph rendering is not wired into the card yet (bundled in a later
-        // step), so the icon type must not be reported as an emoji.
         $this->assertFalse($result['isemoji']);
+    }
+
+    /**
+     * A library icon's own iconcolor must round-trip into isbsicon/iconcolorstyle,
+     * while an emoji card must never report itself as a colourable bundled icon.
+     */
+    public function test_iconcolor_is_reflected_in_returned_card_for_icon_type_only(): void {
+        $this->resetAfterTest();
+        [, $page, $teacher] = $this->create_course_with_teacher();
+        $this->setUser($teacher);
+
+        $iconcolor = '#ffffff';
+
+        $result = save_appearance::execute(
+            cmid: $page->cmid,
+            type: appearance_repository::TYPE_ICON,
+            value: 'book',
+            iconcolor: $iconcolor
+        );
+        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+
+        $this->assertTrue($result['isbsicon']);
+        $this->assertStringContainsString($iconcolor, $result['iconcolorstyle']);
+
+        $emojiresult = save_appearance::execute(
+            cmid: $page->cmid,
+            type: appearance_repository::TYPE_EMOJI,
+            value: '🎉',
+            iconcolor: $iconcolor
+        );
+        $emojiresult = external_api::clean_returnvalue(save_appearance::execute_returns(), $emojiresult);
+
+        $this->assertFalse($emojiresult['isbsicon']);
+        $this->assertSame('', $emojiresult['iconcolorstyle']);
     }
 
     /**

@@ -74,6 +74,12 @@ class save_appearance extends external_api {
                 VALUE_DEFAULT,
                 ''
             ),
+            'iconcolor' => new external_value(
+                PARAM_RAW_TRIMMED,
+                'Icon glyph #RRGGBB (type=icon only), or empty for the default',
+                VALUE_DEFAULT,
+                ''
+            ),
         ]);
     }
 
@@ -88,6 +94,7 @@ class save_appearance extends external_api {
      * @param string $labelfont Curated font slug, or '' for the system font.
      * @param string $imagedata Base64-encoded image bytes (TYPE_IMAGE only), or '' to
      *                          keep the previously uploaded image.
+     * @param string $iconcolor Icon glyph #RRGGBB, or '' for the default.
      * @return array<string, mixed>
      */
     public static function execute(
@@ -97,7 +104,8 @@ class save_appearance extends external_api {
         string $bgcolor = '',
         string $labelcolor = '',
         string $labelfont = '',
-        string $imagedata = ''
+        string $imagedata = '',
+        string $iconcolor = ''
     ): array {
         global $PAGE, $USER;
 
@@ -109,6 +117,7 @@ class save_appearance extends external_api {
             'labelcolor' => $labelcolor,
             'labelfont' => $labelfont,
             'imagedata' => $imagedata,
+            'iconcolor' => $iconcolor,
         ]);
 
         $cm      = get_coursemodule_from_id('', $params['cmid'], 0, false, MUST_EXIST);
@@ -135,6 +144,7 @@ class save_appearance extends external_api {
             $params['bgcolor'] !== '' ? $params['bgcolor'] : null,
             $params['labelcolor'] !== '' ? $params['labelcolor'] : null,
             $params['labelfont'] !== '' ? $params['labelfont'] : null,
+            $params['iconcolor'] !== '' ? $params['iconcolor'] : null,
         );
 
         $modinfo       = get_fast_modinfo($course);
@@ -199,6 +209,9 @@ class save_appearance extends external_api {
             'customiconurl'        => new external_value(PARAM_RAW, 'Custom icon/image URL, or empty'),
             'hasiconstyle'         => new external_value(PARAM_BOOL, 'Whether the icon circle has a custom style'),
             'iconstyle'            => new external_value(PARAM_RAW, 'Inline CSS for the icon circle, or empty'),
+            'isbsicon'             => new external_value(PARAM_BOOL, 'Whether the icon is a colourable bundled library icon'),
+            'hasiconcolorstyle'    => new external_value(PARAM_BOOL, 'Whether the icon glyph has a custom colour'),
+            'iconcolorstyle'       => new external_value(PARAM_RAW, 'Inline CSS for the icon glyph colour, or empty'),
             'hastitlestyle'        => new external_value(PARAM_BOOL, 'Whether the title has a custom style'),
             'titlestyle'           => new external_value(PARAM_RAW, 'Inline CSS for the title, or empty'),
             'opensheet'            => new external_value(PARAM_BOOL, 'Whether tapping the card opens the status sheet'),

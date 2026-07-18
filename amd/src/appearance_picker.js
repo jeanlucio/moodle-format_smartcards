@@ -52,6 +52,9 @@ const SELECTORS = {
     EMOJI_QUICKPICK: '[data-region="smartcards-emoji-quickpick"]',
     ICON_FIELD: '[data-region="smartcards-icon-field"]',
     ICON_BTN: '[data-region="smartcards-icon-btn"]',
+    ICONCOLOR_FIELD: '[data-region="smartcards-iconcolor-field"]',
+    ICONCOLOR_INPUT: '[data-region="smartcards-iconcolor-input"]',
+    ICONCOLOR_CLEAR: '[data-region="smartcards-iconcolor-clear"]',
     IMAGE_FIELD: '[data-region="smartcards-image-field"]',
     IMAGE_INPUT: '[data-region="smartcards-image-input"]',
     IMAGE_FEEDBACK: '[data-region="smartcards-image-feedback"]',
@@ -62,9 +65,13 @@ const SELECTORS = {
     LABELFONT_SELECT: '[data-region="smartcards-labelfont-select"]',
     PREVIEW_ICONWRAP: '[data-region="smartcards-preview-iconwrap"]',
     PREVIEW_ICONIMG: '[data-region="smartcards-preview-iconimg"]',
+    PREVIEW_ICONMASK: '[data-region="smartcards-preview-iconmask"]',
     PREVIEW_EMOJI: '[data-region="smartcards-preview-emoji"]',
     PREVIEW_TITLE: '[data-region="smartcards-preview-title"]',
 };
+
+/** @type {string} Fallback native colour-input value when no iconcolor is set yet, mirrors styles.css --dark fallback. */
+const ICONCOLOR_DEFAULT_SWATCH = '#212529';
 
 /** @type {Object<string, string>} Curated labelcolor palette slug => #RRGGBB, mirrors appearance_palette.php. */
 const LABEL_COLORS = {
@@ -126,6 +133,8 @@ const buildEditorContext = (id, name, bootstrap) => {
         isbgcolordefault: bgcolorIsDefault,
         isbgcolortransparent: bgcolorIsTransparent,
         bgcolorinputvalue: (!bgcolorIsTransparent && !bgcolorIsDefault) ? bootstrap.bgcolor : '#f8f9fa',
+        isiconcolordefault: bootstrap.iconcolor === '',
+        iconcolorinputvalue: bootstrap.iconcolor !== '' ? bootstrap.iconcolor : ICONCOLOR_DEFAULT_SWATCH,
         labelcolor: bootstrap.labelcolor,
         colors: Object.entries(LABEL_COLORS).map(([slug, hex]) => ({
             slug,
@@ -240,6 +249,7 @@ const clearFormError = (form) => {
 const wireTypeToggle = (form) => {
     const emojiField = form.querySelector(SELECTORS.EMOJI_FIELD);
     const iconField = form.querySelector(SELECTORS.ICON_FIELD);
+    const iconcolorField = form.querySelector(SELECTORS.ICONCOLOR_FIELD);
     const imageField = form.querySelector(SELECTORS.IMAGE_FIELD);
     form.addEventListener('change', (event) => {
         if (!event.target.matches(SELECTORS.TYPE_RADIO)) {
@@ -247,6 +257,7 @@ const wireTypeToggle = (form) => {
         }
         emojiField.hidden = event.target.value !== 'emoji';
         iconField.hidden = event.target.value !== 'icon';
+        iconcolorField.hidden = event.target.value !== 'icon';
         imageField.hidden = event.target.value !== 'image';
 
         if (event.target.value === 'icon' && !form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`)) {
@@ -291,6 +302,30 @@ const wireBgcolor = (form, initialBgcolor) => {
     input.addEventListener('input', () => setMode('custom'));
     defaultBtn.addEventListener('click', () => setMode('default'));
     transparentBtn.addEventListener('click', () => setMode('transparent'));
+};
+
+/**
+ * Wires the icon glyph colour input and its "Default" button. Bi-state only (no
+ * "transparent" leg, unlike wireBgcolor): an invisible icon glyph is never a useful
+ * choice, so only 'default'|'custom' apply here.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {string} initialIconcolor The activity's current iconcolor ('' or a hex value).
+ * @returns {void}
+ */
+const wireIconcolor = (form, initialIconcolor) => {
+    const input = form.querySelector(SELECTORS.ICONCOLOR_INPUT);
+    const defaultBtn = form.querySelector(SELECTORS.ICONCOLOR_CLEAR);
+
+    const setMode = (mode) => {
+        input.dataset.mode = mode;
+        defaultBtn.setAttribute('aria-pressed', mode === 'default' ? 'true' : 'false');
+    };
+
+    setMode(initialIconcolor === '' ? 'default' : 'custom');
+
+    input.addEventListener('input', () => setMode('custom'));
+    defaultBtn.addEventListener('click', () => setMode('default'));
 };
 
 /**
@@ -377,7 +412,10 @@ const wireImageInput = (form, invalidMessage, toobigMessage) => {
  * Reads the current form state into the shape the web service expects.
  *
  * @param {HTMLElement} form The editor form.
- * @returns {{type: string, value: string, bgcolor: string, labelcolor: string, labelfont: string, imagedata: string}}
+ * @returns {{
+ *     type: string, value: string, bgcolor: string, labelcolor: string, labelfont: string,
+ *     iconcolor: string, imagedata: string
+ * }}
  */
 const gatherFormValues = (form) => {
     const checkedType = form.querySelector(`${SELECTORS.TYPE_RADIO}:checked`);
@@ -404,10 +442,13 @@ const gatherFormValues = (form) => {
 
     const labelfont = form.querySelector(SELECTORS.LABELFONT_SELECT).value;
 
+    const iconcolorInput = form.querySelector(SELECTORS.ICONCOLOR_INPUT);
+    const iconcolor = iconcolorInput.dataset.mode === 'custom' ? iconcolorInput.value : '';
+
     const imageDataUrl = form.querySelector(SELECTORS.IMAGE_INPUT).dataset.newDataUrl ?? '';
     const imagedata = imageDataUrl.includes(',') ? imageDataUrl.split(',')[1] : '';
 
-    return {type, value, bgcolor, labelcolor, labelfont, imagedata};
+    return {type, value, bgcolor, labelcolor, labelfont, iconcolor, imagedata};
 };
 
 /**
@@ -426,17 +467,27 @@ const updatePreview = (form, defaultIconUrl, existingImageUrl) => {
 
     const iconWrap = form.querySelector(SELECTORS.PREVIEW_ICONWRAP);
     const iconImg = form.querySelector(SELECTORS.PREVIEW_ICONIMG);
+    const iconMask = form.querySelector(SELECTORS.PREVIEW_ICONMASK);
     const emojiSpan = form.querySelector(SELECTORS.PREVIEW_EMOJI);
     const titleSpan = form.querySelector(SELECTORS.PREVIEW_TITLE);
 
     const isEmoji = values.type === 'emoji';
+    const isIcon = values.type === 'icon';
     emojiSpan.hidden = !isEmoji;
-    iconImg.hidden = isEmoji;
+    iconMask.hidden = !isIcon;
+    iconImg.hidden = isEmoji || isIcon;
+
     if (isEmoji) {
         emojiSpan.textContent = values.value;
-    } else if (values.type === 'icon') {
+    } else if (isIcon) {
+        // A bundled library icon is recoloured via CSS mask instead of a plain img —
+        // see cm_icon.mustache for why (its SVG's fill="currentColor" cannot be reached
+        // through an isolated <img> document).
         const selectedIcon = form.querySelector(`${SELECTORS.ICON_BTN}[aria-pressed="true"]`);
-        iconImg.src = selectedIcon ? selectedIcon.dataset.url : defaultIconUrl;
+        const iconUrl = selectedIcon ? selectedIcon.dataset.url : defaultIconUrl;
+        iconMask.style.webkitMaskImage = `url(${iconUrl})`;
+        iconMask.style.maskImage = `url(${iconUrl})`;
+        iconMask.style.backgroundColor = values.iconcolor || '';
     } else if (values.type === 'image') {
         const newDataUrl = form.querySelector(SELECTORS.IMAGE_INPUT).dataset.newDataUrl;
         iconImg.src = newDataUrl || existingImageUrl || defaultIconUrl;
@@ -489,6 +540,7 @@ const openEditor = async(id, name, isSection) => {
     const form = modal.getBody()[0].querySelector(SELECTORS.FORM);
     wireTypeToggle(form);
     wireBgcolor(form, bootstrap.bgcolor);
+    wireIconcolor(form, bootstrap.iconcolor);
     wireExclusivePressedGroup(form, SELECTORS.LABELCOLOR_SWATCH);
     wireExclusivePressedGroup(form, SELECTORS.ICON_BTN);
     wireEmojiQuickpicks(form);

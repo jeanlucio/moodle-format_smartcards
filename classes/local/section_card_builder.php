@@ -59,7 +59,7 @@ final class section_card_builder {
      * @param int[] $sectioncmids Ids of this section's visible activities, in course
      *                             order — the fallback-chain search order.
      * @param array $formatoptions The course's resolved format options, for the
-     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont fallback.
+     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont/defaulticoncolor fallback.
      * @param bool $sectionavailable Whether the section itself is available to this user
      *                                (false only for a restricted-but-visible section —
      *                                a fully hidden one never reaches this method).
@@ -99,7 +99,7 @@ final class section_card_builder {
                 $fileid
             )->out(false);
 
-        [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
+        [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle, $isbsicon, $iconcolorstyle]
             = appearance_style_resolver::resolve($fallbackitem, $output, $formatoptions, $imageurl);
 
         $islocked = !$sectionavailable;
@@ -128,6 +128,9 @@ final class section_card_builder {
             'customiconurl'         => $customiconurl,
             'hasiconstyle'          => ($iconstyle !== ''),
             'iconstyle'             => $iconstyle,
+            'isbsicon'              => $isbsicon,
+            'hasiconcolorstyle'     => ($iconcolorstyle !== ''),
+            'iconcolorstyle'        => $iconcolorstyle,
             'hastitlestyle'         => ($titlestyle !== ''),
             'titlestyle'            => $titlestyle,
             'hasprogress'           => $hasprogress,

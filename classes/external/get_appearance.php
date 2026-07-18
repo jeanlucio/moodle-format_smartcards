@@ -89,6 +89,7 @@ class get_appearance extends external_api {
             'bgcolor'    => $item?->bgcolor ?? '',
             'labelcolor' => $item?->labelcolor ?? '',
             'labelfont'  => $item?->labelfont ?? '',
+            'iconcolor'  => $item?->iconcolor ?? '',
             'iconurl'    => $renderer->image_url('icon', $cminfo->modname)->out(false),
             'imageurl'   => $hasimage ? appearance_image_store::url($params['cmid'], (int)$item->value)->out(false) : '',
             'icons'      => $icons,
@@ -108,6 +109,7 @@ class get_appearance extends external_api {
             'bgcolor'    => new external_value(PARAM_RAW, 'Circle background #RRGGBB, or empty'),
             'labelcolor' => new external_value(PARAM_RAW, 'Title colour #RRGGBB, or empty'),
             'labelfont'  => new external_value(PARAM_RAW, 'Curated font slug, or empty'),
+            'iconcolor'  => new external_value(PARAM_RAW, 'Icon glyph #RRGGBB (type=icon only), or empty'),
             'iconurl'    => new external_value(PARAM_RAW, 'Default per-module-type icon URL'),
             'imageurl'   => new external_value(PARAM_RAW, "Uploaded card image URL (type='image' only), or empty"),
             'icons'      => new external_multiple_structure(

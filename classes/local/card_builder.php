@@ -45,8 +45,8 @@ class card_builder {
      * @param appearance|null $item The module's custom appearance, or null for the default.
      * @param array $formatoptions The course's resolved format options
      *                              (course_format::get_format_options()), used for the
-     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont
-     *                              fallback below the activity's own appearance. Pass [] to skip the
+     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont/
+     *                              defaulticoncolor fallback below the activity's own appearance. Pass [] to skip the
      *                              course-level fallback (falls straight through to the
      *                              system default).
      * @param int $userid User id to resolve completion state for. 0 (not logged in) or a
@@ -90,7 +90,7 @@ class card_builder {
             default => '',
         };
 
-        [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle]
+        [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle, $isbsicon, $iconcolorstyle]
             = appearance_style_resolver::resolve(
                 $item,
                 $output,
@@ -150,6 +150,9 @@ class card_builder {
             'customiconurl'        => $customiconurl,
             'hasiconstyle'         => ($iconstyle !== ''),
             'iconstyle'            => $iconstyle,
+            'isbsicon'             => $isbsicon,
+            'hasiconcolorstyle'    => ($iconcolorstyle !== ''),
+            'iconcolorstyle'       => $iconcolorstyle,
             'hastitlestyle'        => ($titlestyle !== ''),
             'titlestyle'           => $titlestyle,
             'opensheet'            => $opensheet,

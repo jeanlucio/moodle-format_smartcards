@@ -36,6 +36,8 @@
         "bgcolorinputvalue": "#f8f9fa",
         "isbgcolordefault": true,
         "isbgcolortransparent": false,
+        "iconcolorinputvalue": "#212529",
+        "isiconcolordefault": true,
         "isdefaulttype": false,
         "isemojitype": true,
         "isicontype": false,
@@ -62,6 +64,11 @@
         <div class="sc-card sc-appearance-preview-card" aria-labelledby="sc-appearance-preview-legend">
             <span class="sc-card-icon" data-region="smartcards-preview-iconwrap" aria-hidden="true">
                 <img src="{{iconurl}}" alt="" class="sc-card-iconimg" data-region="smartcards-preview-iconimg">
+                <span
+                    class="sc-card-iconimg sc-card-iconimg--masked"
+                    data-region="smartcards-preview-iconmask"
+                    hidden
+                ></span>
                 <span class="sc-card-emoji" data-region="smartcards-preview-emoji" hidden></span>
             </span>
             <span class="sc-card-title" data-region="smartcards-preview-title">{{name}}</span>
@@ -175,6 +182,29 @@
                 <img src="{{url}}" alt="" class="sc-appearance-icon-img">
             </button>
             {{/icons}}
+        </div>
+    </div>
+
+    <div class="sc-appearance-field" data-region="smartcards-iconcolor-field" {{^isicontype}}hidden{{/isicontype}}>
+        <label class="sc-appearance-label" for="sc-appearance-iconcolor-input">
+            {{#str}} appearance_iconcolor, format_smartcards {{/str}}
+        </label>
+        <div class="sc-appearance-bgcolor-row">
+            <input
+                type="color"
+                class="form-control form-control-color"
+                id="sc-appearance-iconcolor-input"
+                data-region="smartcards-iconcolor-input"
+                value="{{iconcolorinputvalue}}"
+            >
+            <button
+                type="button"
+                class="btn btn-link sc-appearance-clear"
+                data-region="smartcards-iconcolor-clear"
+                aria-pressed="{{#isiconcolordefault}}true{{/isiconcolordefault}}{{^isiconcolordefault}}false{{/isiconcolordefault}}"
+            >
+                {{#str}} appearance_defaultcolor, format_smartcards {{/str}}
+            </button>
         </div>
     </div>
 

@@ -297,6 +297,17 @@
     object-fit: contain;
 }
 
+.format-smartcards .sc-card-iconimg--masked {
+    display: inline-block;
+    background-color: var(--dark, #212529);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
 .format-smartcards .sc-card-emoji {
     font-size: var(--sc-card-emoji-size, 1.75rem);
     line-height: 1;

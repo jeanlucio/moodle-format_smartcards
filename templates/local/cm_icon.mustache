@@ -22,13 +22,23 @@
     otherwise the default per-module-type icon. Always aria-hidden — the real accessible
     name is the card's text title, rendered by the caller.
 
+    A bundled library icon (isbsicon) renders as a CSS-masked span instead of a plain
+    img: its bundled SVG uses fill="currentColor", which an isolated <img> document can
+    never inherit from the page, so recolouring it needs mask-image + background-color
+    on the wrapper instead (see appearance_style_resolver::resolve()). An uploaded image
+    or the default per-module-type icon is a real, already-coloured picture, so it
+    always stays a plain img.
+
     Example context (json):
     {
         "isemoji": false,
         "emoji": "",
         "iscustomicon": true,
         "customiconurl": "#",
-        "iconurl": "#"
+        "iconurl": "#",
+        "isbsicon": true,
+        "hasiconcolorstyle": true,
+        "iconcolorstyle": "background-color: #1565c0"
     }
 }}
 {{#isemoji}}
@@ -36,7 +46,15 @@
 {{/isemoji}}
 {{^isemoji}}
     {{#iscustomicon}}
-    <img src="{{customiconurl}}" alt="" class="sc-card-iconimg">
+        {{#isbsicon}}
+        <span
+            class="sc-card-iconimg sc-card-iconimg--masked"
+            style="-webkit-mask-image: url({{customiconurl}}); mask-image: url({{customiconurl}}){{#hasiconcolorstyle}}; {{iconcolorstyle}}{{/hasiconcolorstyle}}"
+        ></span>
+        {{/isbsicon}}
+        {{^isbsicon}}
+        <img src="{{customiconurl}}" alt="" class="sc-card-iconimg">
+        {{/isbsicon}}
     {{/iscustomicon}}
     {{^iscustomicon}}
     <img src="{{iconurl}}" alt="" class="sc-card-iconimg">

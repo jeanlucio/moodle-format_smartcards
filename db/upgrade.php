@@ -71,5 +71,16 @@ function xmldb_format_smartcards_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071700, 'format', 'smartcards');
     }
 
+    if ($oldversion < 2026071800) {
+        $table = new xmldb_table('format_smartcards_appearance');
+        $field = new xmldb_field('iconcolor', XMLDB_TYPE_CHAR, '7', null, null, null, null, 'labelfont');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026071800, 'format', 'smartcards');
+    }
+
     return true;
 }
