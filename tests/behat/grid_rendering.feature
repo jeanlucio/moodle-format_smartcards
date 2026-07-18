@@ -24,7 +24,7 @@ Feature: SmartCards renders activities as icon and title cards
     When I am on the "Course 1" "Course" page logged in as "student1"
     Then "[data-region='smartcards-content']" "css_element" should exist
     And "a.sc-card[data-cmid]" "css_element" should exist
-    And I should see "Page 1" in ".sc-card-title" "css_element"
+    And I should see "Page 1" in the ".sc-card-title" "css_element"
 
   Scenario: The General section always renders plain unless it opts into the active style
     Given the following "courses" exist:
@@ -37,8 +37,8 @@ Feature: SmartCards renders activities as icon and title cards
       | activity | name   | course | idnumber | section |
       | page     | Page 1 | C2     | page1    | 1       |
     When I am on the "Course 2" "Course" page logged in as "student1"
-    Then I should see "General" in "h3.sc-section-title:not(.sc-accordion-title)" "css_element"
-    And I should see "Topic 1" in ".sc-accordion-title" "css_element"
+    Then I should see "General" in the "h3.sc-section-title:not(.sc-accordion-title)" "css_element"
+    And I should see "Topic 1" in the ".sc-accordion-title" "css_element"
 
   Scenario: The card grid does not render while editing mode is on
     Given the following "activities" exist:

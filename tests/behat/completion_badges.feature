@@ -22,21 +22,21 @@ Feature: SmartCards shows an independent completion badge on each card
       | activity | name    | course | idnumber | section | completion |
       | page     | Manual1 | C1     | page1    | 1       | 1          |
     And I am on the "Course 1" "Course" page logged in as "student1"
-    And I should see "⚪" in ".sc-card-completionicon" "css_element"
+    And I should see "⚪" in the ".sc-card-completionicon" "css_element"
     When I click on "Manual1" "button"
     And I click on "Mark as done" "button" in the ".modal-body" "css_element"
-    Then I should see "Mark as not done" in ".modal-body" "css_element"
+    Then I should see "Mark as not done" in the ".modal-body" "css_element"
     And I click on ".btn-close" "css_element" in the ".modal-header" "css_element"
-    And I should see "✅" in ".sc-card-completionicon" "css_element"
+    And I should see "✅" in the ".sc-card-completionicon" "css_element"
 
   Scenario: Viewing an activity satisfies an automatic completion condition
     Given the following "activities" exist:
       | activity | name    | course | idnumber | section | completion | completionview |
       | page     | Auto1   | C1     | page1    | 1       | 2          | 1              |
     And I am on the "Course 1" "Course" page logged in as "student1"
-    And I should see "⚪" in ".sc-card-completionicon" "css_element"
+    And I should see "⚪" in the ".sc-card-completionicon" "css_element"
     When I click on "Auto1" "button"
     And I click on "Access activity" "link" in the ".modal-body" "css_element"
     And I am on "Course 1" course homepage
-    Then I should see "✅" in ".sc-card-completionicon" "css_element"
+    Then I should see "✅" in the ".sc-card-completionicon" "css_element"
     And "button.sc-card-opensheet" "css_element" should not exist

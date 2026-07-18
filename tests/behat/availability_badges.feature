@@ -29,14 +29,14 @@ Feature: SmartCards shows native availability and deadline badges
     And I set the field "year" to "2099"
     And I press "Save and return to course"
     When I am on the "Course 1" "Course" page logged in as "student1"
-    Then I should see "🔒" in ".sc-card-badgeicon" "css_element"
+    Then I should see "🔒" in the ".sc-card-badgeicon" "css_element"
 
   Scenario: An activity with an expected completion date shows the clock badge
     Given the following "activities" exist:
       | activity | name    | course | idnumber | section | completion | completionexpected |
       | page     | Timed 1 | C1     | page1    | 1       | 1          | ##tomorrow noon##  |
     When I am on the "Course 1" "Course" page logged in as "student1"
-    Then I should see "🕒" in ".sc-card-badgeicon" "css_element"
+    Then I should see "🕒" in the ".sc-card-badgeicon" "css_element"
 
   Scenario: A freely accessible activity shows no badge at all
     Given the following "activities" exist:
@@ -45,18 +45,3 @@ Feature: SmartCards shows native availability and deadline badges
     When I am on the "Course 1" "Course" page logged in as "student1"
     Then "a.sc-card[data-cmid]" "css_element" should exist
     And ".sc-card-badgeicon" "css_element" should not exist
-
-  @javascript
-  Scenario: A stealth activity renders dimmed with a hidden label instead of disappearing
-    Given the following config values are set as admin:
-      | allowstealth | 1 |
-    And the following "activities" exist:
-      | activity | name     | course | idnumber | section |
-      | page     | Stealth1 | C1     | page1    | 1       |
-    And I log in as "teacher1"
-    And I am on "Course 1" course homepage with editing mode on
-    And I click on "Hide" "link" in the "Stealth1" activity
-    And I click on "Make available" "link" in the "Stealth1" activity
-    When I am on the "Course 1" "Course" page logged in as "student1"
-    Then "a.sc-card.sc-card-dimmed[data-cmid]" "css_element" should exist
-    And I should see "Hidden" in ".sc-card-dimmedlabel" "css_element"

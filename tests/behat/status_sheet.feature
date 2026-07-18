@@ -30,8 +30,8 @@ Feature: SmartCards status sheet explains what a badge alone cannot show
     And I press "Save and return to course"
     And I am on the "Course 1" "Course" page logged in as "student1"
     When I click on "Restricted 1" "button"
-    Then I should see "Reason" in ".modal-body" "css_element"
-    And I should see "Not available" in ".sc-sheet-reason" "css_element"
+    Then I should see "Reason" in the ".modal-body" "css_element"
+    And I should see "Not available" in the ".sc-sheet-reason" "css_element"
 
   @javascript
   Scenario: The sheet shows the due date row for a timed activity
@@ -40,7 +40,7 @@ Feature: SmartCards status sheet explains what a badge alone cannot show
       | page     | Timed 1 | C1     | page1    | 1       | 1          | ##tomorrow noon##  |
     And I am on the "Course 1" "Course" page logged in as "student1"
     When I click on "Timed 1" "button"
-    Then I should see "Due date" in ".modal-body" "css_element"
+    Then I should see "Due date" in the ".modal-body" "css_element"
 
   @javascript
   Scenario: The sheet shows the activity description when the teacher enabled it
@@ -49,8 +49,8 @@ Feature: SmartCards status sheet explains what a badge alone cannot show
       | page     | Intro 1 | Read chapters 1 to 3 before class.  | C1     | page1    | 1       | 1               |
     And I am on the "Course 1" "Course" page logged in as "student1"
     When I click on "Intro 1" "button"
-    Then I should see "Description" in ".modal-body" "css_element"
-    And I should see "Read chapters 1 to 3" in ".sc-sheet-description" "css_element"
+    Then I should see "Description" in the ".modal-body" "css_element"
+    And I should see "Read chapters 1 to 3" in the ".sc-sheet-description" "css_element"
 
   @javascript
   Scenario: The sheet offers a way to access the activity directly
@@ -59,4 +59,4 @@ Feature: SmartCards status sheet explains what a badge alone cannot show
       | page     | Timed 1 | C1     | page1    | 1       | 1          | ##tomorrow noon##  |
     And I am on the "Course 1" "Course" page logged in as "student1"
     When I click on "Timed 1" "button"
-    Then I should see "Access activity" in ".sc-sheet-access" "css_element"
+    Then I should see "Access activity" in the ".sc-sheet-access" "css_element"
