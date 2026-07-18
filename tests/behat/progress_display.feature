@@ -29,11 +29,11 @@ Feature: SmartCards section progress display
 
   Scenario: A count progress display shows how many activities are complete
     When I am on the "Course 1" "Course" page logged in as "student1"
-    Then I should see "Progress: 0 / 2" in the ".sc-section-title" "css_element"
+    Then I should see "Progress: 0 / 2" in the ".sc-progress-label" "css_element"
 
   Scenario: A percent progress display shows the completion percentage
     When I am on the "Course 2" "Course" page logged in as "student1"
-    Then I should see "0%" in the ".sc-section-title" "css_element"
+    Then I should see "0%" in the ".sc-progress-label" "css_element"
 
   Scenario: No progress display shows nothing next to the section title
     When I am on the "Course 3" "Course" page logged in as "student1"

@@ -29,4 +29,4 @@ Feature: SmartCards "General" section can opt into the active navigation style
   Scenario: With generalinstyle on, General gets its own tab
     When I am on the "Course 2" "Course" page logged in as "student1"
     Then "button.nav-link" "css_element" should exist
-    And I should see "General" in the ".nav-tabs" "css_element"
+    And I should see "General" in the ".sc-tabs" "css_element"

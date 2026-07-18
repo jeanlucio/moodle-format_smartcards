@@ -22,7 +22,7 @@ Feature: SmartCards section-cards navigation style
     When I am on the "Course 1" "Course" page logged in as "student1"
     Then "button.sc-section-card" "css_element" should exist
     And I should see "Topic 1" in the ".sc-section-card" "css_element"
-    And I should not see "Page 1"
+    And "[data-region='smartcards-section-modal-source']" "css_element" should not be visible
 
   Scenario: Tapping the section card opens its nested activity grid in a modal
     Given I am on the "Course 1" "Course" page logged in as "student1"
