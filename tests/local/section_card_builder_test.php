@@ -25,14 +25,12 @@ namespace format_smartcards\local;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\section_card_builder
+ * @covers \format_smartcards\local\section_card_builder
  */
 final class section_card_builder_test extends \advanced_testcase {
     /**
      * The section's own appearance must be used when set, even when its activities also
      * have appearances of their own.
-     *
-     * @covers ::build
      */
     public function test_uses_the_sections_own_appearance_when_set(): void {
         global $PAGE;
@@ -79,8 +77,6 @@ final class section_card_builder_test extends \advanced_testcase {
     /**
      * A section's own library icon and iconcolor must be reported as a colourable
      * bundled icon, mirroring card_builder's own behaviour for activities.
-     *
-     * @covers ::build
      */
     public function test_own_library_icon_reports_isbsicon_and_iconcolorstyle(): void {
         global $PAGE;
@@ -126,8 +122,6 @@ final class section_card_builder_test extends \advanced_testcase {
     /**
      * With no appearance of its own, the section falls back to the first of its visible
      * activities (in course order) that has one configured.
-     *
-     * @covers ::build
      */
     public function test_falls_back_to_first_activity_with_an_appearance(): void {
         global $PAGE;
@@ -168,8 +162,6 @@ final class section_card_builder_test extends \advanced_testcase {
      * With no appearance anywhere (section or activities), the generic per-section icon
      * (core's own pix/i/section.svg) is used — never an activity default icon, since a
      * section has no "module type" to derive one from.
-     *
-     * @covers ::build
      */
     public function test_generic_icon_when_nothing_is_configured_anywhere(): void {
         global $PAGE;
@@ -207,8 +199,6 @@ final class section_card_builder_test extends \advanced_testcase {
      * A restricted-but-visible section (sectionavailable = false) must carry the locked
      * badge — the exact same 'locked' concept card_builder derives from cm_info::$available,
      * just from section_info's own availability, never recomputed.
-     *
-     * @covers ::build
      */
     public function test_unavailable_section_carries_the_locked_badge(): void {
         global $PAGE;
@@ -245,8 +235,6 @@ final class section_card_builder_test extends \advanced_testcase {
      * Progress and completion fields pass straight through from the caller, unchanged —
      * section_card_builder never recomputes them (content.php already does, once, shared
      * with the flat-grid rendering every other navstyle uses).
-     *
-     * @covers ::build
      */
     public function test_progress_and_completion_fields_pass_through(): void {
         global $PAGE;
@@ -287,8 +275,6 @@ final class section_card_builder_test extends \advanced_testcase {
      * title colour must come from the course's defaultsectionlabelcolor — never from
      * defaultlabelcolor, the activity-scoped default section_card_builder passes
      * sectiondefaults: true past specifically to avoid.
-     *
-     * @covers ::build
      */
     public function test_titlestyle_uses_the_sections_own_default_not_the_activitys(): void {
         global $PAGE;

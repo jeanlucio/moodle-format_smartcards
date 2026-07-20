@@ -25,13 +25,11 @@ namespace format_smartcards\local;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\appearance_style_resolver
+ * @covers \format_smartcards\local\appearance_style_resolver
  */
 final class appearance_style_resolver_test extends \advanced_testcase {
     /**
      * An item's own labelcolor/labelfont must win over the course's activity default.
-     *
-     * @covers ::resolve_titlestyle
      */
     public function test_resolve_titlestyle_prefers_the_items_own_colour_and_font(): void {
         $this->resetAfterTest();
@@ -62,8 +60,6 @@ final class appearance_style_resolver_test extends \advanced_testcase {
     /**
      * With no item (or an item that sets neither colour nor font), the course's
      * defaultlabelcolor/defaultlabelfont must apply.
-     *
-     * @covers ::resolve_titlestyle
      */
     public function test_resolve_titlestyle_falls_back_to_the_activity_default(): void {
         $this->resetAfterTest();
@@ -80,8 +76,6 @@ final class appearance_style_resolver_test extends \advanced_testcase {
     /**
      * With no item and no course default set at all, the style must be empty — never a
      * stray "color: ; font-family: ;" declaration.
-     *
-     * @covers ::resolve_titlestyle
      */
     public function test_resolve_titlestyle_is_empty_when_nothing_is_set(): void {
         $this->resetAfterTest();
@@ -94,8 +88,6 @@ final class appearance_style_resolver_test extends \advanced_testcase {
      * section-scoped pair — never to the activity-scoped defaultlabelcolor/font, even
      * when those are the only ones set. This is the core guarantee behind letting a
      * course give sections a different accent than activities.
-     *
-     * @covers ::resolve_section_titlestyle
      */
     public function test_resolve_section_titlestyle_never_falls_back_to_the_activity_default(): void {
         $this->resetAfterTest();
@@ -111,8 +103,6 @@ final class appearance_style_resolver_test extends \advanced_testcase {
     /**
      * With defaultsectionlabelcolor/font set, resolve_section_titlestyle() must apply
      * them — independent of whatever defaultlabelcolor/font the course also has.
-     *
-     * @covers ::resolve_section_titlestyle
      */
     public function test_resolve_section_titlestyle_uses_the_section_default(): void {
         $this->resetAfterTest();
@@ -132,8 +122,6 @@ final class appearance_style_resolver_test extends \advanced_testcase {
     /**
      * A section's own appearance must still win over the section default, mirroring
      * resolve_titlestyle()'s same precedence for activities.
-     *
-     * @covers ::resolve_section_titlestyle
      */
     public function test_resolve_section_titlestyle_prefers_the_sections_own_colour(): void {
         $this->resetAfterTest();
@@ -163,8 +151,6 @@ final class appearance_style_resolver_test extends \advanced_testcase {
      * the returned titlestyle (array index 5) falls back to — section_card_builder
      * passes true (it builds the section's own card), card_builder never passes it
      * (activities always use the activity default).
-     *
-     * @covers ::resolve
      */
     public function test_resolve_sectiondefaults_flag_picks_the_right_titlestyle_pair(): void {
         global $PAGE;

@@ -29,16 +29,13 @@ use core_availability\tree;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\output\courseformat\content
+ * @covers \format_smartcards\output\courseformat\content
  */
 final class content_test extends \advanced_testcase {
     /**
      * Renders a SmartCards course page for a student with one activity of each
      * kind (free, restricted, with an expected completion date, hidden) and
      * asserts each renders exactly as its badge state requires.
-     *
-     * @covers ::export_for_template
-     * @covers ::build_cards_data
      */
     public function test_grid_renders_one_card_per_visible_activity(): void {
         global $DB, $PAGE;
@@ -104,9 +101,6 @@ final class content_test extends \advanced_testcase {
      * hiding restriction status like the stealth-activity workaround), while still
      * being able to follow the link — data-hasurl="1" alongside the badge, a combination
      * that previously only happened for the 'timed' badge.
-     *
-     * @covers ::export_for_template
-     * @covers ::build_cards_data
      */
     public function test_teacher_sees_locked_badge_with_working_link(): void {
         global $DB, $PAGE;
@@ -146,9 +140,6 @@ final class content_test extends \advanced_testcase {
      * with the ordinary per-module-type icon (not an emoji span or a custom icon img),
      * while still applying the custom title colour — the "keep the default icon, only
      * customise colour/font" combination the appearance editor exists to support.
-     *
-     * @covers ::export_for_template
-     * @covers ::build_cards_data
      */
     public function test_default_type_keeps_module_icon_with_custom_title_colour(): void {
         global $PAGE;
@@ -191,8 +182,6 @@ final class content_test extends \advanced_testcase {
     /**
      * The cardsize and showcardframe format options must control the grid container's
      * CSS classes, which styles.css keys its size presets and borderless mode off.
-     *
-     * @covers ::export_for_template
      */
     public function test_cardsize_and_showcardframe_options_control_grid_classes(): void {
         global $PAGE;
@@ -224,9 +213,6 @@ final class content_test extends \advanced_testcase {
     /**
      * The course's defaultlabelcolor format option must style an activity that does not
      * set its own labelcolor.
-     *
-     * @covers ::export_for_template
-     * @covers ::build_cards_data
      */
     public function test_defaultlabelcolor_applies_when_activity_has_no_own_colour(): void {
         global $PAGE;
@@ -260,8 +246,6 @@ final class content_test extends \advanced_testcase {
      * heading — and never the other way round: defaultlabelcolor (the activity-scoped
      * default) must never leak onto the section title, and defaultsectionlabelcolor
      * must never leak onto the activity card, even though both are set at once here.
-     *
-     * @covers ::export_for_template
      */
     public function test_defaultsectionlabelcolor_styles_the_section_title_not_the_activity(): void {
         global $PAGE;
@@ -306,9 +290,6 @@ final class content_test extends \advanced_testcase {
      * must render expanded (aria-expanded="true", collapse "show"), and a fully-complete
      * section must render collapsed — the "resume where you left off" behaviour the
      * accordion style exists to provide.
-     *
-     * @covers ::export_for_template
-     * @covers ::find_default_active_section_index
      */
     public function test_accordion_opens_the_section_with_a_pending_activity(): void {
         global $DB, $PAGE;
@@ -375,9 +356,6 @@ final class content_test extends \advanced_testcase {
      * still has a pending activity — the student's own choice always wins over the
      * "open the pending section" smart default, which only applies to sections nobody
      * has touched yet.
-     *
-     * @covers ::export_for_template
-     * @covers ::find_default_active_section_index
      */
     public function test_accordion_respects_a_manually_collapsed_section_over_pending_progress(): void {
         global $DB, $PAGE;
@@ -441,9 +419,6 @@ final class content_test extends \advanced_testcase {
      * with), so the expand silently reverted on the next render — fixed by tracking
      * explicit expands in their own preference (toggle_section::PREFERENCE_EXPANDED)
      * instead of only tracking explicit collapses.
-     *
-     * @covers ::export_for_template
-     * @covers ::find_default_active_section_index
      */
     public function test_accordion_keeps_a_manually_expanded_default_closed_section_open(): void {
         global $DB, $PAGE;
@@ -524,8 +499,6 @@ final class content_test extends \advanced_testcase {
      * own courseindex output), which always lists every visible section regardless of
      * whether it has content yet. Silently dropping empty sections from the grid while
      * the sidebar still promised them left a real click-to-nowhere gap for students.
-     *
-     * @covers ::export_for_template
      */
     public function test_a_section_with_no_activities_still_renders_its_heading(): void {
         global $PAGE;
@@ -558,9 +531,6 @@ final class content_test extends \advanced_testcase {
      * the tab for the section with a pending completion-tracked activity opens active by
      * default — same "resume where you left off" rule as the accordion (§18 v2.7), just
      * with no per-section preference to respect since a tab switch is never persisted.
-     *
-     * @covers ::export_for_template
-     * @covers ::find_default_active_section_index
      */
     public function test_tabs_activates_the_tab_with_a_pending_activity(): void {
         global $DB, $PAGE;
@@ -633,8 +603,6 @@ final class content_test extends \advanced_testcase {
      * sc-sticky wrapper class that makes each section heading stick while scrolling
      * through it (CSS-only behaviour, not something a server-rendered HTML string can
      * assert beyond the class itself being present).
-     *
-     * @covers ::export_for_template
      */
     public function test_sticky_renders_the_wrapper_class_and_every_section_expanded(): void {
         global $PAGE;
@@ -676,8 +644,6 @@ final class content_test extends \advanced_testcase {
      * always carries the sc-sticky wrapper class, same as navstyle=sticky itself — a long
      * single-column trail is exactly the case a sticky section header helps most, and
      * there is no separate 'sticky' + 'trail' combination to opt into.
-     *
-     * @covers ::export_for_template
      */
     public function test_trail_renders_every_card_in_a_single_column(): void {
         global $PAGE;
@@ -724,8 +690,6 @@ final class content_test extends \advanced_testcase {
      * first pending activity" auto-scroll (§20) queries for — a completed activity must
      * render data-ispending="0" so the scroll never lands on it instead of the real
      * first-pending card after it in course order.
-     *
-     * @covers ::export_for_template
      */
     public function test_trail_cards_carry_the_ispending_marker(): void {
         global $DB, $PAGE;
@@ -780,8 +744,6 @@ final class content_test extends \advanced_testcase {
      * behaviour to preserve; a section with pending completion-tracked activities must
      * not leak any "Progress:" text into the accordion heading without an explicit
      * opt-in.
-     *
-     * @covers ::export_for_template
      */
     public function test_progressdisplay_defaults_to_hidden(): void {
         global $PAGE;
@@ -822,8 +784,6 @@ final class content_test extends \advanced_testcase {
      * With progressdisplay=count, the plain/default navstyle (which never showed progress
      * at all before this feature) must now render the same core progresstotal string the
      * accordion already used, right next to the section heading.
-     *
-     * @covers ::export_for_template
      */
     public function test_progressdisplay_count_shows_progress_in_default_navstyle(): void {
         global $PAGE;
@@ -863,8 +823,6 @@ final class content_test extends \advanced_testcase {
     /**
      * With progressdisplay=percent, the label is a rounded percentage instead of the
      * core "Progress: X / Y" string.
-     *
-     * @covers ::export_for_template
      */
     public function test_progressdisplay_percent_shows_a_rounded_percentage(): void {
         global $PAGE;
@@ -919,8 +877,6 @@ final class content_test extends \advanced_testcase {
      * must carry the sc-progress-complete class the semantic (neutral -> green) colour
      * hooks off — the same "fully tracked and complete" condition the accordion/tabs
      * default-section logic and the sectioncards completion pill already share.
-     *
-     * @covers ::export_for_template
      */
     public function test_progresscomplete_class_appears_once_nothing_is_pending(): void {
         global $PAGE;
@@ -968,8 +924,6 @@ final class content_test extends \advanced_testcase {
      * A section the teacher explicitly hid (the section's own visibility toggle, not a
      * restriction) must leave no trace for a student — same "fully hidden" contract a
      * hidden activity already has (test_grid_renders_one_card_per_visible_activity).
-     *
-     * @covers ::export_for_template
      */
     public function test_section_hidden_by_teacher_is_not_visible_to_student(): void {
         global $PAGE;
@@ -1009,8 +963,6 @@ final class content_test extends \advanced_testcase {
      * course formats already do (core_courseformat\output\local\base::
      * is_section_visible()). No cards render for the section either: core gates the
      * activity list the same way (section::add_cm_data()'s $showcmlist = uservisible).
-     *
-     * @covers ::export_for_template
      */
     public function test_restricted_section_shows_header_and_reason_but_no_cards(): void {
         global $DB, $PAGE;
@@ -1053,8 +1005,6 @@ final class content_test extends \advanced_testcase {
      * ignoreavailabilityrestrictions) the same way they already bypass an activity's own
      * restriction (test_teacher_sees_locked_badge_with_working_link): the section's cards
      * still render normally for them, on top of core's own restriction preview banner.
-     *
-     * @covers ::export_for_template
      */
     public function test_teacher_bypasses_section_restriction_and_still_sees_cards(): void {
         global $DB, $PAGE;
@@ -1096,8 +1046,6 @@ final class content_test extends \advanced_testcase {
      * locked card with the availability reason but no nested activity grid — the exact
      * same three-way distinction the other navstyles already make (§18 v2.22), now
      * applied to a single card instead of a heading + inline grid.
-     *
-     * @covers ::export_for_template
      */
     public function test_sectioncards_renders_one_card_per_available_section(): void {
         global $DB, $PAGE;
@@ -1155,8 +1103,6 @@ final class content_test extends \advanced_testcase {
     /**
      * navstyle = 'sectioncards' never renders the accordion/tabs/plain-grid markup —
      * only the new section-cards grid.
-     *
-     * @covers ::export_for_template
      */
     public function test_sectioncards_renders_no_accordion_or_tabs_markup(): void {
         global $PAGE;
@@ -1189,8 +1135,6 @@ final class content_test extends \advanced_testcase {
      * accordion just like any other section — instead of always rendering as the plain,
      * non-collapsible heading it gets by default (test_accordion_opens_the_section_with_
      * a_pending_activity() and friends, which never set this option, cover that default).
-     *
-     * @covers ::export_for_template
      */
     public function test_accordion_includes_general_when_generalinstyle_enabled(): void {
         global $PAGE;
@@ -1227,8 +1171,6 @@ final class content_test extends \advanced_testcase {
      * instead of always rendering above the tab bar — the opposite of
      * test_tabs_activates_the_tab_with_a_pending_activity()'s default-off assertion that
      * no tab/pane id ever references section 0.
-     *
-     * @covers ::export_for_template
      */
     public function test_tabs_includes_general_as_a_real_tab_when_generalinstyle_enabled(): void {
         global $PAGE;
@@ -1265,8 +1207,6 @@ final class content_test extends \advanced_testcase {
      * source in sectioncards mode, on top of every other available section — the
      * opposite of test_sectioncards_renders_one_card_per_available_section()'s
      * default-off count.
-     *
-     * @covers ::export_for_template
      */
     public function test_sectioncards_includes_general_as_a_card_when_generalinstyle_enabled(): void {
         global $PAGE;
@@ -1304,8 +1244,6 @@ final class content_test extends \advanced_testcase {
      * winding sc-trail column, the same as any other section in navstyle=trail, instead
      * of the always-plain top block test_trail_renders_every_card_in_a_single_column()
      * covers for its default-off sibling section.
-     *
-     * @covers ::export_for_template
      */
     public function test_trail_includes_general_in_the_zigzag_when_generalinstyle_enabled(): void {
         global $PAGE;

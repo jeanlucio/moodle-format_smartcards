@@ -23,7 +23,7 @@ namespace format_smartcards\output\courseformat\content\section;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\output\courseformat\content\section\controlmenu
+ * @covers \format_smartcards\output\courseformat\content\section\controlmenu
  */
 final class controlmenu_test extends \advanced_testcase {
     /**
@@ -32,8 +32,6 @@ final class controlmenu_test extends \advanced_testcase {
      * the entry would let a teacher configure could ever be seen. Real bug found in
      * production: an emoji set through this menu for "Geral" saved successfully but was
      * never visible anywhere, because the section itself is never rendered as a card.
-     *
-     * @covers ::section_control_items
      */
     public function test_section_zero_never_gets_the_appearance_entry(): void {
         $this->resetAfterTest();
@@ -54,8 +52,6 @@ final class controlmenu_test extends \advanced_testcase {
     /**
      * A real (non-General) section, with the manage-appearance capability, must get the
      * "Card appearance" entry, carrying its own sectionid.
-     *
-     * @covers ::section_control_items
      */
     public function test_real_section_gets_the_appearance_entry(): void {
         $this->resetAfterTest();
@@ -78,8 +74,6 @@ final class controlmenu_test extends \advanced_testcase {
      * it becomes a real card too — so the entry that lets a teacher configure its
      * appearance must become available, the opposite of the default-off behaviour
      * covered by test_section_zero_never_gets_the_appearance_entry().
-     *
-     * @covers ::section_control_items
      */
     public function test_section_zero_gets_the_appearance_entry_when_generalinstyle_enabled(): void {
         $this->resetAfterTest();

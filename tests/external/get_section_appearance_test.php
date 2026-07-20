@@ -24,10 +24,16 @@ use format_smartcards\local\appearance_repository;
 /**
  * Tests for the SmartCards get_section_appearance external function.
  *
+ * Also declares appearance_image_store as a second covers target: the image-type test
+ * below exercises its store_for_section()/url_for_section() lifecycle through this
+ * dispatcher, and would otherwise be silently stripped from that class's own coverage
+ * report.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\external\get_section_appearance
+ * @covers \format_smartcards\external\get_section_appearance
+ * @covers \format_smartcards\local\appearance_image_store
  */
 final class get_section_appearance_test extends \advanced_testcase {
     /**
@@ -46,8 +52,6 @@ final class get_section_appearance_test extends \advanced_testcase {
     /**
      * A section with no saved appearance must return TYPE_DEFAULT and empty fields, with
      * a non-empty generic icon URL (a section has no "module type" default icon).
-     *
-     * @covers ::execute
      */
     public function test_returns_defaults_when_nothing_saved(): void {
         $this->resetAfterTest();
@@ -68,8 +72,6 @@ final class get_section_appearance_test extends \advanced_testcase {
 
     /**
      * A previously saved section appearance must round-trip exactly.
-     *
-     * @covers ::execute
      */
     public function test_returns_previously_saved_appearance(): void {
         $this->resetAfterTest();
@@ -100,8 +102,6 @@ final class get_section_appearance_test extends \advanced_testcase {
     /**
      * When the saved appearance is an uploaded image, imageurl must point at the
      * section-scoped image (context_course + itemid=sectionid), not the activity one.
-     *
-     * @covers ::execute
      */
     public function test_returns_image_url_for_image_type(): void {
         $this->resetAfterTest();
@@ -133,8 +133,6 @@ final class get_section_appearance_test extends \advanced_testcase {
 
     /**
      * A user without access to the section's own course must be rejected.
-     *
-     * @covers ::execute
      */
     public function test_rejects_user_without_access_to_the_sections_course(): void {
         $this->resetAfterTest();
@@ -151,8 +149,6 @@ final class get_section_appearance_test extends \advanced_testcase {
 
     /**
      * A plain student, who never has the capability, must be rejected.
-     *
-     * @covers ::execute
      */
     public function test_rejects_student(): void {
         $this->resetAfterTest();
@@ -168,9 +164,6 @@ final class get_section_appearance_test extends \advanced_testcase {
 
     /**
      * A non-existent sectionid must be rejected before any capability check.
-     *
-     * @covers ::execute
-     * @covers ::get_section_or_fail
      */
     public function test_rejects_nonexistent_sectionid(): void {
         $this->resetAfterTest();

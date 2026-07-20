@@ -24,10 +24,15 @@ use format_smartcards\local\appearance_repository;
 /**
  * Tests for the SmartCards get_appearance external function.
  *
+ * Also declares appearance_image_store as a second covers target: the image-type test
+ * below exercises its store()/url() lifecycle through this dispatcher, and would
+ * otherwise be silently stripped from that class's own coverage report.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\external\get_appearance
+ * @covers \format_smartcards\external\get_appearance
+ * @covers \format_smartcards\local\appearance_image_store
  */
 final class get_appearance_test extends \advanced_testcase {
     /**
@@ -46,8 +51,6 @@ final class get_appearance_test extends \advanced_testcase {
     /**
      * An activity with no saved appearance must return TYPE_DEFAULT and empty fields,
      * matching the editor form's own blank state — the modal never has to guess.
-     *
-     * @covers ::execute
      */
     public function test_returns_defaults_when_nothing_saved(): void {
         $this->resetAfterTest();
@@ -74,8 +77,6 @@ final class get_appearance_test extends \advanced_testcase {
      * A Label (a cm_info::has_custom_cmlist_item() activity) must report
      * supportsdisplaymode true, so the editor knows to show the inline/tile toggle at
      * all; an ordinary module like Page must report it false.
-     *
-     * @covers ::execute
      */
     public function test_supportsdisplaymode_true_for_label_false_for_page(): void {
         $this->resetAfterTest();
@@ -102,8 +103,6 @@ final class get_appearance_test extends \advanced_testcase {
     /**
      * A previously saved appearance must round-trip exactly, so reopening the editor
      * can pre-fill the form instead of always starting blank.
-     *
-     * @covers ::execute
      */
     public function test_returns_previously_saved_appearance(): void {
         $this->resetAfterTest();
@@ -136,8 +135,6 @@ final class get_appearance_test extends \advanced_testcase {
     /**
      * When the saved appearance is an uploaded image, imageurl must point at it so the
      * editor can show the current image without a separate round trip.
-     *
-     * @covers ::execute
      */
     public function test_returns_image_url_for_image_type(): void {
         $this->resetAfterTest();
@@ -166,8 +163,6 @@ final class get_appearance_test extends \advanced_testcase {
     /**
      * The returned icon list must cover every curated slug, each with a resolved URL
      * the browser can load directly (not just the bare slug the picker used to show).
-     *
-     * @covers ::execute
      */
     public function test_returns_every_curated_icon_with_a_resolved_url(): void {
         $this->resetAfterTest();
@@ -187,8 +182,6 @@ final class get_appearance_test extends \advanced_testcase {
     /**
      * A user without access to the module's own course must be rejected, the same
      * isolation guarantee save_appearance enforces.
-     *
-     * @covers ::execute
      */
     public function test_rejects_user_without_access_to_the_modules_course(): void {
         $this->resetAfterTest();
@@ -205,8 +198,6 @@ final class get_appearance_test extends \advanced_testcase {
 
     /**
      * A plain student, who never has the capability, must be rejected.
-     *
-     * @covers ::execute
      */
     public function test_rejects_student(): void {
         $this->resetAfterTest();

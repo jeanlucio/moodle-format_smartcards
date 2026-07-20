@@ -29,10 +29,16 @@ use invalid_parameter_exception;
  * and execute_returns() are correctly attributed to this test suite instead of being silently
  * excluded by php-code-coverage's per-method coverage-annotation line filtering.
  *
+ * Also declares appearance_image_store as a second covers target: the image-upload tests
+ * below (upload / resave-without-a-new-upload / reject-with-no-upload / switch-away-deletes)
+ * exercise its whole resolve_saved_value()/store()/delete() lifecycle through this dispatcher,
+ * and would otherwise be silently stripped from that class's own coverage report.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\external\save_appearance
+ * @covers \format_smartcards\local\appearance_image_store
  */
 final class save_appearance_test extends \advanced_testcase {
     /** @var string Base64-encoded 1x1 transparent PNG, small enough to always pass the size check. */

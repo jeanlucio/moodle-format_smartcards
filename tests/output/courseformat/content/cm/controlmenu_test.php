@@ -33,16 +33,12 @@ namespace format_smartcards\output\courseformat\content\cm;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\output\courseformat\content\cm\controlmenu
+ * @covers \format_smartcards\output\courseformat\content\cm\controlmenu
  */
 final class controlmenu_test extends \advanced_testcase {
     /**
      * An editing teacher (who holds format/smartcards:manageappearance) must see the
      * "Card appearance" entry in a real activity's action menu.
-     *
-     * @covers ::get_cm_control_items
-     * @covers ::cm_control_items
-     * @covers ::add_appearance_control
      */
     public function test_teacher_gets_the_appearance_entry(): void {
         global $PAGE;
@@ -77,10 +73,6 @@ final class controlmenu_test extends \advanced_testcase {
      * A student, who never holds format/smartcards:manageappearance, must never see the
      * "Card appearance" entry — mirrors the same capability gate the section-level menu
      * enforces.
-     *
-     * @covers ::get_cm_control_items
-     * @covers ::cm_control_items
-     * @covers ::add_appearance_control
      */
     public function test_student_never_gets_the_appearance_entry(): void {
         global $PAGE;

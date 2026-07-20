@@ -29,14 +29,12 @@ use format_smartcards\local\appearance_repository;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\observer
+ * @covers \format_smartcards\observer
  */
 final class observer_test extends \advanced_testcase {
     /**
      * Deleting a single course module (course still exists) must remove its
      * appearance row.
-     *
-     * @covers ::course_module_deleted
      */
     public function test_deleting_module_removes_its_appearance(): void {
         global $CFG;
@@ -58,8 +56,6 @@ final class observer_test extends \advanced_testcase {
     /**
      * Deleting a single course section (course still exists) must remove its
      * appearance row.
-     *
-     * @covers ::course_section_deleted
      */
     public function test_deleting_section_removes_its_appearance(): void {
         global $CFG, $DB;
@@ -83,8 +79,6 @@ final class observer_test extends \advanced_testcase {
      * unlike a deleted course module, the course context (where a section image lives,
      * see appearance_image_store's class docblock) is not destroyed just because one of
      * its sections is, so this cleanup cannot happen for free via context teardown.
-     *
-     * @covers ::course_section_deleted
      */
     public function test_deleting_section_removes_its_stored_image(): void {
         global $CFG, $DB;

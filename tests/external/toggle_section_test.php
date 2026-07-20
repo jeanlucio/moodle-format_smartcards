@@ -24,7 +24,7 @@ use core_external\external_api;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\external\toggle_section
+ * @covers \format_smartcards\external\toggle_section
  */
 final class toggle_section_test extends \advanced_testcase {
     /**
@@ -48,8 +48,6 @@ final class toggle_section_test extends \advanced_testcase {
      * Expanding a section must record it in PREFERENCE_EXPANDED and clear it from
      * PREFERENCE_COLLAPSED, so a previous collapse never lingers alongside a later
      * explicit expand.
-     *
-     * @covers ::execute
      */
     public function test_expanding_a_section_records_it_as_expanded(): void {
         $this->resetAfterTest();
@@ -67,8 +65,6 @@ final class toggle_section_test extends \advanced_testcase {
     /**
      * Collapsing a section must record it in PREFERENCE_COLLAPSED and clear it from
      * PREFERENCE_EXPANDED.
-     *
-     * @covers ::execute
      */
     public function test_collapsing_a_section_records_it_as_collapsed(): void {
         $this->resetAfterTest();
@@ -85,8 +81,6 @@ final class toggle_section_test extends \advanced_testcase {
 
     /**
      * A user without access to the section's own course must be rejected.
-     *
-     * @covers ::execute
      */
     public function test_rejects_user_without_access_to_the_sections_course(): void {
         $this->resetAfterTest();

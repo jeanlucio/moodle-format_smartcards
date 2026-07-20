@@ -24,7 +24,7 @@ use completion_info;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\section_progress_resolver
+ * @covers \format_smartcards\local\section_progress_resolver
  */
 final class section_progress_resolver_test extends \advanced_testcase {
     /**
@@ -51,8 +51,6 @@ final class section_progress_resolver_test extends \advanced_testcase {
     /**
      * A section with no completion-tracked activities must report zero total, so the
      * accordion never shows a progress badge for it.
-     *
-     * @covers ::resolve
      */
     public function test_section_without_tracking_has_zero_total(): void {
         $this->resetAfterTest();
@@ -76,8 +74,6 @@ final class section_progress_resolver_test extends \advanced_testcase {
     /**
      * A section with one completed and one incomplete tracked activity must count both
      * correctly and report pending completion.
-     *
-     * @covers ::resolve
      */
     public function test_counts_complete_and_incomplete_activities(): void {
         $this->resetAfterTest();
@@ -100,8 +96,6 @@ final class section_progress_resolver_test extends \advanced_testcase {
     /**
      * A section where every tracked activity is complete must report no pending
      * completion, so the accordion does not treat it as the "resume here" section.
-     *
-     * @covers ::resolve
      */
     public function test_fully_complete_section_has_no_pending(): void {
         $this->resetAfterTest();
@@ -124,8 +118,6 @@ final class section_progress_resolver_test extends \advanced_testcase {
     /**
      * A guest (or logged-out) viewer never has meaningful completion state, so progress
      * must resolve to zero/zero rather than querying completion data for them.
-     *
-     * @covers ::resolve
      */
     public function test_guest_gets_no_progress(): void {
         $this->resetAfterTest();

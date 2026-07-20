@@ -22,15 +22,12 @@ namespace format_smartcards\local;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\cm_description_resolver
+ * @covers \format_smartcards\local\cm_description_resolver
  */
 final class cm_description_resolver_test extends \advanced_testcase {
     /**
      * An activity with showdescription enabled and a non-empty intro must resolve to its
      * rendered description.
-     *
-     * @covers ::resolve_many
-     * @covers ::resolve_one
      */
     public function test_resolves_description_when_showdescription_is_enabled(): void {
         $this->resetAfterTest();
@@ -55,9 +52,6 @@ final class cm_description_resolver_test extends \advanced_testcase {
     /**
      * An activity with showdescription disabled must be entirely absent from the result,
      * regardless of whether it has an intro.
-     *
-     * @covers ::resolve_many
-     * @covers ::resolve_one
      */
     public function test_skips_activities_with_showdescription_disabled(): void {
         $this->resetAfterTest();
@@ -79,8 +73,6 @@ final class cm_description_resolver_test extends \advanced_testcase {
     /**
      * An activity with showdescription enabled but an empty intro must be absent from the
      * result — an empty description section would be pointless clutter in the sheet.
-     *
-     * @covers ::resolve_many
      */
     public function test_skips_activities_with_an_empty_intro(): void {
         global $DB;
@@ -106,8 +98,6 @@ final class cm_description_resolver_test extends \advanced_testcase {
     /**
      * Activities from different module types must each be resolved against their own
      * instance table, grouped into one bulk query per distinct modname.
-     *
-     * @covers ::resolve_many
      */
     public function test_resolves_across_multiple_module_types(): void {
         $this->resetAfterTest();
@@ -139,9 +129,6 @@ final class cm_description_resolver_test extends \advanced_testcase {
      * A Label has no showdescription setting at all — it opts out of the standard
      * link/card via cm_info::set_custom_cmlist_item() instead. Its own intro content must
      * still resolve, sourced from cm_info::get_formatted_content() rather than a DB query.
-     *
-     * @covers ::resolve_many
-     * @covers ::resolve_one
      */
     public function test_resolves_content_for_a_custom_cmlist_item_activity(): void {
         $this->resetAfterTest();
@@ -165,8 +152,6 @@ final class cm_description_resolver_test extends \advanced_testcase {
     /**
      * A Label left with an empty intro has no content to surface, so it must be absent
      * from the result just like an empty-intro showdescription activity.
-     *
-     * @covers ::resolve_many
      */
     public function test_skips_a_custom_cmlist_item_activity_with_no_content(): void {
         global $DB;

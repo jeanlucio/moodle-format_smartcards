@@ -27,14 +27,12 @@ use format_smartcards\local\appearance_repository;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\hook_listener
+ * @covers \format_smartcards\hook_listener
  */
 final class hook_listener_test extends \advanced_testcase {
     /**
      * Deleting a whole course must remove the appearance rows of every activity and
      * section that belonged to it, and must not touch rows of an unrelated course.
-     *
-     * @covers ::before_course_deleted
      */
     public function test_deleting_course_removes_all_its_appearance_rows(): void {
         global $DB;

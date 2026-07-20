@@ -27,7 +27,7 @@ use core_availability\tree;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\card_builder
+ * @covers \format_smartcards\local\card_builder
  */
 final class card_builder_test extends \advanced_testcase {
     /**
@@ -70,8 +70,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * An activity's own labelcolor/labelfont must take priority over the course's
      * defaultlabelcolor/defaultlabelfont format option, never the other way round.
-     *
-     * @covers ::build
      */
     public function test_activity_own_colour_and_font_override_course_defaults(): void {
         $this->resetAfterTest();
@@ -117,8 +115,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * With no activity appearance at all, the course's defaultlabelcolor/
      * defaultlabelfont must still apply.
-     *
-     * @covers ::build
      */
     public function test_course_defaults_apply_with_no_activity_appearance(): void {
         $this->resetAfterTest();
@@ -143,10 +139,44 @@ final class card_builder_test extends \advanced_testcase {
     }
 
     /**
+     * An activity with an expected completion date (and no availability restriction)
+     * must get the 🕒 "timed" badge, with duedate/hasduedate/duedateformatted all
+     * populated from status_resolver's own duedate — mirroring
+     * status_resolver_test::test_activity_with_expected_completion_gets_timed_badge(),
+     * but through the full card_builder pipeline instead of the resolver alone.
+     */
+    public function test_activity_with_expected_completion_shows_the_timed_badge(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $expected = (int)time() + DAYSECS;
+        $DB->set_field('course_modules', 'completionexpected', $expected, ['id' => $page->cmid]);
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
+
+        $this->assertSame(status_resolver::BADGE_TIMED, $card['badge']);
+        $this->assertTrue($card['istimed']);
+        $this->assertFalse($card['islocked']);
+        $this->assertSame($expected, $card['duedate']);
+        $this->assertTrue($card['hasduedate']);
+        $this->assertSame(
+            userdate($expected, get_string('strftimedatefullshort', 'langconfig')),
+            $card['duedateformatted']
+        );
+    }
+
+    /**
      * An activity's own bgcolor must take priority over the course's defaultbgcolor
      * format option, never the other way round.
-     *
-     * @covers ::build
      */
     public function test_activity_own_bgcolor_overrides_course_default(): void {
         $this->resetAfterTest();
@@ -188,8 +218,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * With no activity appearance at all, the course's defaultbgcolor must still apply,
      * including the special 'transparent' value.
-     *
-     * @covers ::build
      */
     public function test_course_default_bgcolor_applies_with_no_activity_appearance(): void {
         $this->resetAfterTest();
@@ -215,8 +243,6 @@ final class card_builder_test extends \advanced_testcase {
      * appearance_image_store (no separate File API lookup at render time). It must
      * never be reported as a colourable bundled icon (isbsicon) — a photo has its own
      * real colours and cannot be CSS-masked like a bundled bsicon SVG.
-     *
-     * @covers ::build
      */
     public function test_image_type_renders_as_custom_icon(): void {
         $this->resetAfterTest();
@@ -262,8 +288,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * A library icon's own iconcolor must take priority over the course's
      * defaulticoncolor format option, and must be reported as a colourable bundled icon.
-     *
-     * @covers ::build
      */
     public function test_activity_own_iconcolor_overrides_course_default(): void {
         $this->resetAfterTest();
@@ -307,8 +331,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * With no activity appearance at all, the course's defaulticoncolor must still
      * apply — same fallback chain already covered for bgcolor/labelcolor/labelfont.
-     *
-     * @covers ::build
      */
     public function test_course_default_iconcolor_applies_with_no_activity_appearance(): void {
         $this->resetAfterTest();
@@ -349,8 +371,6 @@ final class card_builder_test extends \advanced_testcase {
      * With no course defaults and no activity appearance, the title must carry no
      * inline style at all — the system/theme default applies, exactly as before this
      * feature existed.
-     *
-     * @covers ::build
      */
     public function test_no_titlestyle_when_nothing_is_configured(): void {
         $this->resetAfterTest();
@@ -377,8 +397,6 @@ final class card_builder_test extends \advanced_testcase {
      * and holds moodle/course:viewhiddenactivities must still see the full reason, exactly
      * like core's own standard course-page rendering does via
      * core_courseformat\output\local\content\cm\availability::conditional_availability_info().
-     *
-     * @covers ::build
      */
     public function test_teacher_with_viewhiddenactivities_sees_full_reason_when_eye_is_off(): void {
         global $DB;
@@ -415,8 +433,6 @@ final class card_builder_test extends \advanced_testcase {
      * bypass capability the activity vanishes from the course page altogether, not just a
      * badge with no reason. This locks in that pre-existing behaviour as a regression
      * guard alongside the teacher-sees-full-reason case above.
-     *
-     * @covers ::build
      */
     public function test_student_gets_no_card_at_all_when_eye_is_off(): void {
         global $DB;
@@ -448,8 +464,6 @@ final class card_builder_test extends \advanced_testcase {
      * A manual-tracking activity not yet completed must open the sheet, carry the pending
      * completion badge, and offer the toggle button to a student who holds the manual
      * completion capability.
-     *
-     * @covers ::build
      */
     public function test_manual_completion_pending_opens_the_sheet_with_a_toggle_button(): void {
         $this->resetAfterTest();
@@ -480,8 +494,6 @@ final class card_builder_test extends \advanced_testcase {
      * no description, must NOT open the sheet — the badge alone already says "done", so
      * tapping the card goes straight to the activity (a behaviour explicitly confirmed
      * during design, see SCOPE.md).
-     *
-     * @covers ::build
      */
     public function test_manual_completion_complete_with_nothing_else_skips_the_sheet(): void {
         $this->resetAfterTest();
@@ -512,8 +524,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * An automatic-tracking activity exposes its criteria descriptions for the sheet, and
      * never offers the manual toggle (core does not allow overriding automatic criteria).
-     *
-     * @covers ::build
      */
     public function test_automatic_completion_exposes_criteria_and_never_offers_a_toggle(): void {
         $this->resetAfterTest();
@@ -543,8 +553,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * A description passed in by the caller must open the sheet on its own, even when
      * there is no availability badge and no completion tracking at all.
-     *
-     * @covers ::build
      */
     public function test_description_alone_opens_the_sheet(): void {
         $this->resetAfterTest();
@@ -567,8 +575,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * With no badge, no completion tracking and no description, the sheet must not open
      * at all — the card stays a plain direct link, unchanged from before this feature.
-     *
-     * @covers ::build
      */
     public function test_nothing_to_show_skips_the_sheet(): void {
         $this->resetAfterTest();
@@ -591,8 +597,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * A Label with content must default to rendering inline and never open the sheet —
      * everything the sheet would have shown renders directly inline instead.
-     *
-     * @covers ::build
      */
     public function test_label_defaults_to_inline_and_never_opens_the_sheet(): void {
         $this->resetAfterTest();
@@ -623,8 +627,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * Saving DISPLAYMODE_TILE on a Label must revert it to a normal clickable tile that
      * opens the sheet, exactly like any other activity with a description.
-     *
-     * @covers ::build
      */
     public function test_label_displaymode_tile_forces_a_normal_tile(): void {
         $this->resetAfterTest();
@@ -666,8 +668,6 @@ final class card_builder_test extends \advanced_testcase {
      * A Label with toggleable manual completion stays inline, but exposes the manual
      * completion toggle — the tap that used to reveal it is gone, so the toggle itself
      * must render directly in the flow instead.
-     *
-     * @covers ::build
      */
     public function test_label_with_toggleable_manual_completion_stays_inline_with_a_toggle(): void {
         $this->resetAfterTest();
@@ -703,8 +703,6 @@ final class card_builder_test extends \advanced_testcase {
      * moodle/course:togglecompletion capability) must still expose
      * showinlinemanualcompletion, so the inline template can fall back to a read-only
      * status span instead of silently showing nothing.
-     *
-     * @covers ::build
      */
     public function test_label_with_non_toggleable_manual_completion_still_shows_inline_status(): void {
         global $DB;
@@ -745,8 +743,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * A Label restricted by an unmet availability condition stays inline but exposes
      * showinlinebadge, so the restriction is still visible without a tap.
-     *
-     * @covers ::build
      */
     public function test_label_with_availability_restriction_shows_inline_badge(): void {
         global $DB;
@@ -785,8 +781,6 @@ final class card_builder_test extends \advanced_testcase {
     /**
      * A Label with automatic completion tracking stays inline but exposes the
      * criteria list, shaped for core_course/completion_automatic.
-     *
-     * @covers ::build
      */
     public function test_label_with_automatic_completion_shows_inline_criteria(): void {
         $this->resetAfterTest();
@@ -824,8 +818,6 @@ final class card_builder_test extends \advanced_testcase {
      * An ordinary module (no custom cmlist item) must never become inline, even with a
      * stray DISPLAYMODE_TILE saved on it — displaymode is only ever consulted once
      * has_custom_cmlist_item() is already true.
-     *
-     * @covers ::build
      */
     public function test_ordinary_module_never_becomes_inline_regardless_of_stray_displaymode(): void {
         $this->resetAfterTest();

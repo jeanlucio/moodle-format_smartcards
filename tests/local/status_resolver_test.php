@@ -26,7 +26,7 @@ use stdClass;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\status_resolver
+ * @covers \format_smartcards\local\status_resolver
  */
 final class status_resolver_test extends \advanced_testcase {
     /**
@@ -44,8 +44,6 @@ final class status_resolver_test extends \advanced_testcase {
     /**
      * A fully hidden activity (visible = 0, not shown greyed out) must not be
      * rendered at all for a student.
-     *
-     * @covers ::resolve
      */
     public function test_hidden_activity_is_not_visible(): void {
         $this->resetAfterTest();
@@ -66,8 +64,6 @@ final class status_resolver_test extends \advanced_testcase {
     /**
      * An activity restricted by an unmet date condition, shown greyed out, must
      * surface the 'locked' badge together with the core-generated reason text.
-     *
-     * @covers ::resolve
      */
     public function test_restricted_activity_gets_locked_badge_with_reason(): void {
         global $DB;
@@ -95,8 +91,6 @@ final class status_resolver_test extends \advanced_testcase {
     /**
      * An available activity with an expected completion date must surface the
      * 'timed' badge and the due date, without any restriction reason.
-     *
-     * @covers ::resolve
      */
     public function test_activity_with_expected_completion_gets_timed_badge(): void {
         global $DB;
@@ -123,8 +117,6 @@ final class status_resolver_test extends \advanced_testcase {
     /**
      * A freely available activity with no restriction and no expected completion
      * date must carry no badge at all.
-     *
-     * @covers ::resolve
      */
     public function test_freely_available_activity_has_no_badge(): void {
         $this->resetAfterTest();
@@ -144,8 +136,6 @@ final class status_resolver_test extends \advanced_testcase {
     /**
      * A teacher able to view hidden activities must still see a hidden activity's
      * card, rendered dimmed, instead of it disappearing as it does for students.
-     *
-     * @covers ::resolve
      */
     public function test_teacher_sees_hidden_activity_dimmed(): void {
         $this->resetAfterTest();
@@ -172,8 +162,6 @@ final class status_resolver_test extends \advanced_testcase {
      * restriction status instead of hiding it like the stealth-activity workaround does.
      * Unlike a student in the same situation, the teacher must still be able to follow
      * the link (canaccess true).
-     *
-     * @covers ::resolve
      */
     public function test_teacher_who_can_bypass_restriction_still_sees_locked_badge(): void {
         global $DB;
@@ -203,8 +191,6 @@ final class status_resolver_test extends \advanced_testcase {
      * A student who genuinely cannot bypass a restriction must still be blocked from
      * accessing the activity, even though the badge/reason computation now shares the
      * same cm_info::$available check as the teacher-bypass case above.
-     *
-     * @covers ::resolve
      */
     public function test_student_cannot_access_restricted_activity(): void {
         global $DB;

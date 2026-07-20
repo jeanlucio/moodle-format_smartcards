@@ -29,10 +29,20 @@ use invalid_parameter_exception;
  * and execute_returns() are correctly attributed to this test suite instead of being silently
  * excluded by php-code-coverage's per-method coverage-annotation line filtering.
  *
+ * Also declares appearance_image_store as a second covers target: the image-upload tests
+ * below (upload / resave-without-a-new-upload / reject-with-no-upload / switch-away-deletes)
+ * exercise its whole resolve_saved_value()/store_for_section()/delete_for_section() lifecycle
+ * through this dispatcher, and would otherwise be silently stripped from that class's own
+ * coverage report. Same reasoning for section_card_builder as a third target:
+ * get_visible_section_cmids() is only ever called from this execute(), and only the
+ * visible-activity test below actually walks its cmid-filtering loop.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\external\save_section_appearance
+ * @covers \format_smartcards\local\appearance_image_store
+ * @covers \format_smartcards\local\section_card_builder
  */
 final class save_section_appearance_test extends \advanced_testcase {
     /** @var string Base64-encoded 1x1 transparent PNG, small enough to always pass the size check. */
@@ -67,6 +77,27 @@ final class save_section_appearance_test extends \advanced_testcase {
         $this->assertTrue($result['isemoji']);
         $this->assertSame('🎉', $result['emoji']);
         $this->assertFalse($result['islocked']);
+    }
+
+    /**
+     * A section with a real visible activity must come back with hascards=true — the
+     * section_card_builder::get_visible_section_cmids() call this execute() makes must
+     * actually find that activity, not just handle the empty-section case every other
+     * test in this file exercises.
+     */
+    public function test_section_with_a_visible_activity_returns_hascards_true(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['numsections' => 1]);
+        $teacher   = $generator->create_and_enrol($course, 'editingteacher');
+        $sectionid = (int)get_fast_modinfo($course)->get_section_info(1)->id;
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+        $this->setUser($teacher);
+
+        $result = save_section_appearance::execute($sectionid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '');
+        $result = external_api::clean_returnvalue(save_section_appearance::execute_returns(), $result);
+
+        $this->assertTrue($result['hascards']);
     }
 
     /**

@@ -24,7 +24,7 @@ use stdClass;
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \format_smartcards\local\cm_completion_resolver
+ * @covers \format_smartcards\local\cm_completion_resolver
  */
 final class cm_completion_resolver_test extends \advanced_testcase {
     /**
@@ -44,8 +44,6 @@ final class cm_completion_resolver_test extends \advanced_testcase {
     /**
      * An activity with no completion tracking configured resolves to TRACKING_NONE with
      * no criteria, regardless of who is asking.
-     *
-     * @covers ::resolve
      */
     public function test_untracked_activity_resolves_to_tracking_none(): void {
         $this->resetAfterTest();
@@ -65,8 +63,6 @@ final class cm_completion_resolver_test extends \advanced_testcase {
     /**
      * A guest user (or userid 0) never has meaningful completion state, even on an
      * activity that does track completion for real users.
-     *
-     * @covers ::resolve
      */
     public function test_guest_user_resolves_to_tracking_none(): void {
         $this->resetAfterTest();
@@ -89,8 +85,6 @@ final class cm_completion_resolver_test extends \advanced_testcase {
      * A manual-tracking activity resolves TRACKING_MANUAL and reflects the real
      * completion state, without ever populating criteria (core has none to describe for
      * a manual toggle).
-     *
-     * @covers ::resolve
      */
     public function test_manual_tracking_resolves_state_with_no_criteria(): void {
         $this->resetAfterTest();
@@ -119,8 +113,6 @@ final class cm_completion_resolver_test extends \advanced_testcase {
      * An automatic-tracking activity resolves TRACKING_AUTOMATIC and populates criteria
      * with core's own already-localised descriptions, shaped exactly like
      * core_course/completion_automatic's template context so the sheet can reuse it as-is.
-     *
-     * @covers ::resolve
      */
     public function test_automatic_tracking_resolves_criteria_descriptions(): void {
         $this->resetAfterTest();

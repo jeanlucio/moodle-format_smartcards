@@ -70,12 +70,20 @@ final class backup_restore_test extends \advanced_testcase {
             appearance_repository::TYPE_EMOJI,
             '🎉',
             '#ffffff',
+            '#c62828',
             null,
-            null,
-            null,
+            '#123abc',
             appearance_repository::DISPLAYMODE_TILE
         );
-        $repository->save_for_section($sectionid, appearance_repository::TYPE_ICON, 'book', null, null, null);
+        $repository->save_for_section(
+            $sectionid,
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            '#1565c0',
+            null,
+            '#abc123'
+        );
 
         $newcourseid = $this->backup_and_restore($course);
 
@@ -95,12 +103,16 @@ final class backup_restore_test extends \advanced_testcase {
         $this->assertSame(appearance_repository::TYPE_EMOJI, $activityappearance->type);
         $this->assertSame('🎉', $activityappearance->value);
         $this->assertSame('#ffffff', $activityappearance->bgcolor);
+        $this->assertSame('#c62828', $activityappearance->labelcolor);
+        $this->assertSame('#123abc', $activityappearance->iconcolor);
         $this->assertSame(appearance_repository::DISPLAYMODE_TILE, $activityappearance->displaymode);
 
         $sectionappearance = $newrepository->get_for_section($newsectionid);
         $this->assertNotNull($sectionappearance);
         $this->assertSame(appearance_repository::TYPE_ICON, $sectionappearance->type);
         $this->assertSame('book', $sectionappearance->value);
+        $this->assertSame('#1565c0', $sectionappearance->labelcolor);
+        $this->assertSame('#abc123', $sectionappearance->iconcolor);
     }
 
     /**
