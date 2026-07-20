@@ -41,9 +41,28 @@ const SELECTORS = {
 // moved into the modal need to keep looking the same as they do inline.
 const SIZE_FRAME_CLASS = /^sc-(size-\w+|noframe)$/;
 
-// Course-configured opening animation (format_smartcards/modaleffect, see lib.php);
-// 'default' leaves core/modal's own fade transition untouched, so no class is added
-// for it — only 'zoom'/'slideup' need their own CSS hook (styles.css).
+// Course-configured opening animation (format_smartcards/modaleffect, see lib.php).
+// 'default' plays core/modal's own Bootstrap fade untouched (no keyframes below).
+// Both use the same duration/easing — a springy overshoot past the resting position,
+// picked because a plain ease-out at this scale/offset still read as barely
+// noticeable; the overshoot is what makes the motion register.
+const EFFECTS = {
+    zoom: {
+        keyframes: [
+            {transform: 'scale(0.5)', opacity: 0},
+            {transform: 'scale(1)', opacity: 1},
+        ],
+        options: {duration: 450, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'},
+    },
+    slideup: {
+        keyframes: [
+            {transform: 'translateY(160px)', opacity: 0},
+            {transform: 'translateY(0)', opacity: 1},
+        ],
+        options: {duration: 450, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'},
+    },
+};
+
 let modaleffect = 'default';
 
 /**
@@ -85,25 +104,26 @@ const openModal = async(card) => {
         });
     }
 
-    if (modaleffect === 'default') {
+    const effect = EFFECTS[modaleffect];
+    if (!effect) {
         return;
     }
 
-    // Core/modal's own .modal starts at display:none, and toggling to .show flips it
-    // to display:block in the very same step — a CSS transition can never animate a
-    // property that changes in the same style recalculation as display:none leaving,
-    // because there was no earlier rendered frame to transition from (this is why the
-    // sc-modal-effect-* class used to have zero visible effect: adding it before or
-    // after .show made no difference, the "closed" transform was never actually
-    // painted). The fix is to add the closed-state class now (already rendered once
-    // .show flips display to block, still at its closed transform since -open hasn't
-    // been added yet), then add a second, separate class next frame to trigger the
-    // actual transition — the browser has had a real frame to paint the closed state
-    // by then, so the change genuinely animates instead of jumping straight to the end.
-    modalRoot.classList.add(`sc-modal-effect-${modaleffect}`);
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => modalRoot.classList.add('sc-modal-effect-open'));
-    });
+    // Element.animate() (Web Animations API) is used instead of a CSS transition
+    // triggered by a class toggle: two earlier CSS-transition attempts both broke in
+    // ways specific to *when* they ran — one never painted a "before" frame because
+    // .show flips display:none to block in the same step a transition needs two
+    // separate steps for, the other worked everywhere except a page's very first
+    // modal, because two requestAnimationFrame calls back to back are not guaranteed
+    // to span two real frames before the browser's rendering loop is "warmed up".
+    // animate() has neither failure mode: it is handed explicit keyframes and a
+    // duration and always plays them, regardless of display state or how "cold" the
+    // page's render loop is — there is no separate trigger step to mistime at all.
+    const dialog = modalRoot.querySelector('.modal-dialog');
+    const reducedmotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (dialog && !reducedmotion) {
+        dialog.animate(effect.keyframes, effect.options);
+    }
 };
 
 /**
