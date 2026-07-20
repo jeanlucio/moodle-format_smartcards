@@ -6,7 +6,10 @@
    * **Incluir "Geral" no estilo de navegação** — desligado por padrão
    * **Tamanho do card** e **moldura do card** ligada/desligada
    * **Exibição de progresso** — oculto, contagem, ou porcentagem
-   * **Cor de fundo padrão**, **cor do título**, e **fonte do título**
+   * **Cor de fundo padrão**, e **cor do título**/**fonte do título** — dois pares independentes,
+     um para atividades e outro para seções
+   * **Efeito de abertura do modal de seção** — fade, zoom, giro 3D ou desfoque (só no estilo
+     Cards de seção)
 3. Adicione atividades e seções normalmente — elas viram cards automaticamente.
 4. Para customizar a aparência de uma atividade ou seção específica, abra seu menu de edição
    (menu de três pontos) e escolha **Aparência do card**: escolha uma imagem enviada, um único

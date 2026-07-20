@@ -6,7 +6,9 @@
    * **Include "General" in the navigation style** — off by default
    * **Card size** and **card frame** on/off
    * **Progress display** — hidden, count, or percentage
-   * **Default background colour**, **title colour**, and **title font**
+   * **Default background colour**, and **title colour**/**title font** — two independent pairs,
+     one for activities and one for sections
+   * **Section modal opening effect** — fade, zoom, 3D flip, or blur (Section cards style only)
 3. Add activities and sections as usual — they render automatically as cards.
 4. To customise one activity's or section's own appearance, open its edit menu (kebab menu) and
    choose **Card appearance**: pick an uploaded image, a single emoji, or a library icon, plus an

@@ -8,37 +8,38 @@ matriz completa (Moodle 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL e MariaDB).
 
 | Arquivo de teste | Casos |
 |-------------------|------:|
-| `output/courseformat/content_test.php` | 25 |
+| `output/courseformat/content_test.php` | 27 |
 | `output/courseformat/content/cm/controlmenu_test.php` | 2 |
 | `output/courseformat/content/section/controlmenu_test.php` | 3 |
 | `observer_test.php` | 3 |
 | `hook_listener_test.php` | 1 |
-| **Subtotal** | **34** |
+| **Subtotal** | **36** |
 
 ### Testes de Lógica de Negócio Local (`tests/local/`)
 
 | Arquivo de teste | Casos |
 |-------------------|------:|
-| `appearance_repository_test.php` | 17 |
+| `appearance_repository_test.php` | 20 |
 | `appearance_image_store_test.php` | 9 |
-| `card_builder_test.php` | 11 |
-| `section_card_builder_test.php` | 5 |
+| `appearance_style_resolver_test.php` | 7 |
+| `card_builder_test.php` | 13 |
+| `section_card_builder_test.php` | 7 |
 | `status_resolver_test.php` | 7 |
 | `cm_completion_resolver_test.php` | 4 |
 | `cm_description_resolver_test.php` | 4 |
 | `section_progress_resolver_test.php` | 4 |
-| **Subtotal** | **61** |
+| **Subtotal** | **75** |
 
 ### Testes de Web Services (`tests/external/`)
 
 | Arquivo de teste | Casos |
 |-------------------|------:|
 | `save_section_appearance_test.php` | 12 |
-| `save_appearance_test.php` | 10 |
+| `save_appearance_test.php` | 11 |
 | `get_appearance_test.php` | 6 |
 | `get_section_appearance_test.php` | 6 |
 | `toggle_section_test.php` | 3 |
-| **Subtotal** | **37** |
+| **Subtotal** | **38** |
 
 ### Testes de Backup, Restore e Privacidade
 
@@ -48,7 +49,7 @@ matriz completa (Moodle 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL e MariaDB).
 | `privacy/provider_test.php` | 2 |
 | **Subtotal** | **4** |
 
-| **Total geral** | **136** |
+| **Total geral** | **153** |
 
 ```bash
 vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcards
@@ -58,10 +59,11 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 
 | Classe | Cobertura de linhas |
 |--------|:-------------------:|
-| `local\appearance_repository` | 93% |
+| `local\appearance_repository` | 94% |
 | `local\appearance_image_store` | 51% |
+| `local\appearance_style_resolver` | 74% |
 | `local\card_builder` | 96% |
-| `local\section_card_builder` | 70% |
+| `local\section_card_builder` | 72% |
 | `local\status_resolver` | 100% |
 | `local\cm_completion_resolver` | 100% |
 | `local\cm_description_resolver` | 100% |
@@ -77,7 +79,7 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Geral** | **65%** |
+| **Geral** | **66%** |
 
 ## Testes de Aceitação Behat
 
