@@ -39,10 +39,18 @@ use format_smartcards\local\appearance_repository;
  * send_stored_file() are covered; the real "does the browser actually get the bytes"
  * path is exercised end to end by Behat instead.
  *
+ * The two global functions each need their own bare "::functionName" target below: a
+ * plain function is not part of the \format_smartcards class, so the class-level target
+ * above does not reach it — PHPUnit's code-unit mapper (Mapper::stringToCodeUnits())
+ * falls back to a function lookup whenever the part before "::" does not resolve to a
+ * real method, which is exactly what happens here with no class name in front of it.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \format_smartcards
+ * @covers     ::format_smartcards_inplace_editable
+ * @covers     ::format_smartcards_pluginfile
  */
 final class lib_test extends \advanced_testcase {
     /**
