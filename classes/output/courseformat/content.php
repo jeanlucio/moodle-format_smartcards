@@ -144,7 +144,7 @@ class content extends content_base {
             // No default-active section either: every card is static until tapped, no
             // "first pending" section to pick for the student ahead of time.
             $modaleffect = $formatoptions['modaleffect'] ?? 'default';
-            if (!in_array($modaleffect, ['default', 'zoom', 'slideup'], true)) {
+            if (!in_array($modaleffect, ['default', 'zoom', 'flip', 'blur'], true)) {
                 $modaleffect = 'default';
             }
             $PAGE->requires->js_call_amd('format_smartcards/section_modal', 'init', [$modaleffect]);

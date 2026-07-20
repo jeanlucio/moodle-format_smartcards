@@ -149,7 +149,8 @@ if ($ADMIN->fulltree) {
         [
             'default' => new lang_string('modaleffect_default', 'format_smartcards'),
             'zoom'    => new lang_string('modaleffect_zoom', 'format_smartcards'),
-            'slideup' => new lang_string('modaleffect_slideup', 'format_smartcards'),
+            'flip'    => new lang_string('modaleffect_flip', 'format_smartcards'),
+            'blur'    => new lang_string('modaleffect_blur', 'format_smartcards'),
         ]
     ));
 

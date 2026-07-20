@@ -43,9 +43,13 @@ const SIZE_FRAME_CLASS = /^sc-(size-\w+|noframe)$/;
 
 // Course-configured opening animation (format_smartcards/modaleffect, see lib.php).
 // 'default' plays core/modal's own Bootstrap fade untouched (no keyframes below).
-// Both use the same duration/easing — a springy overshoot past the resting position,
-// picked because a plain ease-out at this scale/offset still read as barely
-// noticeable; the overshoot is what makes the motion register.
+// zoom uses a springy overshoot past the resting position — a plain ease-out at this
+// scale still read as barely noticeable, the overshoot is what makes it register.
+// flip/blur intentionally avoid translateY (or any positional transform): on Moodle
+// 5.x specifically, a Y-axis transform on the dialog fought with a Bootstrap 5
+// recalculation of the modal's own vertical position, reading as a shaky double-move
+// rather than one clean motion — scale, rotation and filter don't touch position, so
+// neither has that failure mode.
 const EFFECTS = {
     zoom: {
         keyframes: [
@@ -54,12 +58,19 @@ const EFFECTS = {
         ],
         options: {duration: 450, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'},
     },
-    slideup: {
+    flip: {
         keyframes: [
-            {transform: 'translateY(160px)', opacity: 0},
-            {transform: 'translateY(0)', opacity: 1},
+            {transform: 'perspective(800px) rotateX(-25deg)', opacity: 0},
+            {transform: 'perspective(800px) rotateX(0deg)', opacity: 1},
         ],
-        options: {duration: 450, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'},
+        options: {duration: 400, easing: 'cubic-bezier(0.16, 1, 0.3, 1)'},
+    },
+    blur: {
+        keyframes: [
+            {filter: 'blur(8px)', opacity: 0},
+            {filter: 'blur(0)', opacity: 1},
+        ],
+        options: {duration: 350, easing: 'ease-out'},
     },
 };
 
@@ -130,8 +141,8 @@ const openModal = async(card) => {
  * Initialises the delegated click handler for every section card.
  *
  * @param {string} effect The course's configured modal opening effect
- *                         (format_smartcards/modaleffect: 'default', 'zoom' or
- *                         'slideup'), passed by content.php's export_for_template().
+ *                         (format_smartcards/modaleffect: 'default', 'zoom', 'flip' or
+ *                         'blur'), passed by content.php's export_for_template().
  * @returns {void}
  */
 export const init = (effect = 'default') => {
