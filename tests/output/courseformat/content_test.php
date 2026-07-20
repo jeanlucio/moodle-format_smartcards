@@ -26,12 +26,16 @@ use core_availability\tree;
  * pipeline (not just status_resolver in isolation), to catch mistakes that
  * only surface when cm_info methods are actually called during export.
  *
- * Also declares two extra covers targets: section_progress (the progressdisplay=count/
+ * Also declares three extra covers targets: section_progress (the progressdisplay=count/
  * percent tests below are the only place percent()/format_label() are reachable at all —
- * section_progress_resolver_test.php only exercises has_tracking()/has_pending()) and
- * renderer (every test here goes through the real $PAGE->get_renderer('format_smartcards')
- * pipeline, so its constructor would otherwise be silently stripped from that class's own
- * coverage report).
+ * section_progress_resolver_test.php only exercises has_tracking()/has_pending()); renderer
+ * (every test here goes through the real $PAGE->get_renderer('format_smartcards') pipeline,
+ * so its constructor would otherwise be silently stripped from that class's own coverage
+ * report); and the plugin's own global-namespace \format_smartcards class (lib.php) — every
+ * create_course(['format' => 'smartcards']) + course_get_format() call here exercises
+ * course_format_options()/get_section_name()/get_view_url(), which otherwise never show up
+ * in any coverage report at all, since that bare global class (it lives outside the
+ * format_smartcards\ namespace) was never a declared coverage target anywhere.
  *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
@@ -39,6 +43,7 @@ use core_availability\tree;
  * @covers \format_smartcards\output\courseformat\content
  * @covers \format_smartcards\local\section_progress
  * @covers \format_smartcards\output\renderer
+ * @covers \format_smartcards
  */
 final class content_test extends \advanced_testcase {
     /**
