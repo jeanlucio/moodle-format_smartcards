@@ -241,14 +241,18 @@ class format_smartcards extends core_courseformat\base {
     /**
      * Returns the format options for this course.
      *
-     * Nine options, each with a site-wide default (settings.php) overridable per
+     * Eleven options, each with a site-wide default (settings.php) overridable per
      * course: cardsize and showcardframe control the grid's visual density; the four
-     * "default" colour/font options give the whole course a fallback that an
-     * individual activity's own appearance still takes priority over (see
-     * card_builder::build()); navstyle controls the section navigation layout (view
-     * mode only, see classes/output/courseformat/content.php); generalinstyle decides
-     * whether section 0 (General) participates in that layout at all, instead of
-     * always rendering as a plain, unstyled section (its historical default — this
+     * activity-scoped "default" colour/font options give the whole course a fallback
+     * that an individual activity's own appearance still takes priority over (see
+     * card_builder::build()); defaultsectionlabelcolor/defaultsectionlabelfont are the
+     * same idea for section titles, kept as a separate pair so a course can give
+     * sections a different accent than activities — an individual section's own
+     * appearance still takes priority (see appearance_style_resolver::
+     * resolve_section_titlestyle()); navstyle controls the section navigation layout
+     * (view mode only, see classes/output/courseformat/content.php); generalinstyle
+     * decides whether section 0 (General) participates in that layout at all, instead
+     * of always rendering as a plain, unstyled section (its historical default — this
      * option preserves that as the default, off).
      *
      * @param bool $foreditform Whether this is being called to populate the course edit form.
@@ -277,6 +281,14 @@ class format_smartcards extends core_courseformat\base {
                 ],
                 'defaultlabelfont' => [
                     'default' => get_config('format_smartcards', 'defaultlabelfont'),
+                    'type' => PARAM_ALPHANUM,
+                ],
+                'defaultsectionlabelcolor' => [
+                    'default' => get_config('format_smartcards', 'defaultsectionlabelcolor'),
+                    'type' => PARAM_TEXT,
+                ],
+                'defaultsectionlabelfont' => [
+                    'default' => get_config('format_smartcards', 'defaultsectionlabelfont'),
                     'type' => PARAM_ALPHANUM,
                 ],
                 'defaulticoncolor' => [
@@ -356,6 +368,16 @@ class format_smartcards extends core_courseformat\base {
                 ],
                 'defaultlabelfont' => [
                     'label' => new lang_string('defaultlabelfont', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [$labelfontoptions],
+                ],
+                'defaultsectionlabelcolor' => [
+                    'label' => new lang_string('defaultsectionlabelcolor', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [$labelcoloroptions],
+                ],
+                'defaultsectionlabelfont' => [
+                    'label' => new lang_string('defaultsectionlabelfont', 'format_smartcards'),
                     'element_type' => 'select',
                     'element_attributes' => [$labelfontoptions],
                 ],

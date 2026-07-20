@@ -61,6 +61,9 @@
                 "isactivetab": false,
                 "hasprogress": true,
                 "progresslabel": "Progress: 2 / 5",
+                "progresscomplete": false,
+                "hastitlestyle": true,
+                "titlestyle": "color: #0f6cbf",
                 "issectioncard": false,
                 "sectioncard": null,
                 "availability": {
@@ -101,7 +104,11 @@
         {{#sections}}
             {{#plainsection}}
                 <section class="sc-section" aria-labelledby="sc-section-title-{{id}}">
-                    <h3 class="sc-section-title" id="sc-section-title-{{id}}">{{name}}</h3>
+                    <h3
+                        class="sc-section-title"
+                        id="sc-section-title-{{id}}"
+                        {{#hastitlestyle}}style="{{titlestyle}}"{{/hastitlestyle}}
+                    >{{name}}</h3>
                     {{#availability}}
                         {{> core_courseformat/local/content/section/availability }}
                     {{/availability}}
@@ -148,8 +155,8 @@
                                 aria-controls="sc-tab-pane-{{id}}"
                                 aria-selected="{{#isactivetab}}true{{/isactivetab}}{{^isactivetab}}false{{/isactivetab}}"
                             >
-                                <span class="sc-tabs-name">{{name}}</span>
-                                {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
+                                <span class="sc-tabs-name" {{#hastitlestyle}}style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
+                                {{#hasprogress}}<span class="sc-progress-label {{#progresscomplete}}sc-progress-complete{{/progresscomplete}}">{{progresslabel}}</span>{{/hasprogress}}
                             </button>
                         </li>
                         {{/plainsection}}
@@ -196,17 +203,15 @@
                                 <span class="sc-accordion-chevron-expanded" aria-hidden="true">
                                     {{#pix}} t/expandedchevron, core {{/pix}}
                                 </span>
-                                <span class="sc-accordion-name">{{name}}</span>
-                                {{#hasprogress}}
-                                <span class="sc-progress-label">{{progresslabel}}</span>
-                                {{/hasprogress}}
+                                <span class="sc-accordion-name" {{#hastitlestyle}}style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
+                                {{#hasprogress}}<span class="sc-progress-label {{#progresscomplete}}sc-progress-complete{{/progresscomplete}}">{{progresslabel}}</span>{{/hasprogress}}
                             </button>
                         </h3>
                         {{/iscollapsible}}
                         {{^iscollapsible}}
                         <h3 class="sc-section-title" id="sc-section-title-{{id}}">
-                            <span class="sc-section-name">{{name}}</span>
-                            {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
+                            <span class="sc-section-name" {{#hastitlestyle}}style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
+                            {{#hasprogress}}<span class="sc-progress-label {{#progresscomplete}}sc-progress-complete{{/progresscomplete}}">{{progresslabel}}</span>{{/hasprogress}}
                         </h3>
                         {{/iscollapsible}}
 

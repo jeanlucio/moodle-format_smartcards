@@ -136,10 +136,26 @@
 }
 
 .format-smartcards .sc-progress-label {
+    display: inline-flex;
+    align-items: center;
     font-size: 0.8rem;
-    font-weight: 400;
-    color: var(--secondary, #6c757d);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--body-color, #212529);
+    background-color: var(--border-color, #dee2e6);
+    border-radius: 50rem;
+    padding: 0.2rem 0.6rem;
     white-space: nowrap;
+}
+
+/*
+ * Semantic colour once a section has no pending completion-tracked activity left (see
+ * section_progress::has_pending() via content.php's $progresscomplete / section_card_
+ * builder's $iscompletioncomplete — the two never disagree, both feed this same class).
+ */
+.format-smartcards .sc-progress-label.sc-progress-complete {
+    color: #fff;
+    background-color: var(--success, #198754);
 }
 
 .format-smartcards .sc-accordion-toggle .sc-progress-label {
@@ -187,10 +203,6 @@
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-}
-
-.format-smartcards .sc-tabs .nav-link.active .sc-progress-label {
-    color: inherit;
 }
 
 .format-smartcards .sc-accordion-toggle:not(.collapsed) .sc-accordion-chevron-collapsed {

@@ -59,7 +59,9 @@ final class section_card_builder {
      * @param int[] $sectioncmids Ids of this section's visible activities, in course
      *                             order — the fallback-chain search order.
      * @param array $formatoptions The course's resolved format options, for the
-     *                              defaultbgcolor/defaultlabelcolor/defaultlabelfont/defaulticoncolor fallback.
+     *                              defaultbgcolor/defaultsectionlabelcolor/defaultsectionlabelfont/defaulticoncolor
+     *                              fallback (section-scoped label colour/font, since this builds the section's
+     *                              own card).
      * @param bool $sectionavailable Whether the section itself is available to this user
      *                                (false only for a restricted-but-visible section —
      *                                a fully hidden one never reaches this method).
@@ -100,7 +102,7 @@ final class section_card_builder {
             )->out(false);
 
         [$isemoji, $emoji, $iscustomicon, $customiconurl, $iconstyle, $titlestyle, $isbsicon, $iconcolorstyle]
-            = appearance_style_resolver::resolve($fallbackitem, $output, $formatoptions, $imageurl);
+            = appearance_style_resolver::resolve($fallbackitem, $output, $formatoptions, $imageurl, sectiondefaults: true);
 
         $islocked = !$sectionavailable;
         $badgelabel = $islocked ? get_string('status_locked', 'format_smartcards') : '';

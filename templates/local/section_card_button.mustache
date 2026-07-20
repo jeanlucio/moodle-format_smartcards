@@ -68,5 +68,5 @@
         {{/hascompletionbadge}}
     </span>
     <span class="sc-card-title"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{name}}</span>
-    {{#hasprogress}}<span class="sc-progress-label">{{progresslabel}}</span>{{/hasprogress}}
+    {{#hasprogress}}<span class="sc-progress-label {{#iscompletioncomplete}}sc-progress-complete{{/iscompletioncomplete}}">{{progresslabel}}</span>{{/hasprogress}}
 </button>

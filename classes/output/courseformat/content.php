@@ -24,6 +24,7 @@ use core_courseformat\output\local\content\section\availability;
 use format_smartcards\external\toggle_section;
 use format_smartcards\local\appearance;
 use format_smartcards\local\appearance_repository;
+use format_smartcards\local\appearance_style_resolver;
 use format_smartcards\local\card_builder;
 use format_smartcards\local\cm_description_resolver;
 use format_smartcards\local\section_card_builder;
@@ -150,13 +151,12 @@ class content extends content_base {
             $PAGE->requires->js_call_amd('format_smartcards/trail', 'init');
         }
 
-        // Only queried in sectioncards mode: every other navstyle never renders a
-        // section-level icon, so bulk-loading this table for them would be pure waste.
-        $sectionappearances = $issectioncards
-            ? (new appearance_repository())->get_many_for_sections(
-                array_map(static fn (section_info $s): int => $s->id, $modinfo->get_section_info_all())
-            )
-            : [];
+        // Bulk-loaded for every navstyle: besides feeding the section card icon in
+        // sectioncards mode, every section heading below resolves its own titlestyle
+        // (colour/font) from this same table, regardless of navstyle.
+        $sectionappearances = (new appearance_repository())->get_many_for_sections(
+            array_map(static fn (section_info $s): int => $s->id, $modinfo->get_section_info_all())
+        );
 
         $sectionsdata = [];
         $untouchedbyindex = [];
@@ -220,6 +220,14 @@ class content extends content_base {
             $hastracking = $progress !== null && $progress->has_tracking();
             $hasprogress = $hastracking && $showprogress;
             $progresslabel = $hasprogress ? $progress->format_label($progressdisplay) : '';
+            // Semantic colour for the progress badge (neutral, or green once nothing is
+            // left pending) — the same "fully tracked and complete" condition already
+            // computed for the section card's own completion pill below, reused here so
+            // the flat/accordion/tabs badge and the sectioncards pill never disagree.
+            $progresscomplete = $hastracking && !$progress->has_pending();
+
+            $sectionitem = $sectionappearances[$sectioninfo->id] ?? null;
+            $titlestyle = appearance_style_resolver::resolve_section_titlestyle($sectionitem, $formatoptions);
 
             // Built only for a section that joins the style in sectioncards mode —
             // reuses $cards/$sectionavailable/$hasprogress/$progresslabel computed above
@@ -229,7 +237,7 @@ class content extends content_base {
                     $sectioninfo,
                     $format->get_section_name($sectioninfo),
                     $output,
-                    $sectionappearances[$sectioninfo->id] ?? null,
+                    $sectionitem,
                     $appearances,
                     array_column($cards, 'cmid'),
                     $formatoptions,
@@ -238,7 +246,7 @@ class content extends content_base {
                     $hasprogress,
                     $progresslabel,
                     $hastracking && $progress->has_pending(),
-                    $hastracking && !$progress->has_pending()
+                    $progresscomplete
                 )
                 : null;
 
@@ -257,24 +265,27 @@ class content extends content_base {
             }
 
             $sectionsdata[] = [
-                'id'            => $sectioninfo->id,
-                'num'           => $sectioninfo->section,
-                'name'          => $format->get_section_name($sectioninfo),
-                'issection0'    => ($sectioninfo->section === 0),
+                'id'               => $sectioninfo->id,
+                'num'              => $sectioninfo->section,
+                'name'             => $format->get_section_name($sectioninfo),
+                'issection0'       => ($sectioninfo->section === 0),
                 // Renders via the always-plain top block, outside any navstyle: true
                 // only for section 0 when it has not opted into the style (the default,
                 // unchanged behaviour). Every other section always joins its style.
-                'plainsection'  => ($sectioninfo->section === 0 && !$includegeneral),
-                'cards'         => $cards,
-                'hascards'      => !empty($cards),
-                'availability'  => $availability->export_for_template($output),
-                'iscollapsible' => $iscollapsible,
-                'isopen'        => $iscollapsible && ($explicitopen ?? false),
-                'isactivetab'   => false,
-                'hasprogress'   => $hasprogress,
-                'progresslabel' => $progresslabel,
-                'issectioncard' => ($sectioncard !== null),
-                'sectioncard'   => $sectioncard,
+                'plainsection'     => ($sectioninfo->section === 0 && !$includegeneral),
+                'cards'            => $cards,
+                'hascards'         => !empty($cards),
+                'availability'     => $availability->export_for_template($output),
+                'iscollapsible'    => $iscollapsible,
+                'isopen'           => $iscollapsible && ($explicitopen ?? false),
+                'isactivetab'      => false,
+                'hasprogress'      => $hasprogress,
+                'progresslabel'    => $progresslabel,
+                'progresscomplete' => $progresscomplete,
+                'hastitlestyle'    => ($titlestyle !== ''),
+                'titlestyle'       => $titlestyle,
+                'issectioncard'    => ($sectioncard !== null),
+                'sectioncard'      => $sectioncard,
             ];
 
             $lastindex = array_key_last($sectionsdata);

@@ -90,6 +90,30 @@ if ($ADMIN->fulltree) {
         $labelfontoptions
     ));
 
+    $sectionlabelcoloroptions = ['' => new lang_string('appearance_defaultcolor', 'format_smartcards')];
+    foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
+        $sectionlabelcoloroptions[$hex] = ucfirst($slug) . " ($hex)";
+    }
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/defaultsectionlabelcolor',
+        new lang_string('defaultsectionlabelcolor', 'format_smartcards'),
+        new lang_string('defaultsectionlabelcolor_desc', 'format_smartcards'),
+        '',
+        $sectionlabelcoloroptions
+    ));
+
+    $sectionlabelfontoptions = ['' => new lang_string('appearance_labelfont_system', 'format_smartcards')];
+    foreach (appearance_palette::LABEL_FONTS as $slug => $fontname) {
+        $sectionlabelfontoptions[$slug] = $fontname;
+    }
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/defaultsectionlabelfont',
+        new lang_string('defaultsectionlabelfont', 'format_smartcards'),
+        new lang_string('defaultsectionlabelfont_desc', 'format_smartcards'),
+        '',
+        $sectionlabelfontoptions
+    ));
+
     $iconcoloroptions = ['' => new lang_string('appearance_defaultcolor', 'format_smartcards')];
     foreach (appearance_palette::LABEL_COLORS as $slug => $hex) {
         $iconcoloroptions[$hex] = ucfirst($slug) . " ($hex)";
