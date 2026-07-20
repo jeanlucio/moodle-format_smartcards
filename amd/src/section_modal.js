@@ -63,7 +63,7 @@ const EFFECTS = {
             {transform: 'perspective(800px) rotateX(-25deg)', opacity: 0},
             {transform: 'perspective(800px) rotateX(0deg)', opacity: 1},
         ],
-        options: {duration: 400, easing: 'cubic-bezier(0.16, 1, 0.3, 1)'},
+        options: {duration: 450, easing: 'cubic-bezier(0.16, 1, 0.3, 1)'},
     },
     blur: {
         keyframes: [
