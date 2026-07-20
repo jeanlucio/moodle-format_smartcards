@@ -256,6 +256,52 @@ final class content_test extends \advanced_testcase {
     }
 
     /**
+     * The course's defaultsectionlabelcolor format option must style a section's own
+     * heading — and never the other way round: defaultlabelcolor (the activity-scoped
+     * default) must never leak onto the section title, and defaultsectionlabelcolor
+     * must never leak onto the activity card, even though both are set at once here.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_defaultsectionlabelcolor_styles_the_section_title_not_the_activity(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['format' => 'smartcards', 'numsections' => 1]);
+        $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $activitydefault = \format_smartcards\local\appearance_palette::LABEL_COLORS['blue'];
+        $sectiondefault   = \format_smartcards\local\appearance_palette::LABEL_COLORS['green'];
+        course_get_format($course)->update_course_format_options([
+            'defaultlabelcolor' => $activitydefault,
+            'defaultsectionlabelcolor' => $sectiondefault,
+        ]);
+
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertMatchesRegularExpression(
+            '~sc-section-name" style="color: ' . preg_quote($sectiondefault, '~') . '"~',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '~sc-card-title" style="color: ' . preg_quote($activitydefault, '~') . '"~',
+            $html
+        );
+    }
+
+    /**
      * With navstyle=accordion, the section with a pending completion-tracked activity
      * must render expanded (aria-expanded="true", collapse "show"), and a fully-complete
      * section must render collapsed — the "resume where you left off" behaviour the
@@ -865,6 +911,57 @@ final class content_test extends \advanced_testcase {
 
         $this->assertStringContainsString('>50%<', $html);
         $this->assertStringNotContainsString('Progress:', $html);
+        $this->assertStringNotContainsString('sc-progress-complete', $html);
+    }
+
+    /**
+     * Once every completion-tracked activity in a section is done, the progress badge
+     * must carry the sc-progress-complete class the semantic (neutral -> green) colour
+     * hooks off — the same "fully tracked and complete" condition the accordion/tabs
+     * default-section logic and the sectioncards completion pill already share.
+     *
+     * @covers ::export_for_template
+     */
+    public function test_progresscomplete_class_appears_once_nothing_is_pending(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course([
+            'format' => 'smartcards',
+            'numsections' => 1,
+            'enablecompletion' => 1,
+        ]);
+        course_get_format($course)->update_course_format_options(['progressdisplay' => 'percent']);
+
+        $done = $generator->create_module('page', [
+            'course' => $course->id,
+            'section' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $student = $generator->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $completioninfo = new \completion_info($course);
+        $completioninfo->update_state(
+            get_fast_modinfo($course, $student->id)->get_cm($done->cmid),
+            COMPLETION_COMPLETE,
+            $student->id
+        );
+
+        $PAGE->set_url('/course/view.php', ['id' => $course->id]);
+        $PAGE->set_course($course);
+
+        $format      = course_get_format($course);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+        $outputclass = $format->get_output_classname('content');
+        $widget      = new $outputclass($format);
+
+        $html = $renderer->render($widget);
+
+        $this->assertStringContainsString('>100%<', $html);
+        $this->assertStringContainsString('sc-progress-complete', $html);
     }
 
     /**

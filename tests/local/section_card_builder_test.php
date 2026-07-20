@@ -283,6 +283,49 @@ final class section_card_builder_test extends \advanced_testcase {
     }
 
     /**
+     * With no appearance of its own (or on its fallback activity), the section card's
+     * title colour must come from the course's defaultsectionlabelcolor — never from
+     * defaultlabelcolor, the activity-scoped default section_card_builder passes
+     * sectiondefaults: true past specifically to avoid.
+     *
+     * @covers ::build
+     */
+    public function test_titlestyle_uses_the_sections_own_default_not_the_activitys(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course(['numsections' => 1]);
+        $page      = $generator->create_module('page', ['course' => $course->id, 'section' => 1]);
+
+        $sectioninfo = get_fast_modinfo($course)->get_section_info(1);
+        $renderer    = $PAGE->get_renderer('format_smartcards');
+
+        $card = section_card_builder::build(
+            $sectioninfo,
+            'Topic 1',
+            $renderer,
+            null,
+            [],
+            [$page->cmid],
+            [
+                'defaultlabelcolor' => appearance_palette::LABEL_COLORS['blue'],
+                'defaultsectionlabelcolor' => appearance_palette::LABEL_COLORS['green'],
+            ],
+            true,
+            true,
+            false,
+            '',
+            false,
+            false
+        );
+
+        $this->assertTrue($card['hastitlestyle']);
+        $this->assertStringContainsString('color: ' . appearance_palette::LABEL_COLORS['green'], $card['titlestyle']);
+        $this->assertStringNotContainsString(appearance_palette::LABEL_COLORS['blue'], $card['titlestyle']);
+    }
+
+    /**
      * Resolves the id of section $sectionnum in $course.
      *
      * @param \stdClass $course Course record.
