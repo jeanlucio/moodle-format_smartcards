@@ -66,7 +66,9 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 
 | Classe | Cobertura de linhas |
 |--------|:-------------------:|
-| `format_smartcards` (lib.php) | 19% |
+| `format_smartcards` (classe do lib.php) | 19% |
+| `format_smartcards_inplace_editable()` (função do lib.php) | 100% |
+| `format_smartcards_pluginfile()` (função do lib.php) | 68% |
 | `local\appearance_repository` | 94% |
 | `local\appearance` | 100% |
 | `local\appearance_palette` | 100% |
@@ -94,7 +96,7 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Geral** | **84%** |
+| **Geral** | **86%** |
 
 > Os métodos de título de `output\renderer` (`section_title()`/`section_title_without_link()`)
 > só são exercitados por uma página renderizada de verdade (Behat) — nenhum teste PHPUnit aqui
@@ -110,6 +112,15 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 > exercita não recebe o crédito. Todo o resto da classe (os getters simples de capability,
 > `get_section_name()`, `get_default_section_name()`, `get_view_url()`, `page_set_course()`) é
 > testado diretamente em `tests/lib_test.php`.
+
+> As duas funções globais do `lib.php` não fazem parte da classe `format_smartcards`, então um
+> `@covers \format_smartcards` a nível de classe não credita nada a elas — precisam do próprio
+> alvo simples `@covers ::nomeDaFuncao` (sem nome de classe antes do `::`), que o mapeador de
+> code-unit do PHPUnit resolve como busca de função assim que a busca por método com nome de
+> classe vazio falha. `format_smartcards_inplace_editable()` ficou 100% coberta;
+> `format_smartcards_pluginfile()` fica em 68% porque seus ramos de "arquivo servido de verdade"
+> terminam em `send_stored_file()`, que dá `die()` no sucesso sem forma segura de interceptar
+> isso dentro do processo — deixado para o Behat.
 
 > O único ramo do `navstyle=sectioncards` não alcançável aqui (o formato legado de item de
 > menu exclusivo do Moodle 4.5 em `content/section/controlmenu`) é exercitado de verdade

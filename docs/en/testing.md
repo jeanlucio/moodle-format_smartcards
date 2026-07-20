@@ -66,7 +66,9 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 
 | Class | Line coverage |
 |-------|:-------------:|
-| `format_smartcards` (lib.php) | 19% |
+| `format_smartcards` (lib.php class) | 19% |
+| `format_smartcards_inplace_editable()` (lib.php function) | 100% |
+| `format_smartcards_pluginfile()` (lib.php function) | 68% |
 | `local\appearance_repository` | 94% |
 | `local\appearance` | 100% |
 | `local\appearance_palette` | 100% |
@@ -94,7 +96,7 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Overall** | **84%** |
+| **Overall** | **86%** |
 
 > `output\renderer`'s title methods (`section_title()`/`section_title_without_link()`) are
 > only exercised by a real rendered page (Behat) — no PHPUnit test here reaches them.
@@ -108,6 +110,14 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 > other method on the class (the simple capability getters, `get_section_name()`,
 > `get_default_section_name()`, `get_view_url()`, `page_set_course()`) is directly tested in
 > `tests/lib_test.php`.
+
+> `lib.php`'s two global functions are not part of the `format_smartcards` class, so a
+> class-level `@covers \format_smartcards` does not credit them — they need their own bare
+> `@covers ::functionName` target (no class name before the `::`), which PHPUnit's code-unit
+> mapper resolves as a plain function lookup once the method lookup for an empty class name
+> fails. `format_smartcards_inplace_editable()` is fully covered; `format_smartcards_pluginfile()`
+> sits at 68% because its "file actually served" branches end in `send_stored_file()`, which
+> `die()`s on success with no safe way to intercept that in-process — left to Behat instead.
 
 > The one navstyle=sectioncards branch not reachable here (`content/section/controlmenu`'s
 > Moodle 4.5-only legacy menu-item shape) is exercised for real by the CI matrix's
