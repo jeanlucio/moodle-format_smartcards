@@ -67,9 +67,6 @@ const openModal = async(card) => {
 
     const modalRoot = modal.getRoot()[0];
     modalRoot.classList.add('sc-section-modal');
-    if (modaleffect !== 'default') {
-        modalRoot.classList.add(`sc-modal-effect-${modaleffect}`);
-    }
 
     // The core/modal module hoists its root to <body>, so the cm_grid moved into the
     // modal body no longer sits under the page's own .sc-course — losing both its cardsize/
@@ -87,6 +84,26 @@ const openModal = async(card) => {
             }
         });
     }
+
+    if (modaleffect === 'default') {
+        return;
+    }
+
+    // Core/modal's own .modal starts at display:none, and toggling to .show flips it
+    // to display:block in the very same step — a CSS transition can never animate a
+    // property that changes in the same style recalculation as display:none leaving,
+    // because there was no earlier rendered frame to transition from (this is why the
+    // sc-modal-effect-* class used to have zero visible effect: adding it before or
+    // after .show made no difference, the "closed" transform was never actually
+    // painted). The fix is to add the closed-state class now (already rendered once
+    // .show flips display to block, still at its closed transform since -open hasn't
+    // been added yet), then add a second, separate class next frame to trigger the
+    // actual transition — the browser has had a real frame to paint the closed state
+    // by then, so the change genuinely animates instead of jumping straight to the end.
+    modalRoot.classList.add(`sc-modal-effect-${modaleffect}`);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => modalRoot.classList.add('sc-modal-effect-open'));
+    });
 };
 
 /**

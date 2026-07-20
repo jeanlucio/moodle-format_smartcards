@@ -533,16 +533,22 @@
  * ancestor selector — core/modal, like the plugin's own Bootstrap modals, hoists its
  * root to <body> before showing it, breaking any ancestor-based scope. 'default'
  * leaves core/modal's own Bootstrap fade/slide transition untouched (no class, no
- * rule here); these two rules only start from a state the transition below animates
- * away from once Bootstrap's own modal.js adds the .show class it already toggles for
- * the default transition.
+ * rule here).
+ *
+ * The closed-state rule below is intentionally NOT keyed off Bootstrap's own .show —
+ * .show is what flips the modal from display:none to display:block, and a transition
+ * can never animate a property that changes in that same step (no earlier rendered
+ * frame exists to animate from). sc-modal-effect-open is a second, separate class
+ * amd/src/section_modal.js adds one frame after .show, once the closed transform below
+ * has actually had a frame to paint — that later, decoupled class change is what the
+ * transition genuinely animates.
  */
 .format-smartcards .sc-section-modal.sc-modal-effect-zoom .modal-dialog {
     transition: transform 0.2s ease-out;
     transform: scale(0.92);
 }
 
-.format-smartcards .sc-section-modal.sc-modal-effect-zoom.show .modal-dialog {
+.format-smartcards .sc-section-modal.sc-modal-effect-zoom.sc-modal-effect-open .modal-dialog {
     transform: scale(1);
 }
 
@@ -551,7 +557,7 @@
     transform: translateY(40px);
 }
 
-.format-smartcards .sc-section-modal.sc-modal-effect-slideup.show .modal-dialog {
+.format-smartcards .sc-section-modal.sc-modal-effect-slideup.sc-modal-effect-open .modal-dialog {
     transform: translateY(0);
 }
 
