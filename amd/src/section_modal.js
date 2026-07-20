@@ -14,14 +14,15 @@
 // along with Moodle. If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Opens a core/modal, at its native size, for a section card (navstyle =
- * 'sectioncards'), showing that section's own nested activity grid — or, for a
- * restricted section, the availability reason instead (see content.mustache: both are
- * already rendered server-side into a hidden sibling of the card button, so this
- * module only ever moves already-rendered HTML into the modal body; it never
- * re-renders anything client-side). Cards inside the nested grid keep working exactly
- * as they do inline — status_sheet.js listens on document, not on the grid's original
- * location, so a card cloned into the modal still opens its own sheet correctly.
+ * Opens a core/modal, sized to match the course content area's own width, for a
+ * section card (navstyle = 'sectioncards'), showing that section's own nested
+ * activity grid — or, for a restricted section, the availability reason instead (see
+ * content.mustache: both are already rendered server-side into a hidden sibling of
+ * the card button, so this module only ever moves already-rendered HTML into the
+ * modal body; it never re-renders anything client-side). Cards inside the nested
+ * grid keep working exactly as they do inline — status_sheet.js listens on document,
+ * not on the grid's original location, so a card cloned into the modal still opens
+ * its own sheet correctly.
  *
  * @module     format_smartcards/section_modal
  * @copyright  2026 Jean Lúcio
@@ -77,7 +78,7 @@ const EFFECTS = {
 let modaleffect = 'default';
 
 /**
- * Opens the modal for one section card, at core/modal's own native size.
+ * Opens the modal for one section card, sized to match the course content area.
  *
  * @param {HTMLElement} card The clicked section card button.
  * @returns {Promise<void>}
@@ -97,6 +98,7 @@ const openModal = async(card) => {
 
     const modalRoot = modal.getRoot()[0];
     modalRoot.classList.add('sc-section-modal');
+    const dialog = modalRoot.querySelector('.modal-dialog');
 
     // The core/modal module hoists its root to <body>, so the cm_grid moved into the
     // modal body no longer sits under the page's own .sc-course — losing both its cardsize/
@@ -113,6 +115,15 @@ const openModal = async(card) => {
                 modalRoot.classList.add(className);
             }
         });
+
+        // Match the modal's width to the course content area's own rendered width,
+        // so the activity grid wraps into the same number of columns per row it
+        // already does inline, instead of core/modal's fixed ~500px default cramming
+        // it down to far fewer. Measured fresh on every open — not a fixed CSS value
+        // — since the right width depends on viewport size, theme drawer state, etc.
+        if (dialog) {
+            dialog.style.maxWidth = `${content.getBoundingClientRect().width}px`;
+        }
     }
 
     const effect = EFFECTS[modaleffect];
@@ -130,7 +141,6 @@ const openModal = async(card) => {
     // animate() has neither failure mode: it is handed explicit keyframes and a
     // duration and always plays them, regardless of display state or how "cold" the
     // page's render loop is — there is no separate trigger step to mistime at all.
-    const dialog = modalRoot.querySelector('.modal-dialog');
     const reducedmotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (dialog && !reducedmotion) {
         dialog.animate(effect.keyframes, effect.options);
