@@ -60,14 +60,19 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | Class | Line coverage |
 |-------|:-------------:|
 | `local\appearance_repository` | 94% |
+| `local\appearance` | 100% |
+| `local\appearance_palette` | 100% |
 | `local\appearance_image_store` | 95% |
 | `local\appearance_style_resolver` | 95% |
 | `local\card_builder` | 100% |
 | `local\section_card_builder` | 98% |
 | `local\status_resolver` | 100% |
+| `local\cm_status` | 100% |
 | `local\cm_completion_resolver` | 100% |
+| `local\cm_completion` | 100% |
 | `local\cm_description_resolver` | 100% |
 | `local\section_progress_resolver` | 100% |
+| `local\section_progress` | 100% |
 | `external\save_section_appearance` | 99% |
 | `external\save_appearance` | 99% |
 | `external\get_appearance` | 100% |
@@ -77,10 +82,16 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `output\courseformat\content\cm\controlmenu` | 94% |
 | `output\courseformat\content\controlmenu_insert` | 88% |
 | `output\courseformat\content\section\controlmenu` | 73% |
+| `output\renderer` | 25% |
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Overall** | **78%** |
+| **Overall** | **81%** |
+
+> `output\renderer`'s uncovered lines are `section_title()`/`section_title_without_link()` —
+> reached only when a real page renders a section header, not by any unit test here; the
+> constructor that *is* exercised registers the extra editing capability. Covered end to end
+> by the Behat suite below instead.
 
 > The one navstyle=sectioncards branch not reachable here (`content/section/controlmenu`'s
 > Moodle 4.5-only legacy menu-item shape) is exercised for real by the CI matrix's
