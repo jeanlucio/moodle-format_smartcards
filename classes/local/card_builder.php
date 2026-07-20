@@ -18,6 +18,7 @@ namespace format_smartcards\local;
 
 use cm_info;
 use core_availability\info;
+use core_availability\info_module;
 use renderer_base;
 use stdClass;
 
@@ -67,13 +68,36 @@ class card_builder {
         int $userid,
         string $description
     ): ?array {
+        global $CFG;
+
         $status = status_resolver::resolve($cm);
         if (!$status->isvisible) {
             return null;
         }
 
-        $reason = $status->reason !== ''
-            ? info::format_info($status->reason, $course)
+        $rawreason = $status->reason;
+        if (
+            $rawreason === ''
+            && $status->badge === status_resolver::BADGE_LOCKED
+            && $status->canaccess
+            && !empty($CFG->enableavailability)
+            && has_capability('moodle/course:viewhiddenactivities', $cm->context, $userid)
+        ) {
+            // Status_resolver's reason ($cm->availableinfo) stays empty whenever the unmet
+            // condition's own "hide info" eye is off, for every viewer alike (see
+            // core_availability\info::is_available(), which is not capability-aware). But a
+            // viewer who can already bypass the restriction (canaccess true) and holds
+            // moodle/course:viewhiddenactivities is exactly the case core's own standard
+            // course-page rendering special-cases too — see
+            // core_courseformat\output\local\content\cm\availability::
+            // conditional_availability_info(), which reveals the full reason via
+            // info_module::get_full_information() instead. Mirrored here so a teacher sees
+            // the same detail on a SmartCards course page as on any core-format one.
+            $rawreason = (string)(new info_module($cm))->get_full_information();
+        }
+
+        $reason = $rawreason !== ''
+            ? info::format_info($rawreason, $course)
             : '';
 
         $duedate          = $status->duedate;

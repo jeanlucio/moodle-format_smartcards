@@ -370,6 +370,81 @@ final class card_builder_test extends \advanced_testcase {
     }
 
     /**
+     * A restriction whose own "hide info" eye is off leaves cm_info::$availableinfo empty
+     * for every viewer (core_availability\info::is_available() is not capability-aware —
+     * see availability/classes/info.php's own docblock). But a viewer who can already
+     * bypass the restriction (e.g. a teacher with moodle/course:ignoreavailabilityrestrictions)
+     * and holds moodle/course:viewhiddenactivities must still see the full reason, exactly
+     * like core's own standard course-page rendering does via
+     * core_courseformat\output\local\content\cm\availability::conditional_availability_info().
+     *
+     * @covers ::build
+     */
+    public function test_teacher_with_viewhiddenactivities_sees_full_reason_when_eye_is_off(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+
+        $condition = tree::get_root_json(
+            [condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS)],
+            tree::OP_AND,
+            false
+        );
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $page->cmid]);
+        rebuild_course_cache($course->id, true);
+
+        $modinfo = get_fast_modinfo($course, $teacher->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$teacher->id, '');
+
+        $this->assertSame(status_resolver::BADGE_LOCKED, $card['badge']);
+        $this->assertTrue($card['hasreason']);
+        $this->assertNotSame('', $card['reason']);
+    }
+
+    /**
+     * The same eye-off restriction must leave the card entirely unrendered (null) for a
+     * plain student — core's cm_info::update_user_visible() only re-reveals
+     * uservisibleoncoursepage when availableinfo is non-empty, so with the eye off and no
+     * bypass capability the activity vanishes from the course page altogether, not just a
+     * badge with no reason. This locks in that pre-existing behaviour as a regression
+     * guard alongside the teacher-sees-full-reason case above.
+     *
+     * @covers ::build
+     */
+    public function test_student_gets_no_card_at_all_when_eye_is_off(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $condition = tree::get_root_json(
+            [condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS)],
+            tree::OP_AND,
+            false
+        );
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $page->cmid]);
+        rebuild_course_cache($course->id, true);
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$student->id, '');
+
+        $this->assertNull($card);
+    }
+
+    /**
      * A manual-tracking activity not yet completed must open the sheet, carry the pending
      * completion badge, and offer the toggle button to a student who holds the manual
      * completion capability.
