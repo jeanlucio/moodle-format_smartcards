@@ -4,6 +4,13 @@ O SmartCards vem com uma suíte de testes PHPUnit cobrindo renderização, lógi
 services, backup/restore, e conformidade com a API de Privacidade. Todo push no CI roda contra a
 matriz completa (Moodle 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL e MariaDB).
 
+### Testes da Classe do Formato de Curso (`tests/lib_test.php`)
+
+| Arquivo de teste | Casos |
+|-------------------|------:|
+| `lib_test.php` | 19 |
+| **Subtotal** | **19** |
+
 ### Testes de Output e Conteúdo (`tests/output/`, `tests/observer_test.php`, `tests/hook_listener_test.php`)
 
 | Arquivo de teste | Casos |
@@ -49,7 +56,7 @@ matriz completa (Moodle 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL e MariaDB).
 | `privacy/provider_test.php` | 2 |
 | **Subtotal** | **4** |
 
-| **Total geral** | **173** |
+| **Total geral** | **192** |
 
 ```bash
 vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcards
@@ -59,6 +66,7 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 
 | Classe | Cobertura de linhas |
 |--------|:-------------------:|
+| `format_smartcards` (lib.php) | 19% |
 | `local\appearance_repository` | 94% |
 | `local\appearance` | 100% |
 | `local\appearance_palette` | 100% |
@@ -86,11 +94,22 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Geral** | **81%** |
+| **Geral** | **84%** |
 
 > Os métodos de título de `output\renderer` (`section_title()`/`section_title_without_link()`)
 > só são exercitados por uma página renderizada de verdade (Behat) — nenhum teste PHPUnit aqui
 > chega lá.
+
+> O placar baixo de `format_smartcards` é, na maior parte, duas coisas fora do alcance prático
+> de um teste unitário: `extend_course_navigation()` precisa de um par real
+> `global_navigation`/`navigation_node` (montado por uma página carregada de verdade, não
+> construível isoladamente), e o ramo de formulário de edição de `course_format_options()` é
+> protegido por um cache estático de função que — uma vez populado por alguma chamada de
+> criação de curso anterior e não relacionada, em qualquer ponto do mesmo processo do PHPUnit —
+> nunca mais roda pelo resto daquele processo, então a única rodada do PHPUnit que de fato o
+> exercita não recebe o crédito. Todo o resto da classe (os getters simples de capability,
+> `get_section_name()`, `get_default_section_name()`, `get_view_url()`, `page_set_course()`) é
+> testado diretamente em `tests/lib_test.php`.
 
 > O único ramo do `navstyle=sectioncards` não alcançável aqui (o formato legado de item de
 > menu exclusivo do Moodle 4.5 em `content/section/controlmenu`) é exercitado de verdade

@@ -4,6 +4,13 @@ SmartCards ships with a PHPUnit test suite covering rendering, business logic, w
 backup/restore, and Privacy API compliance. Every CI push runs against the full matrix (Moodle
 4.5 → 5.2, PHP 8.2 → 8.4, PostgreSQL & MariaDB).
 
+### Course Format Class Tests (`tests/lib_test.php`)
+
+| Test file | Cases |
+|-----------|------:|
+| `lib_test.php` | 19 |
+| **Subtotal** | **19** |
+
 ### Output & Content Tests (`tests/output/`, `tests/observer_test.php`, `tests/hook_listener_test.php`)
 
 | Test file | Cases |
@@ -49,7 +56,7 @@ backup/restore, and Privacy API compliance. Every CI push runs against the full 
 | `privacy/provider_test.php` | 2 |
 | **Subtotal** | **4** |
 
-| **Grand Total** | **173** |
+| **Grand Total** | **192** |
 
 ```bash
 vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcards
@@ -59,6 +66,7 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 
 | Class | Line coverage |
 |-------|:-------------:|
+| `format_smartcards` (lib.php) | 19% |
 | `local\appearance_repository` | 94% |
 | `local\appearance` | 100% |
 | `local\appearance_palette` | 100% |
@@ -86,10 +94,20 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Overall** | **81%** |
+| **Overall** | **84%** |
 
 > `output\renderer`'s title methods (`section_title()`/`section_title_without_link()`) are
 > only exercised by a real rendered page (Behat) — no PHPUnit test here reaches them.
+
+> `format_smartcards`'s low score is mostly two things outside a unit test's practical reach:
+> `extend_course_navigation()` needs a real `global_navigation`/`navigation_node` pair (built by
+> a full page load, not constructible in isolation), and `course_format_options()`'s edit-form
+> branch is guarded by a function-static cache that — once populated by an earlier, unrelated
+> course-creation call anywhere in the same PHPUnit process — never runs again for the rest of
+> that process, so the one PHPUnit run that does exercise it doesn't get credit for it. Every
+> other method on the class (the simple capability getters, `get_section_name()`,
+> `get_default_section_name()`, `get_view_url()`, `page_set_course()`) is directly tested in
+> `tests/lib_test.php`.
 
 > The one navstyle=sectioncards branch not reachable here (`content/section/controlmenu`'s
 > Moodle 4.5-only legacy menu-item shape) is exercised for real by the CI matrix's
