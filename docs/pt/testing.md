@@ -88,10 +88,9 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `privacy\provider` | 100% |
 | **Geral** | **81%** |
 
-> As linhas não cobertas de `output\renderer` são `section_title()`/`section_title_without_link()`
-> — só alcançadas quando uma página real renderiza o cabeçalho de uma seção, nenhum teste
-> unitário aqui chega lá; o construtor, que é exercitado, registra a capability extra de
-> edição. Coberto de ponta a ponta pela suíte Behat abaixo.
+> Os métodos de título de `output\renderer` (`section_title()`/`section_title_without_link()`)
+> só são exercitados por uma página renderizada de verdade (Behat) — nenhum teste PHPUnit aqui
+> chega lá.
 
 > O único ramo do `navstyle=sectioncards` não alcançável aqui (o formato legado de item de
 > menu exclusivo do Moodle 4.5 em `content/section/controlmenu`) é exercitado de verdade

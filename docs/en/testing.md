@@ -88,10 +88,8 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | `privacy\provider` | 100% |
 | **Overall** | **81%** |
 
-> `output\renderer`'s uncovered lines are `section_title()`/`section_title_without_link()` —
-> reached only when a real page renders a section header, not by any unit test here; the
-> constructor that *is* exercised registers the extra editing capability. Covered end to end
-> by the Behat suite below instead.
+> `output\renderer`'s title methods (`section_title()`/`section_title_without_link()`) are
+> only exercised by a real rendered page (Behat) — no PHPUnit test here reaches them.
 
 > The one navstyle=sectioncards branch not reachable here (`content/section/controlmenu`'s
 > Moodle 4.5-only legacy menu-item shape) is exercised for real by the CI matrix's
