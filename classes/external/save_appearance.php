@@ -20,6 +20,7 @@ use coding_exception;
 use context_course;
 use core_external\external_api;
 use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
 use format_smartcards\local\appearance_image_store;
@@ -80,6 +81,12 @@ class save_appearance extends external_api {
                 VALUE_DEFAULT,
                 ''
             ),
+            'displaymode' => new external_value(
+                PARAM_ALPHA,
+                "'tile' to force a normal clickable tile, or empty for the activity type's own default",
+                VALUE_DEFAULT,
+                ''
+            ),
         ]);
     }
 
@@ -95,6 +102,7 @@ class save_appearance extends external_api {
      * @param string $imagedata Base64-encoded image bytes (TYPE_IMAGE only), or '' to
      *                          keep the previously uploaded image.
      * @param string $iconcolor Icon glyph #RRGGBB, or '' for the default.
+     * @param string $displaymode 'tile', or '' for the activity type's own default.
      * @return array<string, mixed>
      */
     public static function execute(
@@ -105,7 +113,8 @@ class save_appearance extends external_api {
         string $labelcolor = '',
         string $labelfont = '',
         string $imagedata = '',
-        string $iconcolor = ''
+        string $iconcolor = '',
+        string $displaymode = ''
     ): array {
         global $PAGE, $USER;
 
@@ -118,6 +127,7 @@ class save_appearance extends external_api {
             'labelfont' => $labelfont,
             'imagedata' => $imagedata,
             'iconcolor' => $iconcolor,
+            'displaymode' => $displaymode,
         ]);
 
         $cm      = get_coursemodule_from_id('', $params['cmid'], 0, false, MUST_EXIST);
@@ -145,6 +155,7 @@ class save_appearance extends external_api {
             $params['labelcolor'] !== '' ? $params['labelcolor'] : null,
             $params['labelfont'] !== '' ? $params['labelfont'] : null,
             $params['iconcolor'] !== '' ? $params['iconcolor'] : null,
+            $params['displaymode'] !== '' ? $params['displaymode'] : null,
         );
 
         $modinfo       = get_fast_modinfo($course);
@@ -232,6 +243,31 @@ class save_appearance extends external_api {
             'cantoggle'            => new external_value(PARAM_BOOL, 'Whether the manual completion toggle applies'),
             'hasdescription'       => new external_value(PARAM_BOOL, 'Whether a "Display description" intro is present'),
             'description'          => new external_value(PARAM_RAW, 'Rendered description HTML, or empty'),
+            'isinline'             => new external_value(
+                PARAM_BOOL,
+                'Whether the card renders inline (full-width, no tap) instead of a normal tile'
+            ),
+            'showinlinebadge'      => new external_value(PARAM_BOOL, 'Whether the inline card shows an availability badge'),
+            'showinlinemanualcompletion' => new external_value(
+                PARAM_BOOL,
+                'Whether the inline card shows a manual completion toggle/status'
+            ),
+            'showinlineautomaticcriteria' => new external_value(
+                PARAM_BOOL,
+                'Whether the inline card shows the automatic completion criteria list'
+            ),
+            'criteria'             => new external_multiple_structure(
+                new external_single_structure([
+                    'description' => new external_value(PARAM_RAW, 'Localised criterion description'),
+                    'statuscomplete' => new external_value(PARAM_BOOL, 'Whether this criterion is complete'),
+                    'statuscompletefail' => new external_value(PARAM_BOOL, 'Whether this criterion failed'),
+                    'statusincomplete' => new external_value(PARAM_BOOL, 'Whether this criterion is incomplete'),
+                    'istrackeduser' => new external_value(PARAM_BOOL, 'Always true for this user-facing card'),
+                ]),
+                'Automatic completion criteria, core_course/completion_automatic-shaped'
+            ),
+            'markcompletelabel'    => new external_value(PARAM_RAW, "Localised 'Mark as done' label"),
+            'markincompletelabel'  => new external_value(PARAM_RAW, "Localised 'Mark as not done' label"),
         ]);
     }
 }

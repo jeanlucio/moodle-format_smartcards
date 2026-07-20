@@ -51,11 +51,34 @@
         "icons": [
             {"slug": "book", "url": "#", "selected": false}
         ],
-        "emojis": ["🎯", "🚀", "⭐"]
+        "emojis": ["🎯", "🚀", "⭐"],
+        "showdisplaymodefield": true,
+        "isdisplaymodetile": false,
+        "showtilefields": false
     }
 }}
 <form class="sc-appearance-form" data-region="smartcards-appearance-form" data-cmid="{{cmid}}">
     <div class="alert alert-danger" role="alert" data-region="smartcards-form-error" hidden></div>
+
+    {{#showdisplaymodefield}}
+    <div class="sc-appearance-field">
+        <div class="form-check">
+            <input
+                type="checkbox"
+                class="form-check-input"
+                id="sc-appearance-displaymode-tile"
+                data-region="smartcards-displaymode-tile"
+                {{#isdisplaymodetile}}checked{{/isdisplaymodetile}}
+            >
+            <label class="form-check-label" for="sc-appearance-displaymode-tile">
+                {{#str}} appearance_displaymode_tile, format_smartcards {{/str}}
+            </label>
+        </div>
+        <div class="form-text">{{#str}} appearance_displaymode_tile_help, format_smartcards {{/str}}</div>
+    </div>
+    {{/showdisplaymodefield}}
+
+    <div data-region="smartcards-tile-fields" {{^showtilefields}}hidden{{/showtilefields}}>
 
     <div class="sc-appearance-field">
         <span class="sc-appearance-label" id="sc-appearance-preview-legend">
@@ -267,6 +290,8 @@
                 {{#str}} cancel {{/str}}
             </button>
         </div>
+    </div>
+
     </div>
 
     <div class="sc-appearance-field">

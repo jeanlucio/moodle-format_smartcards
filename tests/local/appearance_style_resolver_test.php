@@ -45,6 +45,7 @@ final class appearance_style_resolver_test extends \advanced_testcase {
             null,
             appearance_palette::LABEL_COLORS['red'],
             'baloo2',
+            null,
             null
         );
 
@@ -145,6 +146,7 @@ final class appearance_style_resolver_test extends \advanced_testcase {
             '',
             null,
             appearance_palette::LABEL_COLORS['orange'],
+            null,
             null,
             null
         );

@@ -64,8 +64,39 @@ final class get_appearance_test extends \advanced_testcase {
         $this->assertSame('', $result['labelcolor']);
         $this->assertSame('', $result['labelfont']);
         $this->assertSame('', $result['iconcolor']);
+        $this->assertSame('', $result['displaymode']);
+        $this->assertFalse($result['supportsdisplaymode']);
         $this->assertNotSame('', $result['iconurl']);
         $this->assertSame('', $result['imageurl']);
+    }
+
+    /**
+     * A Label (a cm_info::has_custom_cmlist_item() activity) must report
+     * supportsdisplaymode true, so the editor knows to show the inline/tile toggle at
+     * all; an ordinary module like Page must report it false.
+     *
+     * @covers ::execute
+     */
+    public function test_supportsdisplaymode_true_for_label_false_for_page(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course();
+        $label     = $generator->create_module('label', ['course' => $course->id]);
+        $page      = $generator->create_module('page', ['course' => $course->id]);
+        $teacher   = $generator->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $labelresult = external_api::clean_returnvalue(
+            get_appearance::execute_returns(),
+            get_appearance::execute($label->cmid)
+        );
+        $pageresult = external_api::clean_returnvalue(
+            get_appearance::execute_returns(),
+            get_appearance::execute($page->cmid)
+        );
+
+        $this->assertTrue($labelresult['supportsdisplaymode']);
+        $this->assertFalse($pageresult['supportsdisplaymode']);
     }
 
     /**
@@ -86,7 +117,8 @@ final class get_appearance_test extends \advanced_testcase {
             '#fff3e0',
             appearance_palette::LABEL_COLORS['blue'],
             'fredoka',
-            '#ffffff'
+            '#ffffff',
+            appearance_repository::DISPLAYMODE_TILE
         );
 
         $result = get_appearance::execute($page->cmid);
@@ -98,6 +130,7 @@ final class get_appearance_test extends \advanced_testcase {
         $this->assertSame(appearance_palette::LABEL_COLORS['blue'], $result['labelcolor']);
         $this->assertSame('fredoka', $result['labelfont']);
         $this->assertSame('#ffffff', $result['iconcolor']);
+        $this->assertSame(appearance_repository::DISPLAYMODE_TILE, $result['displaymode']);
     }
 
     /**

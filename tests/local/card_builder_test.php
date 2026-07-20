@@ -16,6 +16,9 @@
 
 namespace format_smartcards\local;
 
+use availability_date\condition;
+use core_availability\tree;
+
 /**
  * Tests for the SmartCards card_builder, focused on the defaultbgcolor/defaultlabelcolor/
  * defaultlabelfont course format option fallback (the full render pipeline is covered
@@ -40,6 +43,28 @@ final class card_builder_test extends \advanced_testcase {
         $course    = $generator->create_course($courseoptions);
         $page      = $generator->create_module('page', ['course' => $course->id] + $moduleoptions);
         return [$course, $page];
+    }
+
+    /**
+     * Creates a course with one Label activity and returns it alongside the course.
+     * Label is the reference cm_info::has_custom_cmlist_item() activity — its whole
+     * point is showing its own content inline instead of behind a link (see
+     * mod_label::label_cm_info_view()).
+     *
+     * @param array $moduleoptions Extra options passed to create_module() (e.g. completion
+     *                              tracking).
+     * @param array $courseoptions Extra options passed to create_course() (e.g. enablecompletion).
+     * @return array{0: \stdClass, 1: \stdClass} Course record and course-module record.
+     */
+    private function create_course_with_label(array $moduleoptions = [], array $courseoptions = []): array {
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course($courseoptions);
+        $label     = $generator->create_module('label', [
+            'course' => $course->id,
+            'intro' => '<p>Label content.</p>',
+            'introformat' => FORMAT_HTML,
+        ] + $moduleoptions);
+        return [$course, $label];
     }
 
     /**
@@ -486,5 +511,279 @@ final class card_builder_test extends \advanced_testcase {
         $this->assertFalse($card['opensheet']);
         $this->assertFalse($card['hascompletionbadge']);
         $this->assertFalse($card['hasdescription']);
+    }
+
+    /**
+     * A Label with content must default to rendering inline and never open the sheet —
+     * everything the sheet would have shown renders directly inline instead.
+     *
+     * @covers ::build
+     */
+    public function test_label_defaults_to_inline_and_never_opens_the_sheet(): void {
+        $this->resetAfterTest();
+        [$course, $label] = $this->create_course_with_label();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($label->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            null,
+            [],
+            (int)$student->id,
+            cm_description_resolver::resolve_one($cm)
+        );
+
+        $this->assertTrue($card['isinline']);
+        $this->assertFalse($card['opensheet']);
+        $this->assertStringContainsString('Label content.', $card['description']);
+    }
+
+    /**
+     * Saving DISPLAYMODE_TILE on a Label must revert it to a normal clickable tile that
+     * opens the sheet, exactly like any other activity with a description.
+     *
+     * @covers ::build
+     */
+    public function test_label_displaymode_tile_forces_a_normal_tile(): void {
+        $this->resetAfterTest();
+        [$course, $label] = $this->create_course_with_label();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        (new appearance_repository())->save_for_activity(
+            $label->cmid,
+            appearance_repository::TYPE_DEFAULT,
+            '',
+            null,
+            null,
+            null,
+            null,
+            appearance_repository::DISPLAYMODE_TILE
+        );
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($label->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            (new appearance_repository())->get_for_activity($label->cmid),
+            [],
+            (int)$student->id,
+            cm_description_resolver::resolve_one($cm)
+        );
+
+        $this->assertFalse($card['isinline']);
+        $this->assertTrue($card['opensheet']);
+    }
+
+    /**
+     * A Label with toggleable manual completion stays inline, but exposes the manual
+     * completion toggle — the tap that used to reveal it is gone, so the toggle itself
+     * must render directly in the flow instead.
+     *
+     * @covers ::build
+     */
+    public function test_label_with_toggleable_manual_completion_stays_inline_with_a_toggle(): void {
+        $this->resetAfterTest();
+        [$course, $label] = $this->create_course_with_label(
+            ['completion' => COMPLETION_TRACKING_MANUAL],
+            ['enablecompletion' => 1]
+        );
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($label->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            null,
+            [],
+            (int)$student->id,
+            cm_description_resolver::resolve_one($cm)
+        );
+
+        $this->assertTrue($card['isinline']);
+        $this->assertTrue($card['showinlinemanualcompletion']);
+        $this->assertTrue($card['cantoggle']);
+    }
+
+    /**
+     * A Label with manual completion the current user cannot toggle (no
+     * moodle/course:togglecompletion capability) must still expose
+     * showinlinemanualcompletion, so the inline template can fall back to a read-only
+     * status span instead of silently showing nothing.
+     *
+     * @covers ::build
+     */
+    public function test_label_with_non_toggleable_manual_completion_still_shows_inline_status(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $label] = $this->create_course_with_label(
+            ['completion' => COMPLETION_TRACKING_MANUAL],
+            ['enablecompletion' => 1]
+        );
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $coursecontext = \context_course::instance($course->id);
+        $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
+        assign_capability('moodle/course:togglecompletion', CAP_PROHIBIT, $studentrole->id, $coursecontext->id, true);
+        accesslib_clear_all_caches_for_unit_testing();
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($label->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            null,
+            [],
+            (int)$student->id,
+            cm_description_resolver::resolve_one($cm)
+        );
+
+        $this->assertTrue($card['isinline']);
+        $this->assertTrue($card['showinlinemanualcompletion']);
+        $this->assertFalse($card['cantoggle']);
+    }
+
+    /**
+     * A Label restricted by an unmet availability condition stays inline but exposes
+     * showinlinebadge, so the restriction is still visible without a tap.
+     *
+     * @covers ::build
+     */
+    public function test_label_with_availability_restriction_shows_inline_badge(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $label] = $this->create_course_with_label();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $condition = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+        ]);
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $label->cmid]);
+        rebuild_course_cache($course->id, true);
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($label->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            null,
+            [],
+            (int)$student->id,
+            cm_description_resolver::resolve_one($cm)
+        );
+
+        $this->assertTrue($card['isinline']);
+        $this->assertTrue($card['showinlinebadge']);
+        $this->assertFalse($card['opensheet']);
+    }
+
+    /**
+     * A Label with automatic completion tracking stays inline but exposes the
+     * criteria list, shaped for core_course/completion_automatic.
+     *
+     * @covers ::build
+     */
+    public function test_label_with_automatic_completion_shows_inline_criteria(): void {
+        $this->resetAfterTest();
+        [$course, $label] = $this->create_course_with_label(
+            [
+                'completion' => COMPLETION_TRACKING_AUTOMATIC,
+                'completionview' => 1,
+            ],
+            ['enablecompletion' => 1]
+        );
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($label->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            null,
+            [],
+            (int)$student->id,
+            cm_description_resolver::resolve_one($cm)
+        );
+
+        $this->assertTrue($card['isinline']);
+        $this->assertTrue($card['showinlineautomaticcriteria']);
+        $this->assertNotEmpty($card['criteria']);
+    }
+
+    /**
+     * An ordinary module (no custom cmlist item) must never become inline, even with a
+     * stray DISPLAYMODE_TILE saved on it — displaymode is only ever consulted once
+     * has_custom_cmlist_item() is already true.
+     *
+     * @covers ::build
+     */
+    public function test_ordinary_module_never_becomes_inline_regardless_of_stray_displaymode(): void {
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        (new appearance_repository())->save_for_activity(
+            $page->cmid,
+            appearance_repository::TYPE_DEFAULT,
+            '',
+            null,
+            null,
+            null,
+            null,
+            appearance_repository::DISPLAYMODE_TILE
+        );
+
+        $modinfo = get_fast_modinfo($course, $student->id);
+        $cm      = $modinfo->get_cm($page->cmid);
+
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build(
+            $cm,
+            $course,
+            $renderer,
+            (new appearance_repository())->get_for_activity($page->cmid),
+            [],
+            (int)$student->id,
+            ''
+        );
+
+        $this->assertFalse($card['isinline']);
     }
 }

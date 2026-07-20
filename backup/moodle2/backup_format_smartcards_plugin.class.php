@@ -50,7 +50,7 @@
 class backup_format_smartcards_plugin extends backup_format_plugin {
     /** @var string[] format_smartcards_appearance columns backed up, besides id/itemid. */
     private const APPEARANCE_COLUMNS = [
-        'type', 'value', 'bgcolor', 'labelcolor', 'labelfont', 'iconcolor', 'timecreated', 'timemodified',
+        'type', 'value', 'bgcolor', 'labelcolor', 'labelfont', 'iconcolor', 'displaymode', 'timecreated', 'timemodified',
     ];
 
     /**

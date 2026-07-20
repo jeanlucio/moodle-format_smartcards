@@ -83,16 +83,18 @@ class get_appearance extends external_api {
         $hasimage = $item?->type === appearance_repository::TYPE_IMAGE && $item->value !== '';
 
         return [
-            'cmid'       => $params['cmid'],
-            'type'       => $item?->type ?? appearance_repository::TYPE_DEFAULT,
-            'value'      => $item?->value ?? '',
-            'bgcolor'    => $item?->bgcolor ?? '',
-            'labelcolor' => $item?->labelcolor ?? '',
-            'labelfont'  => $item?->labelfont ?? '',
-            'iconcolor'  => $item?->iconcolor ?? '',
-            'iconurl'    => $renderer->image_url('icon', $cminfo->modname)->out(false),
-            'imageurl'   => $hasimage ? appearance_image_store::url($params['cmid'], (int)$item->value)->out(false) : '',
-            'icons'      => $icons,
+            'cmid'                => $params['cmid'],
+            'type'                => $item?->type ?? appearance_repository::TYPE_DEFAULT,
+            'value'               => $item?->value ?? '',
+            'bgcolor'             => $item?->bgcolor ?? '',
+            'labelcolor'          => $item?->labelcolor ?? '',
+            'labelfont'           => $item?->labelfont ?? '',
+            'iconcolor'           => $item?->iconcolor ?? '',
+            'displaymode'         => $item?->displaymode ?? '',
+            'supportsdisplaymode' => $cminfo->has_custom_cmlist_item(),
+            'iconurl'             => $renderer->image_url('icon', $cminfo->modname)->out(false),
+            'imageurl'            => $hasimage ? appearance_image_store::url($params['cmid'], (int)$item->value)->out(false) : '',
+            'icons'               => $icons,
         ];
     }
 
@@ -103,16 +105,21 @@ class get_appearance extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
-            'cmid'       => new external_value(PARAM_INT, 'Course module id'),
-            'type'       => new external_value(PARAM_ALPHA, "'default', 'emoji', 'icon' or 'image'"),
-            'value'      => new external_value(PARAM_RAW, 'Emoji character or icon name, or empty'),
-            'bgcolor'    => new external_value(PARAM_RAW, 'Circle background #RRGGBB, or empty'),
-            'labelcolor' => new external_value(PARAM_RAW, 'Title colour #RRGGBB, or empty'),
-            'labelfont'  => new external_value(PARAM_RAW, 'Curated font slug, or empty'),
-            'iconcolor'  => new external_value(PARAM_RAW, 'Icon glyph #RRGGBB (type=icon only), or empty'),
-            'iconurl'    => new external_value(PARAM_RAW, 'Default per-module-type icon URL'),
-            'imageurl'   => new external_value(PARAM_RAW, "Uploaded card image URL (type='image' only), or empty"),
-            'icons'      => new external_multiple_structure(
+            'cmid'                => new external_value(PARAM_INT, 'Course module id'),
+            'type'                => new external_value(PARAM_ALPHA, "'default', 'emoji', 'icon' or 'image'"),
+            'value'               => new external_value(PARAM_RAW, 'Emoji character or icon name, or empty'),
+            'bgcolor'             => new external_value(PARAM_RAW, 'Circle background #RRGGBB, or empty'),
+            'labelcolor'          => new external_value(PARAM_RAW, 'Title colour #RRGGBB, or empty'),
+            'labelfont'           => new external_value(PARAM_RAW, 'Curated font slug, or empty'),
+            'iconcolor'           => new external_value(PARAM_RAW, 'Icon glyph #RRGGBB (type=icon only), or empty'),
+            'displaymode'         => new external_value(PARAM_ALPHA, "'tile', or empty for the activity type's own default"),
+            'supportsdisplaymode' => new external_value(
+                PARAM_BOOL,
+                'Whether this activity supports the inline/tile display-mode toggle at all'
+            ),
+            'iconurl'             => new external_value(PARAM_RAW, 'Default per-module-type icon URL'),
+            'imageurl'            => new external_value(PARAM_RAW, "Uploaded card image URL (type='image' only), or empty"),
+            'icons'               => new external_multiple_structure(
                 new external_single_structure([
                     'slug' => new external_value(PARAM_RAW, 'Icon slug'),
                     'url'  => new external_value(PARAM_RAW, 'Resolved icon URL'),

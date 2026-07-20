@@ -134,4 +134,55 @@ final class cm_description_resolver_test extends \advanced_testcase {
         $this->assertStringContainsString('Page intro.', $descriptions[$page->cmid]);
         $this->assertStringContainsString('Forum intro.', $descriptions[$forum->cmid]);
     }
+
+    /**
+     * A Label has no showdescription setting at all — it opts out of the standard
+     * link/card via cm_info::set_custom_cmlist_item() instead. Its own intro content must
+     * still resolve, sourced from cm_info::get_formatted_content() rather than a DB query.
+     *
+     * @covers ::resolve_many
+     * @covers ::resolve_one
+     */
+    public function test_resolves_content_for_a_custom_cmlist_item_activity(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course();
+        $label     = $generator->create_module('label', [
+            'course' => $course->id,
+            'intro' => '<p>Welcome to this section.</p>',
+            'introformat' => FORMAT_HTML,
+        ]);
+
+        $cm = get_fast_modinfo($course)->get_cm($label->cmid);
+
+        $descriptions = cm_description_resolver::resolve_many([$cm]);
+        $this->assertArrayHasKey($cm->id, $descriptions);
+        $this->assertStringContainsString('Welcome to this section.', $descriptions[$cm->id]);
+
+        $this->assertStringContainsString('Welcome to this section.', cm_description_resolver::resolve_one($cm));
+    }
+
+    /**
+     * A Label left with an empty intro has no content to surface, so it must be absent
+     * from the result just like an empty-intro showdescription activity.
+     *
+     * @covers ::resolve_many
+     */
+    public function test_skips_a_custom_cmlist_item_activity_with_no_content(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course();
+        $label     = $generator->create_module('label', [
+            'course' => $course->id,
+            'introformat' => FORMAT_HTML,
+        ]);
+        $DB->set_field('label', 'intro', '', ['id' => $label->id]);
+        rebuild_course_cache($course->id, true);
+
+        $cm = get_fast_modinfo($course)->get_cm($label->cmid);
+
+        $this->assertArrayNotHasKey($cm->id, cm_description_resolver::resolve_many([$cm]));
+    }
 }

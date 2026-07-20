@@ -52,6 +52,23 @@ final class save_appearance_test extends \advanced_testcase {
     }
 
     /**
+     * Creates a course with one Label activity and a teacher enrolled in it.
+     *
+     * @return array{0: \stdClass, 1: \stdClass, 2: \stdClass} Course, label cm record, teacher.
+     */
+    private function create_course_with_label_and_teacher(): array {
+        $generator = $this->getDataGenerator();
+        $course    = $generator->create_course();
+        $label     = $generator->create_module('label', [
+            'course' => $course->id,
+            'intro' => '<p>Label content.</p>',
+            'introformat' => FORMAT_HTML,
+        ]);
+        $teacher   = $generator->create_and_enrol($course, 'editingteacher');
+        return [$course, $label, $teacher];
+    }
+
+    /**
      * A teacher saving an emoji appearance must get back a fully rendered card whose
      * emoji fields reflect what was just saved.
      */
@@ -267,5 +284,74 @@ final class save_appearance_test extends \advanced_testcase {
         save_appearance::execute($page->cmid, appearance_repository::TYPE_EMOJI, '🎉', '', '', '', '');
 
         $this->assertNull(appearance_image_store::resolve_for_serving($page->cmid, 'cardimage'));
+    }
+
+    /**
+     * A Label with no saved appearance must default to inline (isinline true, opensheet
+     * false), reflecting card_builder's own default for a custom-cmlist-item activity.
+     */
+    public function test_label_with_no_saved_appearance_returns_an_inline_card(): void {
+        $this->resetAfterTest();
+        [, $label, $teacher] = $this->create_course_with_label_and_teacher();
+        $this->setUser($teacher);
+
+        $result = save_appearance::execute(
+            cmid: $label->cmid,
+            type: appearance_repository::TYPE_DEFAULT,
+            value: ''
+        );
+        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+
+        $this->assertTrue($result['isinline']);
+        $this->assertFalse($result['opensheet']);
+    }
+
+    /**
+     * Saving displaymode='tile' on a Label must revert the returned card to a normal
+     * clickable tile that opens the sheet.
+     */
+    public function test_saving_tile_displaymode_on_a_label_returns_a_normal_tile(): void {
+        $this->resetAfterTest();
+        [, $label, $teacher] = $this->create_course_with_label_and_teacher();
+        $this->setUser($teacher);
+
+        $result = save_appearance::execute(
+            cmid: $label->cmid,
+            type: appearance_repository::TYPE_DEFAULT,
+            value: '',
+            displaymode: appearance_repository::DISPLAYMODE_TILE
+        );
+        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+
+        $this->assertFalse($result['isinline']);
+        $this->assertTrue($result['opensheet']);
+    }
+
+    /**
+     * Saving displaymode='' after previously saving 'tile' must clear it back to the
+     * Label's own default (inline), never leave it stuck on the last non-empty value.
+     */
+    public function test_saving_empty_displaymode_reverts_to_the_labels_own_default(): void {
+        $this->resetAfterTest();
+        [, $label, $teacher] = $this->create_course_with_label_and_teacher();
+        $this->setUser($teacher);
+
+        save_appearance::execute(
+            cmid: $label->cmid,
+            type: appearance_repository::TYPE_DEFAULT,
+            value: '',
+            displaymode: appearance_repository::DISPLAYMODE_TILE
+        );
+
+        $result = save_appearance::execute(
+            cmid: $label->cmid,
+            type: appearance_repository::TYPE_DEFAULT,
+            value: '',
+            displaymode: ''
+        );
+        $result = external_api::clean_returnvalue(save_appearance::execute_returns(), $result);
+
+        $this->assertTrue($result['isinline']);
+        $this->assertFalse($result['opensheet']);
     }
 }

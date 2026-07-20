@@ -256,6 +256,56 @@ final class appearance_repository_test extends \advanced_testcase {
     }
 
     /**
+     * DISPLAYMODE_TILE must round-trip through save_for_activity().
+     */
+    public function test_displaymode_tile_roundtrips(): void {
+        $this->resetAfterTest();
+        $saved = (new appearance_repository())->save_for_activity(
+            1,
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            null,
+            null,
+            null,
+            appearance_repository::DISPLAYMODE_TILE
+        );
+
+        $this->assertSame(appearance_repository::DISPLAYMODE_TILE, $saved->displaymode);
+    }
+
+    /**
+     * Omitting displaymode entirely must default to null — meaning "use the activity
+     * type's own default" (inline for a custom-cmlist-item activity, irrelevant for
+     * every other one), never a stray empty string or unrecognised value.
+     */
+    public function test_displaymode_defaults_to_null_when_omitted(): void {
+        $this->resetAfterTest();
+        $saved = (new appearance_repository())->save_for_activity(1, appearance_repository::TYPE_ICON, 'book', null, null, null);
+
+        $this->assertNull($saved->displaymode);
+    }
+
+    /**
+     * A displaymode value outside the known set must be rejected — the same defensive
+     * validation every other free-form field on this row already gets.
+     */
+    public function test_bogus_displaymode_is_rejected(): void {
+        $this->resetAfterTest();
+        $this->expectException(invalid_parameter_exception::class);
+        (new appearance_repository())->save_for_activity(
+            1,
+            appearance_repository::TYPE_ICON,
+            'book',
+            null,
+            null,
+            null,
+            null,
+            'bogus'
+        );
+    }
+
+    /**
      * Deleting an activity's appearance must remove the row and leave get_for_activity()
      * returning null.
      */

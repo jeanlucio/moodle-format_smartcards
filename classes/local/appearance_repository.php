@@ -26,6 +26,10 @@ use invalid_parameter_exception;
  *
  * Generic over both context levels (activity and section) — the same table serves both
  * from day one, and both have a full UI (section appearance since SCOPE.md §16 Fase 4).
+ * The "displaymode" column is the one exception: it is activity-only by convention, not
+ * by DB constraint — the editor UI never sends a non-null value for a section, since
+ * only activities can have cm_info::has_custom_cmlist_item() (a section has no such
+ * concept), so save_for_section() simply never receives one in practice.
  *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
@@ -63,6 +67,18 @@ class appearance_repository {
      *             for explicitly in validate_bgcolor() rather than by the hex regex.
      */
     public const BGCOLOR_TRANSPARENT = 'transparent';
+
+    /**
+     * @var string Forces a custom-cmlist-item activity (e.g. Label) to render as a
+     *             normal clickable tile instead of inline. Only meaningful for
+     *             activities whose cm_info::has_custom_cmlist_item() is true; a null
+     *             displaymode means "use the activity type's own default" there, and is
+     *             simply ignored for every other activity.
+     */
+    public const DISPLAYMODE_TILE = 'tile';
+
+    /** @var string[] All valid non-null values of the "displaymode" column. */
+    private const VALID_DISPLAYMODES = [self::DISPLAYMODE_TILE];
 
     /**
      * Returns the appearance configured for one course module, if any.
@@ -119,6 +135,8 @@ class appearance_repository {
      * @param string|null $labelcolor #RRGGBB title colour, must belong to the curated palette, or null.
      * @param string|null $labelfont Curated font slug, or null for the system font.
      * @param string|null $iconcolor #RRGGBB icon glyph colour, or null for the default.
+     * @param string|null $displaymode DISPLAYMODE_TILE, or null for the activity type's
+     *                                 own default.
      * @return appearance The saved row.
      * @throws invalid_parameter_exception If any value fails validation.
      */
@@ -130,6 +148,7 @@ class appearance_repository {
         ?string $labelcolor,
         ?string $labelfont,
         ?string $iconcolor = null,
+        ?string $displaymode = null,
     ): appearance {
         return $this->save_for_item(
             self::CONTEXTLEVEL_ACTIVITY,
@@ -139,7 +158,8 @@ class appearance_repository {
             $bgcolor,
             $labelcolor,
             $labelfont,
-            $iconcolor
+            $iconcolor,
+            $displaymode
         );
     }
 
@@ -153,6 +173,8 @@ class appearance_repository {
      * @param string|null $labelcolor #RRGGBB title colour, must belong to the curated palette, or null.
      * @param string|null $labelfont Curated font slug, or null for the system font.
      * @param string|null $iconcolor #RRGGBB icon glyph colour, or null for the default.
+     * @param string|null $displaymode Unused for sections; kept only so save_for_item()
+     *                                 has one shared signature. Always null in practice.
      * @return appearance The saved row.
      * @throws invalid_parameter_exception If any value fails validation.
      */
@@ -164,6 +186,7 @@ class appearance_repository {
         ?string $labelcolor,
         ?string $labelfont,
         ?string $iconcolor = null,
+        ?string $displaymode = null,
     ): appearance {
         return $this->save_for_item(
             self::CONTEXTLEVEL_SECTION,
@@ -173,7 +196,8 @@ class appearance_repository {
             $bgcolor,
             $labelcolor,
             $labelfont,
-            $iconcolor
+            $iconcolor,
+            $displaymode
         );
     }
 
@@ -279,6 +303,9 @@ class appearance_repository {
      * @param string|null $labelcolor #RRGGBB title colour, must belong to the curated palette, or null.
      * @param string|null $labelfont Curated font slug, or null for the system font.
      * @param string|null $iconcolor #RRGGBB icon glyph colour, or null for the default.
+     * @param string|null $displaymode DISPLAYMODE_TILE, or null for the activity type's
+     *                                 own default. Meaningless for sections; see the
+     *                                 class docblock.
      * @return appearance The saved row.
      * @throws invalid_parameter_exception If any value fails validation.
      */
@@ -291,6 +318,7 @@ class appearance_repository {
         ?string $labelcolor,
         ?string $labelfont,
         ?string $iconcolor = null,
+        ?string $displaymode = null,
     ): appearance {
         global $DB;
 
@@ -299,6 +327,7 @@ class appearance_repository {
         $this->validate_labelcolor($labelcolor);
         $this->validate_labelfont($labelfont);
         $this->validate_iconcolor($iconcolor);
+        $this->validate_displaymode($displaymode);
 
         $now = time();
         $existing = $DB->get_record('format_smartcards_appearance', [
@@ -315,6 +344,7 @@ class appearance_repository {
             'labelcolor'   => $labelcolor,
             'labelfont'    => $labelfont,
             'iconcolor'    => $iconcolor,
+            'displaymode'  => $displaymode,
             'timemodified' => $now,
         ];
 
@@ -444,6 +474,19 @@ class appearance_repository {
     private function validate_iconcolor(?string $iconcolor): void {
         if ($iconcolor !== null && !appearance_palette::is_valid_hex_color($iconcolor)) {
             throw new invalid_parameter_exception('Invalid iconcolor: ' . $iconcolor);
+        }
+    }
+
+    /**
+     * Validates the display-mode override, if provided.
+     *
+     * @param string|null $displaymode Value to validate.
+     * @return void
+     * @throws invalid_parameter_exception If $displaymode is set but not a known value.
+     */
+    private function validate_displaymode(?string $displaymode): void {
+        if ($displaymode !== null && !in_array($displaymode, self::VALID_DISPLAYMODES, true)) {
+            throw new invalid_parameter_exception('Invalid displaymode: ' . $displaymode);
         }
     }
 

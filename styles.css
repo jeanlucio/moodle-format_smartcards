@@ -261,7 +261,8 @@
  * own padding/line-height/border, see the sc-sticky rule above) when the browser's
  * native scrollIntoView() lands on it.
  */
-.format-smartcards .sc-trail .sc-card {
+.format-smartcards .sc-trail .sc-card,
+.format-smartcards .sc-trail .sc-card-inline {
     scroll-margin-top: 130px;
 }
 
@@ -357,6 +358,44 @@
     opacity: var(--sc-dimmed-opacity);
 }
 
+/*
+ * A custom-cmlist-item activity (e.g. Label) renders its own content directly, full
+ * width, instead of a square tile — see card_builder.php's $isinline. flex: 1 1 100% on
+ * a .sc-grid child forces a line break in that flex-wrap container without touching the
+ * container itself; .sc-trail's own width cap (see the trail comment above) naturally
+ * constrains it there too. Deliberately not the .sc-card class: that carries a fixed
+ * inline-size and the centered icon-circle column layout, both wrong here, and giving
+ * this its own class also means the trail's .sc-card:nth-child(...) zigzag-offset rules
+ * simply never match it — no override needed.
+ */
+.format-smartcards .sc-card-inline {
+    flex: 1 1 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    text-align: start;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--sc-card-radius);
+    background-color: var(--card-bg, #fff);
+    color: var(--body-color, #212529);
+}
+
+.format-smartcards .sc-card-inline-status {
+    font-size: 0.8rem;
+    color: var(--secondary, #6c757d);
+}
+
+.format-smartcards .sc-card-inline-badge {
+    font-weight: 600;
+}
+
+.format-smartcards .sc-card-inline-completionstatus {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
 .format-smartcards .sc-sheet-badgelabel {
     font-weight: 600;
 }
@@ -378,12 +417,14 @@
     margin-block-start: 0.5rem;
 }
 
-.format-smartcards .sc-sheet-toggle {
+.format-smartcards .sc-sheet-toggle,
+.format-smartcards .sc-card-inline-toggle {
     min-inline-size: 44px;
     min-block-size: 44px;
 }
 
-.format-smartcards .sc-sheet-criteria {
+.format-smartcards .sc-sheet-criteria,
+.format-smartcards .sc-card-inline-criteria {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;

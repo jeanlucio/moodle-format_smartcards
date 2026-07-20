@@ -67,6 +67,8 @@ const SELECTORS = {
     BGCOLOR_CANCEL: '[data-region="smartcards-bgcolor-cancel"]',
     LABELCOLOR_SWATCH: '[data-region="smartcards-labelcolor-swatch"]',
     LABELFONT_SELECT: '[data-region="smartcards-labelfont-select"]',
+    DISPLAYMODE_TILE_CHECKBOX: '[data-region="smartcards-displaymode-tile"]',
+    TILE_FIELDS_WRAPPER: '[data-region="smartcards-tile-fields"]',
     PREVIEW_ICONWRAP: '[data-region="smartcards-preview-iconwrap"]',
     PREVIEW_ICONIMG: '[data-region="smartcards-preview-iconimg"]',
     PREVIEW_ICONMASK: '[data-region="smartcards-preview-iconmask"]',
@@ -155,6 +157,9 @@ const buildEditorContext = (id, name, bootstrap) => {
             selected: bootstrap.type === 'icon' && icon.slug === bootstrap.value,
         })),
         emojis: EMOJIS,
+        showdisplaymodefield: Boolean(bootstrap.supportsdisplaymode),
+        isdisplaymodetile: bootstrap.displaymode === 'tile',
+        showtilefields: !bootstrap.supportsdisplaymode || bootstrap.displaymode === 'tile',
     };
 };
 
@@ -270,6 +275,32 @@ const wireTypeToggle = (form) => {
                 firstIcon.setAttribute('aria-pressed', 'true');
             }
         }
+    });
+};
+
+/**
+ * Wires the "Display as a clickable tile" checkbox (only present at all for activities
+ * whose bootstrap response set supportsdisplaymode, e.g. Label — see
+ * buildEditorContext()'s showdisplaymodefield) to show/hide the icon/emoji/image/bgcolor
+ * fields, which are meaningless while the activity renders inline. The querySelector()
+ * calls below simply return null when the checkbox/wrapper are absent from the DOM (a
+ * section's editor, or a non-custom-cmlist-item activity), making this a safe no-op.
+ *
+ * @param {HTMLElement} form The editor form.
+ * @param {Function} refreshPreview Re-renders the live preview after the wrapper's
+ *                                    visibility changes.
+ * @returns {void}
+ */
+const wireDisplaymodeToggle = (form, refreshPreview) => {
+    const checkbox = form.querySelector(SELECTORS.DISPLAYMODE_TILE_CHECKBOX);
+    const wrapper = form.querySelector(SELECTORS.TILE_FIELDS_WRAPPER);
+    if (!checkbox || !wrapper) {
+        return;
+    }
+
+    checkbox.addEventListener('change', () => {
+        wrapper.hidden = !checkbox.checked;
+        refreshPreview();
     });
 };
 
@@ -477,7 +508,7 @@ const wireImageInput = (form, invalidMessage, toobigMessage) => {
  * @param {HTMLElement} form The editor form.
  * @returns {{
  *     type: string, value: string, bgcolor: string, labelcolor: string, labelfont: string,
- *     iconcolor: string, imagedata: string
+ *     iconcolor: string, imagedata: string, displaymode: string
  * }}
  */
 const gatherFormValues = (form) => {
@@ -511,7 +542,10 @@ const gatherFormValues = (form) => {
     const imageDataUrl = form.querySelector(SELECTORS.IMAGE_INPUT).dataset.newDataUrl ?? '';
     const imagedata = imageDataUrl.includes(',') ? imageDataUrl.split(',')[1] : '';
 
-    return {type, value, bgcolor, labelcolor, labelfont, iconcolor, imagedata};
+    const displaymodeCheckbox = form.querySelector(SELECTORS.DISPLAYMODE_TILE_CHECKBOX);
+    const displaymode = displaymodeCheckbox?.checked ? 'tile' : '';
+
+    return {type, value, bgcolor, labelcolor, labelfont, iconcolor, imagedata, displaymode};
 };
 
 /**
@@ -604,6 +638,7 @@ const openEditor = async(id, name, isSection) => {
     const refreshPreview = () => updatePreview(form, bootstrap.iconurl, bootstrap.imageurl);
 
     wireTypeToggle(form);
+    wireDisplaymodeToggle(form, refreshPreview);
     wireBgcolor(form, bootstrap.bgcolor, refreshPreview);
     wireIconcolor(form, bootstrap.iconcolor, refreshPreview);
     wireExclusivePressedGroup(form, SELECTORS.LABELCOLOR_SWATCH);
@@ -635,10 +670,19 @@ const openEditor = async(id, name, isSection) => {
             return;
         }
 
+        // Displaymode is activity-only (see appearance_repository.php's class docblock);
+        // format_smartcards_save_section_appearance has no such parameter and its strict
+        // param validation would throw on an unrecognized key, so it never reaches a
+        // section save at all.
+        const payload = {[idParam]: Number(id), ...values};
+        if (isSection) {
+            delete payload.displaymode;
+        }
+
         try {
             await Ajax.call([{
                 methodname: saveMethod,
-                args: {[idParam]: Number(id), ...values},
+                args: payload,
             }])[0];
             await addToast(savedMessage, {type: 'success'});
             modal.hide();

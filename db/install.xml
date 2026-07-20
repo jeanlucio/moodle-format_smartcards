@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="course/format/smartcards/db" VERSION="20260718" COMMENT="XMLDB file for Moodle course/format/smartcards"
+<XMLDB PATH="course/format/smartcards/db" VERSION="20260720" COMMENT="XMLDB file for Moodle course/format/smartcards"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
 >
@@ -15,6 +15,7 @@
         <FIELD NAME="labelcolor" TYPE="char" LENGTH="7" NOTNULL="false" SEQUENCE="false" COMMENT="#RRGGBB title colour, restricted to the curated palette"/>
         <FIELD NAME="labelfont" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="Slug of the curated bundled font, null = system font"/>
         <FIELD NAME="iconcolor" TYPE="char" LENGTH="7" NOTNULL="false" SEQUENCE="false" COMMENT="#RRGGBB icon glyph colour, only meaningful when type=icon"/>
+        <FIELD NAME="displaymode" TYPE="char" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="'tile' to force a custom-cmlist-item activity (e.g. Label) to render as a normal clickable tile instead of inline; null = use the activity type's own default"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>

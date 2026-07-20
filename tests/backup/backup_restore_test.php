@@ -65,7 +65,16 @@ final class backup_restore_test extends \advanced_testcase {
         $sectionid = (int)get_fast_modinfo($course)->get_section_info(1)->id;
 
         $repository = new appearance_repository();
-        $repository->save_for_activity($cm->cmid, appearance_repository::TYPE_EMOJI, '🎉', '#ffffff', null, null);
+        $repository->save_for_activity(
+            $cm->cmid,
+            appearance_repository::TYPE_EMOJI,
+            '🎉',
+            '#ffffff',
+            null,
+            null,
+            null,
+            appearance_repository::DISPLAYMODE_TILE
+        );
         $repository->save_for_section($sectionid, appearance_repository::TYPE_ICON, 'book', null, null, null);
 
         $newcourseid = $this->backup_and_restore($course);
@@ -86,6 +95,7 @@ final class backup_restore_test extends \advanced_testcase {
         $this->assertSame(appearance_repository::TYPE_EMOJI, $activityappearance->type);
         $this->assertSame('🎉', $activityappearance->value);
         $this->assertSame('#ffffff', $activityappearance->bgcolor);
+        $this->assertSame(appearance_repository::DISPLAYMODE_TILE, $activityappearance->displaymode);
 
         $sectionappearance = $newrepository->get_for_section($newsectionid);
         $this->assertNotNull($sectionappearance);

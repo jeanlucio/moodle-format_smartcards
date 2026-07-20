@@ -17,13 +17,15 @@
 {{!
     @template format_smartcards/local/cm_button
 
-    Single activity card/button for the SmartCards grid. Renders as a plain
-    link when opensheet is false (direct access, nothing to explain), or as
-    a button that opens the status sheet when opensheet is true (an
-    availability badge, a pending completion, or a description to show). The
-    icon is always decorative; the title is always real, localizable text.
-    The availability badge (locked/timed) and the completion badge (pending/
-    complete) are independent and can both be visible at once.
+    Single activity card/button for the SmartCards grid. Renders one of three
+    ways: inline (isinline true — a custom-cmlist-item activity like Label,
+    showing its own content directly, full-width, no tap required), a plain
+    link (opensheet false — direct access, nothing to explain), or a button
+    that opens the status sheet (opensheet true — an availability badge, a
+    pending completion, or a description to show). The icon is always
+    decorative; the title is always real, localizable text. The availability
+    badge (locked/timed) and the completion badge (pending/complete) are
+    independent and can both be visible at once.
 
     Example context (json):
     {
@@ -63,9 +65,66 @@
         "completioncriteria": "[]",
         "cantoggle": true,
         "hasdescription": false,
-        "description": ""
+        "description": "",
+        "isinline": false,
+        "showinlinebadge": false,
+        "showinlinemanualcompletion": false,
+        "showinlineautomaticcriteria": false,
+        "criteria": [],
+        "markcompletelabel": "Mark as done",
+        "markincompletelabel": "Mark as not done"
     }
 }}
+{{#isinline}}
+<div
+    class="sc-card-inline{{#dimmed}} sc-card-dimmed{{/dimmed}}"
+    data-region="smartcards-card"
+    data-cmid="{{cmid}}"
+    data-ispending="{{#iscompletionpending}}1{{/iscompletionpending}}{{^iscompletionpending}}0{{/iscompletionpending}}"
+>
+    {{#dimmed}}<span class="sc-card-dimmedlabel">{{hiddenlabel}}</span>{{/dimmed}}
+    {{#showinlinebadge}}
+        <div class="sc-card-inline-status">
+            {{#badgelabel}}<span class="sc-card-inline-badge">{{badgelabel}}</span>{{/badgelabel}}
+            {{#hasreason}}
+                {{! reason is core-generated availability markup (core_availability info::format_info),
+                    the same trusted content core itself renders with a triple-brace tag — see
+                    status_sheet.mustache's identical field for the full trust-boundary note. }}
+                <div class="sc-card-inline-reason">{{{reason}}}</div>
+            {{/hasreason}}
+            {{#hasduedate}}<span class="sc-card-inline-due">{{duedateformatted}}</span>{{/hasduedate}}
+        </div>
+    {{/showinlinebadge}}
+    {{! description is core-generated via cm_info::get_formatted_content() (format_text()
+        under the hood), the same trusted rendering status_sheet.mustache's identical field
+        already uses — not raw user input rendered unescaped. }}
+    <div class="sc-card-inline-body"{{#hastitlestyle}} style="{{titlestyle}}"{{/hastitlestyle}}>{{{description}}}</div>
+    {{#showinlinemanualcompletion}}
+        {{#cantoggle}}
+        <button
+            type="button"
+            class="btn btn-outline-primary sc-card-inline-toggle"
+            data-region="smartcards-inline-toggle"
+            data-cmid="{{cmid}}"
+            data-iscompletioncomplete="{{#iscompletioncomplete}}1{{/iscompletioncomplete}}{{^iscompletioncomplete}}0{{/iscompletioncomplete}}"
+            data-markcompletelabel="{{markcompletelabel}}"
+            data-markincompletelabel="{{markincompletelabel}}"
+        >{{#iscompletioncomplete}}{{markincompletelabel}}{{/iscompletioncomplete}}{{^iscompletioncomplete}}{{markcompletelabel}}{{/iscompletioncomplete}}</button>
+        {{/cantoggle}}
+        {{^cantoggle}}
+        <span class="sc-card-inline-completionstatus">{{#iscompletioncomplete}}{{markincompletelabel}}{{/iscompletioncomplete}}{{^iscompletioncomplete}}{{markcompletelabel}}{{/iscompletioncomplete}}</span>
+        {{/cantoggle}}
+    {{/showinlinemanualcompletion}}
+    {{#showinlineautomaticcriteria}}
+    <div class="sc-card-inline-criteria" role="list">
+        {{#criteria}}
+            {{> core_course/completion_automatic }}
+        {{/criteria}}
+    </div>
+    {{/showinlineautomaticcriteria}}
+</div>
+{{/isinline}}
+{{^isinline}}
 {{#opensheet}}
 <button
     type="button"
@@ -138,3 +197,4 @@
     </div>
     {{/hasurl}}
 {{/opensheet}}
+{{/isinline}}

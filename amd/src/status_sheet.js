@@ -17,9 +17,11 @@
  * Opens the SmartCards status sheet (a core/modal) when a card that needs it
  * is tapped, using only data already rendered server-side in the card's
  * data-* attributes — no extra network request to open the sheet itself.
- * Also wires the manual completion toggle button inside the sheet, which
- * does make one AJAX call (core_completion_update_activity_completion_status_manually)
- * and reflects the result back onto both the sheet and the underlying card.
+ * Also wires the manual completion toggle button, both inside the sheet and on an
+ * inline card's own copy of the same button (see cm_button.mustache's isinline
+ * branch, which never opens the sheet at all) — either one makes one AJAX call
+ * (core_completion_update_activity_completion_status_manually) and reflects the
+ * result back onto the toggle button and, when there is one, the underlying card.
  *
  * @module     format_smartcards/status_sheet
  * @copyright  2026 Jean Lúcio
@@ -35,6 +37,7 @@ import * as Templates from 'core/templates';
 const SELECTORS = {
     CARD_BUTTON: '[data-region="smartcards-card"].sc-card-opensheet',
     TOGGLE_BUTTON: '[data-region="smartcards-sheet-toggle"]',
+    INLINE_TOGGLE_BUTTON: '[data-region="smartcards-inline-toggle"]',
 };
 
 let stringsPromise = null;
@@ -209,16 +212,24 @@ const openSheet = async(card) => {
 };
 
 /**
- * Initialises the status sheet click handler.
+ * Initialises the status sheet click handler, plus the manual completion toggle for
+ * inline cards (see cm_button.mustache's isinline branch) — those never open the sheet
+ * at all, so their own toggle button needs the same delegated wiring the sheet's copy
+ * already gets from openSheet()'s own listener, reusing toggleCompletion() verbatim.
  *
  * @returns {void}
  */
 export const init = () => {
     document.addEventListener('click', (event) => {
         const card = event.target.closest(SELECTORS.CARD_BUTTON);
-        if (!card) {
+        if (card) {
+            openSheet(card);
             return;
         }
-        openSheet(card);
+
+        const inlineToggle = event.target.closest(SELECTORS.INLINE_TOGGLE_BUTTON);
+        if (inlineToggle) {
+            toggleCompletion(inlineToggle);
+        }
     });
 };

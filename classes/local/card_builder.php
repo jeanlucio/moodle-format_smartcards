@@ -103,13 +103,29 @@ class card_builder {
         $iscomplete  = $completion->is_tracked() && $completion->iscomplete;
         $hasdescription = ($description !== '');
 
+        // Mirrors the visibility check core itself applies to its own manual completion
+        // checkbox — showing a toggle button that would just 403 on submit is worse than
+        // not showing one at all.
+        $cantoggle = ($completion->tracking === cm_completion::TRACKING_MANUAL)
+            && has_capability('moodle/course:togglecompletion', $cm->context, $userid);
+
+        // A custom-cmlist-item activity (e.g. Label) has its own content to show and no
+        // view link of its own (see mod_label::label_cm_info_view()) — by default it
+        // renders inline, full-width, directly in the flow, matching how core itself
+        // shows it, instead of behind a tap. A teacher can opt one back into a normal
+        // clickable tile via the "Card appearance" editor (appearance::$displaymode).
+        $isinline = $cm->has_custom_cmlist_item()
+            && $item?->displaymode !== appearance_repository::DISPLAYMODE_TILE;
+
         // The sheet only ever needs to interrupt the tap when it has something the
         // badge alone cannot show: an availability reason/date, a pending completion
         // (either an explanation of the automatic criteria, or the manual toggle
         // button), or a description the teacher opted into showing. A plain "complete"
         // state needs no explanation — the badge alone already says it all — so it
         // never opens the sheet on its own (see SCOPE.md §4 for the full reasoning).
-        $opensheet = ($status->badge !== null) || $ispending || $hasdescription;
+        // An inline card never opens the sheet at all — everything it would have shown
+        // renders directly inline instead (see the sc-card-inline-* fields below).
+        $opensheet = !$isinline && (($status->badge !== null) || $ispending || $hasdescription);
 
         $completionbadgelabel = match (true) {
             $ispending  => get_string('status_completion_pending', 'format_smartcards'),
@@ -118,12 +134,6 @@ class card_builder {
         };
 
         $statuslabelparts = array_filter([$badgelabel, $completionbadgelabel]);
-
-        // Mirrors the visibility check core itself applies to its own manual completion
-        // checkbox — showing a toggle button that would just 403 on submit is worse than
-        // not showing one at all.
-        $cantoggle = ($completion->tracking === cm_completion::TRACKING_MANUAL)
-            && has_capability('moodle/course:togglecompletion', $cm->context, $userid);
 
         return [
             'cmid'                 => $cm->id,
@@ -167,6 +177,15 @@ class card_builder {
             'cantoggle'            => $cantoggle,
             'hasdescription'       => $hasdescription,
             'description'          => $description,
+            'isinline'             => $isinline,
+            'showinlinebadge'      => $isinline && ($status->badge !== null),
+            'showinlinemanualcompletion' => $isinline
+                && ($completion->tracking === cm_completion::TRACKING_MANUAL),
+            'showinlineautomaticcriteria' => $isinline
+                && ($completion->tracking === cm_completion::TRACKING_AUTOMATIC),
+            'criteria'             => $completion->criteria,
+            'markcompletelabel'    => get_string('completion_markdone', 'format_smartcards'),
+            'markincompletelabel'  => get_string('completion_markundone', 'format_smartcards'),
         ];
     }
 }

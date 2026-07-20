@@ -57,6 +57,14 @@ final class appearance {
     public readonly ?string $iconcolor;
 
     /**
+     * @var string|null 'tile' to force a custom-cmlist-item activity (e.g. Label) to
+     *                  render as a normal clickable tile instead of inline, or null to
+     *                  use the activity type's own default. Only meaningful for
+     *                  activities whose cm_info::has_custom_cmlist_item() is true.
+     */
+    public readonly ?string $displaymode;
+
+    /**
      * Constructor.
      *
      * @param int $id Record id.
@@ -68,6 +76,7 @@ final class appearance {
      * @param string|null $labelcolor #RRGGBB title colour, or null.
      * @param string|null $labelfont Curated font slug, or null.
      * @param string|null $iconcolor #RRGGBB icon glyph colour, or null.
+     * @param string|null $displaymode 'tile' or null.
      */
     public function __construct(
         int $id,
@@ -79,6 +88,7 @@ final class appearance {
         ?string $labelcolor,
         ?string $labelfont,
         ?string $iconcolor,
+        ?string $displaymode,
     ) {
         $this->id           = $id;
         $this->contextlevel = $contextlevel;
@@ -89,6 +99,7 @@ final class appearance {
         $this->labelcolor   = $labelcolor;
         $this->labelfont    = $labelfont;
         $this->iconcolor    = $iconcolor;
+        $this->displaymode  = $displaymode;
     }
 
     /**
@@ -108,6 +119,7 @@ final class appearance {
             labelcolor: $record->labelcolor,
             labelfont: $record->labelfont,
             iconcolor: $record->iconcolor,
+            displaymode: $record->displaymode,
         );
     }
 }
