@@ -143,7 +143,11 @@ class content extends content_base {
         } else if ($issectioncards) {
             // No default-active section either: every card is static until tapped, no
             // "first pending" section to pick for the student ahead of time.
-            $PAGE->requires->js_call_amd('format_smartcards/section_modal', 'init');
+            $modaleffect = $formatoptions['modaleffect'] ?? 'default';
+            if (!in_array($modaleffect, ['default', 'zoom', 'slideup'], true)) {
+                $modaleffect = 'default';
+            }
+            $PAGE->requires->js_call_amd('format_smartcards/section_modal', 'init', [$modaleffect]);
         } else if ($istrail) {
             // Card-level "first pending" default (see trail.js's own docblock) — the
             // section-level equivalent accordion/tabs apply above has no section to open

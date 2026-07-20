@@ -141,6 +141,18 @@ if ($ADMIN->fulltree) {
         ]
     ));
 
+    $settings->add(new admin_setting_configselect(
+        'format_smartcards/modaleffect',
+        new lang_string('modaleffect', 'format_smartcards'),
+        new lang_string('modaleffect_desc', 'format_smartcards'),
+        'default',
+        [
+            'default' => new lang_string('modaleffect_default', 'format_smartcards'),
+            'zoom'    => new lang_string('modaleffect_zoom', 'format_smartcards'),
+            'slideup' => new lang_string('modaleffect_slideup', 'format_smartcards'),
+        ]
+    ));
+
     $settings->add(new admin_setting_configcheckbox(
         'format_smartcards/generalinstyle',
         new lang_string('generalinstyle', 'format_smartcards'),

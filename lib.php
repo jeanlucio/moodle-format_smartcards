@@ -241,7 +241,7 @@ class format_smartcards extends core_courseformat\base {
     /**
      * Returns the format options for this course.
      *
-     * Eleven options, each with a site-wide default (settings.php) overridable per
+     * Twelve options, each with a site-wide default (settings.php) overridable per
      * course: cardsize and showcardframe control the grid's visual density; the four
      * activity-scoped "default" colour/font options give the whole course a fallback
      * that an individual activity's own appearance still takes priority over (see
@@ -250,7 +250,9 @@ class format_smartcards extends core_courseformat\base {
      * sections a different accent than activities — an individual section's own
      * appearance still takes priority (see appearance_style_resolver::
      * resolve_section_titlestyle()); navstyle controls the section navigation layout
-     * (view mode only, see classes/output/courseformat/content.php); generalinstyle
+     * (view mode only, see classes/output/courseformat/content.php); modaleffect picks
+     * the opening animation for the sectioncards navstyle's own modal (see
+     * amd/src/section_modal.js), a no-op for every other navstyle; generalinstyle
      * decides whether section 0 (General) participates in that layout at all, instead
      * of always rendering as a plain, unstyled section (its historical default — this
      * option preserves that as the default, off).
@@ -297,6 +299,10 @@ class format_smartcards extends core_courseformat\base {
                 ],
                 'navstyle' => [
                     'default' => get_config('format_smartcards', 'navstyle'),
+                    'type' => PARAM_ALPHA,
+                ],
+                'modaleffect' => [
+                    'default' => get_config('format_smartcards', 'modaleffect'),
                     'type' => PARAM_ALPHA,
                 ],
                 'generalinstyle' => [
@@ -397,6 +403,17 @@ class format_smartcards extends core_courseformat\base {
                             'sticky' => new lang_string('navstyle_sticky', 'format_smartcards'),
                             'sectioncards' => new lang_string('navstyle_sectioncards', 'format_smartcards'),
                             'trail' => new lang_string('navstyle_trail', 'format_smartcards'),
+                        ],
+                    ],
+                ],
+                'modaleffect' => [
+                    'label' => new lang_string('modaleffect', 'format_smartcards'),
+                    'element_type' => 'select',
+                    'element_attributes' => [
+                        [
+                            'default' => new lang_string('modaleffect_default', 'format_smartcards'),
+                            'zoom' => new lang_string('modaleffect_zoom', 'format_smartcards'),
+                            'slideup' => new lang_string('modaleffect_slideup', 'format_smartcards'),
                         ],
                     ],
                 ],

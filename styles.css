@@ -527,23 +527,38 @@
 }
 
 /*
- * Full-screen override for the section-card modal (amd/src/section_modal.js). Scoped by
- * this fixed class added to the modal's own root right after creation, never by an
+ * Opening animation for the section-card modal (amd/src/section_modal.js), picked by
+ * the course's modaleffect format option. Scoped by the sc-section-modal/sc-modal-
+ * effect-* classes added to the modal's own root right after creation, never by an
  * ancestor selector — core/modal, like the plugin's own Bootstrap modals, hoists its
- * root to <body> before showing it, breaking any ancestor-based scope. No .modal-fullscreen
- * Bootstrap utility is assumed here: Moodle 4.5's bundled Bootstrap 4 may not ship it.
+ * root to <body> before showing it, breaking any ancestor-based scope. 'default'
+ * leaves core/modal's own Bootstrap fade/slide transition untouched (no class, no
+ * rule here); these two rules only start from a state the transition below animates
+ * away from once Bootstrap's own modal.js adds the .show class it already toggles for
+ * the default transition.
  */
-.format-smartcards .sc-section-modal .modal-dialog {
-    max-width: 100vw;
-    height: 100vh;
-    margin: 0;
+.format-smartcards .sc-section-modal.sc-modal-effect-zoom .modal-dialog {
+    transition: transform 0.2s ease-out;
+    transform: scale(0.92);
 }
 
-.format-smartcards .sc-section-modal .modal-content {
-    height: 100vh;
-    border-radius: 0;
+.format-smartcards .sc-section-modal.sc-modal-effect-zoom.show .modal-dialog {
+    transform: scale(1);
 }
 
-.format-smartcards .sc-section-modal .modal-body {
-    overflow-y: auto;
+.format-smartcards .sc-section-modal.sc-modal-effect-slideup .modal-dialog {
+    transition: transform 0.25s ease-out;
+    transform: translateY(40px);
+}
+
+.format-smartcards .sc-section-modal.sc-modal-effect-slideup.show .modal-dialog {
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .format-smartcards .sc-section-modal.sc-modal-effect-zoom .modal-dialog,
+    .format-smartcards .sc-section-modal.sc-modal-effect-slideup .modal-dialog {
+        transition: none;
+        transform: none;
+    }
 }

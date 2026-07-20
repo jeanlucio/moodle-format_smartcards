@@ -14,14 +14,14 @@
 // along with Moodle. If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Opens a full-screen core/modal for a section card (navstyle = 'sectioncards'),
- * showing that section's own nested activity grid — or, for a restricted section, the
- * availability reason instead (see content.mustache: both are already rendered
- * server-side into a hidden sibling of the card button, so this module only ever moves
- * already-rendered HTML into the modal body; it never re-renders anything client-side).
- * Cards inside the nested grid keep working exactly as they do inline — status_sheet.js
- * listens on document, not on the grid's original location, so a card cloned into the
- * modal still opens its own sheet correctly.
+ * Opens a core/modal, at its native size, for a section card (navstyle =
+ * 'sectioncards'), showing that section's own nested activity grid — or, for a
+ * restricted section, the availability reason instead (see content.mustache: both are
+ * already rendered server-side into a hidden sibling of the card button, so this
+ * module only ever moves already-rendered HTML into the modal body; it never
+ * re-renders anything client-side). Cards inside the nested grid keep working exactly
+ * as they do inline — status_sheet.js listens on document, not on the grid's original
+ * location, so a card cloned into the modal still opens its own sheet correctly.
  *
  * @module     format_smartcards/section_modal
  * @copyright  2026 Jean Lúcio
@@ -41,8 +41,13 @@ const SELECTORS = {
 // moved into the modal need to keep looking the same as they do inline.
 const SIZE_FRAME_CLASS = /^sc-(size-\w+|noframe)$/;
 
+// Course-configured opening animation (format_smartcards/modaleffect, see lib.php);
+// 'default' leaves core/modal's own fade transition untouched, so no class is added
+// for it — only 'zoom'/'slideup' need their own CSS hook (styles.css).
+let modaleffect = 'default';
+
 /**
- * Opens the full-screen modal for one section card.
+ * Opens the modal for one section card, at core/modal's own native size.
  *
  * @param {HTMLElement} card The clicked section card button.
  * @returns {Promise<void>}
@@ -58,11 +63,13 @@ const openModal = async(card) => {
         body: source.innerHTML,
         show: true,
         removeOnClose: true,
-        large: true,
     });
 
     const modalRoot = modal.getRoot()[0];
     modalRoot.classList.add('sc-section-modal');
+    if (modaleffect !== 'default') {
+        modalRoot.classList.add(`sc-modal-effect-${modaleffect}`);
+    }
 
     // The core/modal module hoists its root to <body>, so the cm_grid moved into the
     // modal body no longer sits under the page's own .sc-course — losing both its cardsize/
@@ -85,9 +92,13 @@ const openModal = async(card) => {
 /**
  * Initialises the delegated click handler for every section card.
  *
+ * @param {string} effect The course's configured modal opening effect
+ *                         (format_smartcards/modaleffect: 'default', 'zoom' or
+ *                         'slideup'), passed by content.php's export_for_template().
  * @returns {void}
  */
-export const init = () => {
+export const init = (effect = 'default') => {
+    modaleffect = effect;
     document.addEventListener('click', (event) => {
         const card = event.target.closest(SELECTORS.CARD);
         if (!card) {
