@@ -19,27 +19,27 @@ backup/restore, and Privacy API compliance. Every CI push runs against the full 
 
 | Test file | Cases |
 |-----------|------:|
-| `appearance_repository_test.php` | 20 |
+| `appearance_repository_test.php` | 23 |
+| `card_builder_test.php` | 23 |
 | `appearance_image_store_test.php` | 9 |
 | `appearance_style_resolver_test.php` | 7 |
-| `card_builder_test.php` | 13 |
 | `section_card_builder_test.php` | 7 |
 | `status_resolver_test.php` | 7 |
+| `cm_description_resolver_test.php` | 6 |
 | `cm_completion_resolver_test.php` | 4 |
-| `cm_description_resolver_test.php` | 4 |
 | `section_progress_resolver_test.php` | 4 |
-| **Subtotal** | **75** |
+| **Subtotal** | **90** |
 
 ### Web Services Tests (`tests/external/`)
 
 | Test file | Cases |
 |-----------|------:|
-| `save_section_appearance_test.php` | 12 |
-| `save_appearance_test.php` | 11 |
-| `get_appearance_test.php` | 6 |
+| `save_appearance_test.php` | 14 |
+| `save_section_appearance_test.php` | 13 |
+| `get_appearance_test.php` | 7 |
 | `get_section_appearance_test.php` | 6 |
 | `toggle_section_test.php` | 3 |
-| **Subtotal** | **38** |
+| **Subtotal** | **43** |
 
 ### Backup, Restore & Privacy Tests
 
@@ -49,7 +49,7 @@ backup/restore, and Privacy API compliance. Every CI push runs against the full 
 | `privacy/provider_test.php` | 2 |
 | **Subtotal** | **4** |
 
-| **Grand Total** | **153** |
+| **Grand Total** | **173** |
 
 ```bash
 vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcards
@@ -60,26 +60,31 @@ vendor/bin/phpunit --bootstrap lib/phpunit/bootstrap.php course/format/smartcard
 | Class | Line coverage |
 |-------|:-------------:|
 | `local\appearance_repository` | 94% |
-| `local\appearance_image_store` | 51% |
-| `local\appearance_style_resolver` | 74% |
-| `local\card_builder` | 96% |
-| `local\section_card_builder` | 72% |
+| `local\appearance_image_store` | 95% |
+| `local\appearance_style_resolver` | 95% |
+| `local\card_builder` | 100% |
+| `local\section_card_builder` | 98% |
 | `local\status_resolver` | 100% |
 | `local\cm_completion_resolver` | 100% |
 | `local\cm_description_resolver` | 100% |
 | `local\section_progress_resolver` | 100% |
 | `external\save_section_appearance` | 99% |
 | `external\save_appearance` | 99% |
-| `external\get_appearance` | 59% |
-| `external\get_section_appearance` | 58% |
-| `external\toggle_section` | 75% |
-| `output\courseformat\content` | 90% |
+| `external\get_appearance` | 100% |
+| `external\get_section_appearance` | 100% |
+| `external\toggle_section` | 95% |
+| `output\courseformat\content` | 98% |
 | `output\courseformat\content\cm\controlmenu` | 94% |
-| `output\courseformat\content\section\controlmenu` | 46% |
+| `output\courseformat\content\controlmenu_insert` | 88% |
+| `output\courseformat\content\section\controlmenu` | 73% |
 | `observer` | 100% |
 | `hook_listener` | 100% |
 | `privacy\provider` | 100% |
-| **Overall** | **66%** |
+| **Overall** | **78%** |
+
+> The one navstyle=sectioncards branch not reachable here (`content/section/controlmenu`'s
+> Moodle 4.5-only legacy menu-item shape) is exercised for real by the CI matrix's
+> `MOODLE_405_STABLE` legs, not by this single-Moodle-version local run.
 
 ## Behat Acceptance Tests
 
