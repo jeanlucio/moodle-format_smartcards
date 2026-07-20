@@ -21,10 +21,15 @@ use completion_info;
 /**
  * Tests for the SmartCards section_progress_resolver.
  *
+ * Also declares section_progress as an extra covers target: has_tracking()/has_pending()
+ * are exercised directly here (percent()/format_label() are only reachable through
+ * content.php's own progressdisplay tests, see content_test.php's matching declaration).
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\local\section_progress_resolver
+ * @covers \format_smartcards\local\section_progress
  */
 final class section_progress_resolver_test extends \advanced_testcase {
     /**

@@ -26,10 +26,18 @@ use invalid_parameter_exception;
  * attributed to this test suite instead of being silently excluded by php-code-coverage's
  * per-method coverage-annotation line filtering.
  *
+ * Also declares appearance and appearance_palette as extra covers targets: every
+ * get_for_activity()/get_for_section() call here goes through appearance::from_record(),
+ * and every malformed/valid bgcolor/labelcolor/labelfont/iconcolor test goes through
+ * appearance_palette's validators — both would otherwise be silently stripped from their
+ * own classes' coverage report.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\local\appearance_repository
+ * @covers \format_smartcards\local\appearance
+ * @covers \format_smartcards\local\appearance_palette
  */
 final class appearance_repository_test extends \advanced_testcase {
     /**

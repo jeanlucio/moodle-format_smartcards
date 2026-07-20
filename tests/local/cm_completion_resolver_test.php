@@ -21,10 +21,15 @@ use stdClass;
 /**
  * Tests for the SmartCards cm_completion_resolver.
  *
+ * Also declares cm_completion as an extra covers target: every assertion here reads (and
+ * some call is_tracked() on) a cm_completion built by resolve(), so it would otherwise
+ * be silently stripped from that class's own coverage report.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\local\cm_completion_resolver
+ * @covers \format_smartcards\local\cm_completion
  */
 final class cm_completion_resolver_test extends \advanced_testcase {
     /**

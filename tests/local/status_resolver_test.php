@@ -23,10 +23,15 @@ use stdClass;
 /**
  * Tests for the SmartCards status_resolver.
  *
+ * Also declares cm_status as an extra covers target: every assertion here reads a
+ * cm_status built by resolve(), so its constructor and properties would otherwise be
+ * silently stripped from that class's own coverage report.
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\local\status_resolver
+ * @covers \format_smartcards\local\cm_status
  */
 final class status_resolver_test extends \advanced_testcase {
     /**

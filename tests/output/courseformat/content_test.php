@@ -26,10 +26,19 @@ use core_availability\tree;
  * pipeline (not just status_resolver in isolation), to catch mistakes that
  * only surface when cm_info methods are actually called during export.
  *
+ * Also declares two extra covers targets: section_progress (the progressdisplay=count/
+ * percent tests below are the only place percent()/format_label() are reachable at all —
+ * section_progress_resolver_test.php only exercises has_tracking()/has_pending()) and
+ * renderer (every test here goes through the real $PAGE->get_renderer('format_smartcards')
+ * pipeline, so its constructor would otherwise be silently stripped from that class's own
+ * coverage report).
+ *
  * @package    format_smartcards
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \format_smartcards\output\courseformat\content
+ * @covers \format_smartcards\local\section_progress
+ * @covers \format_smartcards\output\renderer
  */
 final class content_test extends \advanced_testcase {
     /**
