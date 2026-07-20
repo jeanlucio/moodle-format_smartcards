@@ -121,8 +121,17 @@ const openModal = async(card) => {
         // already does inline, instead of core/modal's fixed ~500px default cramming
         // it down to far fewer. Measured fresh on every open — not a fixed CSS value
         // — since the right width depends on viewport size, theme drawer state, etc.
-        if (dialog) {
-            dialog.style.maxWidth = `${content.getBoundingClientRect().width}px`;
+        // .sc-course itself has no padding of its own (only custom properties), so
+        // the content area's outer width is exactly what its grid gets to use — but
+        // Bootstrap's .modal-body does have its own left/right padding, unlike the
+        // page, which ate into that same space and rendered one column short. Adding
+        // the modal-body's own padding back to the target width is what makes the
+        // two column counts actually match instead of just the two outer widths.
+        const modalBody = modalRoot.querySelector('.modal-body');
+        if (dialog && modalBody) {
+            const bodyStyle = window.getComputedStyle(modalBody);
+            const bodyPadding = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
+            dialog.style.maxWidth = `${content.getBoundingClientRect().width + bodyPadding}px`;
         }
     }
 
