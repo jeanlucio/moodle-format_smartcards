@@ -29,7 +29,7 @@ educational purpose, usage guide, the full test suite, and security details.
 | Moodle    | 4.5 – 5.2 |
 | PHP       | 8.2+    |
 
-### 🛠️ Installation
+### 🛠️ Installation & Configuration
 
 1. Download the `.zip` file or clone this repository.
 2. Extract the folder into your Moodle `course/format/` directory.
@@ -38,6 +38,12 @@ educational purpose, usage guide, the full test suite, and security details.
    `your-moodle/course/format/smartcards/`
 4. Visit **Site administration > Notifications** to complete installation.
 5. Create or edit a course and choose **SmartCards** as its course format.
+
+Site-wide defaults (card size, colours, fonts, navigation style, progress display) can be set
+at **Site administration > Plugins > Course formats > SmartCards**, and every one of them can
+still be overridden per course, as covered in the
+[Usage](https://jeanlucio.github.io/moodle-format_smartcards/#usage) section of the full
+documentation.
 
 ### 🆘 Support
 
@@ -80,7 +86,7 @@ segurança.
 | Moodle     | 4.5 – 5.2 |
 | PHP        | 8.2+   |
 
-### 🛠️ Instalação
+### 🛠️ Instalação e Configuração
 
 1. Baixe o arquivo `.zip` ou clone este repositório.
 2. Extraia na pasta `course/format/` do seu Moodle.
@@ -89,6 +95,12 @@ segurança.
    `seu-moodle/course/format/smartcards/`
 4. Acesse **Administração do site > Notificações** para concluir a instalação.
 5. Crie ou edite um curso e escolha **SmartCards** como formato de curso.
+
+Os padrões em nível de site (tamanho de card, cores, fontes, estilo de navegação, exibição de
+progresso) podem ser definidos em **Administração do site > Plugins > Formatos de curso >
+SmartCards**, e cada um deles ainda pode ser sobrescrito por curso, conforme explicado na seção
+[Como Usar](https://jeanlucio.github.io/moodle-format_smartcards/pt.html#usage) da documentação
+completa.
 
 ### 🆘 Suporte
 
