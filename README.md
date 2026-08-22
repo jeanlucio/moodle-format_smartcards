@@ -32,7 +32,7 @@ educational purpose, usage guide, the full test suite, and security details.
 | Component | Version |
 |-----------|---------|
 | Moodle    | 4.5 – 5.2 |
-| PHP       | 8.2+    |
+| PHP       | 8.1+    |
 
 ### 🛠️ Installation & Configuration
 
@@ -89,7 +89,7 @@ segurança.
 | Componente | Versão |
 |------------|--------|
 | Moodle     | 4.5 – 5.2 |
-| PHP        | 8.2+   |
+| PHP        | 8.1+   |
 
 ### 🛠️ Instalação e Configuração
 
