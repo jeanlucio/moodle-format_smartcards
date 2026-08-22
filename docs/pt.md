@@ -8,7 +8,7 @@ lang: pt
 ![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat)
 ![Status](https://img.shields.io/badge/Status-Alpha-red?style=flat)
 [![Latest Release](https://img.shields.io/github/v/release/jeanlucio/moodle-format_smartcards?style=flat)](https://github.com/jeanlucio/moodle-format_smartcards/releases)
-[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://marketplace.moodle.com/user/984)
+[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://github.com/jeanlucio/)
 
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-format_smartcards/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-format_smartcards/actions/workflows/ci.yml)
 [![Last Commit](https://img.shields.io/github/last-commit/jeanlucio/moodle-format_smartcards?style=flat)](https://github.com/jeanlucio/moodle-format_smartcards/commits)
@@ -19,9 +19,7 @@ cards baseados em ícone em vez de uma lista simples, reaproveitando de ponta a 
 nativa de disponibilidade do Moodle, então motivos de restrição e datas de abertura/fechamento
 sempre aparecem para o estudante.
 
-Use a barra lateral para pular direto a qualquer seção desta página.
-
-Código-fonte: [github.com/jeanlucio/moodle-format_smartcards](https://github.com/jeanlucio/moodle-format_smartcards)
+<p class="page-hint">👈 Use a barra lateral para pular direto a qualquer seção desta página.</p>
 
 ---
 
