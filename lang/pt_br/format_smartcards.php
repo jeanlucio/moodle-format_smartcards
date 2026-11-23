@@ -21,8 +21,9 @@
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-// phpcs:disable moodle.Files.LineLength
+
 defined('MOODLE_INTERNAL') || die();
+// phpcs:disable moodle.Files.LineLength
 
 $string['accessactivity'] = 'Acessar atividade';
 $string['appearance_bgcolor'] = 'Cor de fundo do círculo';
