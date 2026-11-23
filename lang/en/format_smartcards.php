@@ -23,7 +23,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-// phpcs:disable moodle.Files.LineLength
 
 $string['accessactivity'] = 'Access activity';
 $string['appearance_bgcolor'] = 'Circle background colour';
