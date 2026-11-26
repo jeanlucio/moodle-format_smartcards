@@ -581,3 +581,38 @@
 .format-smartcards .sc-section-card-wrap {
     display: contents;
 }
+
+/*
+ * Dark mode. The colour variables used above (--body-color, --body-bg, --card-bg, --border-color, --secondary)
+ * are not defined by Moodle 5.x, so their light fallbacks applied in dark mode too and the card titles could not
+ * be read. These rules take the Bootstrap variables, which follow the colour mode; light mode is left as it was.
+ * The circles behind the icons stay light on purpose: the activity icons are dark drawings.
+ */
+[data-bs-theme="dark"] .format-smartcards .sc-card,
+[data-bs-theme="dark"] .format-smartcards .sc-card-inline {
+    border-color: var(--bs-border-color, #495057);
+    background-color: var(--bs-tertiary-bg, #292e33);
+    color: var(--bs-body-color, #dee2e6);
+}
+
+[data-bs-theme="dark"] .format-smartcards .sc-course.sc-sticky .sc-section-title {
+    border-block-end-color: var(--bs-border-color, #495057);
+    background-color: var(--bs-body-bg, #1d2125);
+}
+
+[data-bs-theme="dark"] .format-smartcards .sc-progress-label {
+    background-color: var(--bs-secondary-bg, #343a40);
+    color: var(--bs-body-color, #dee2e6);
+}
+
+[data-bs-theme="dark"] .format-smartcards .sc-card-dimmedlabel,
+[data-bs-theme="dark"] .format-smartcards .sc-sheet-label,
+[data-bs-theme="dark"] .format-smartcards .sc-appearance-label {
+    color: var(--bs-secondary-color, #adb5bd);
+}
+
+[data-bs-theme="dark"] .format-smartcards .sc-appearance-swatch,
+[data-bs-theme="dark"] .format-smartcards .sc-appearance-icon-btn,
+[data-bs-theme="dark"] .format-smartcards .sc-appearance-emoji-btn {
+    border-color: var(--bs-border-color, #495057);
+}
