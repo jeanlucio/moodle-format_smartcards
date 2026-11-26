@@ -235,39 +235,41 @@
 }
 
 /*
- * navstyle=trail (§16 Fase "trilha"): a single non-wrapping column, each card offset
- * horizontally by :nth-child in a repeating 4-step wave (0% / 12% / 24% / 12%) — no
- * connecting line between cards, and no CSS `order` reshuffle, so DOM order (course
- * order) always matches both visual order and tab/screen-reader order. Percentages
- * (not fixed px) keep the offset proportional to the trail's own width, so it never
- * overflows a narrow viewport regardless of cardsize.
+ * navstyle=trail (§16 Fase "trilha"): a single non-wrapping column, each card centred and then
+ * pushed by :nth-child in a repeating 4-step wave around the middle (start side / middle / end
+ * side / middle) — no connecting line between cards, and no CSS `order` reshuffle, so DOM order
+ * (course order) always matches both visual order and tab/screen-reader order. The wave starts
+ * from the middle so the room left over is the same on both sides, on a phone as on a wide screen.
  *
- * The trail's own width is capped to a multiple of --sc-card-size (not the full section
- * width) and centered with margin-inline: auto — on a wide course content column, the
- * 0%-24% wave computed against the full section width left every card hugging the left
- * edge instead of reading as a centered path. Scaling the cap off --sc-card-size keeps
- * it proportioned the same way across every cardsize preset; min(100%, ...) still lets
- * it shrink to fit a narrow viewport instead of overflowing.
+ * Each push is 12% of the trail's width, never more than the room beside a centred card, so a
+ * card stays inside the trail whatever the cardsize and the viewport; with no room to spare the
+ * cards simply line up in the middle.
+ *
+ * The trail's own width is capped to a multiple of --sc-card-size (not the full section width)
+ * and centred with margin-inline: auto, which keeps the path proportioned the same way across
+ * every cardsize preset; min(100%, ...) still lets it shrink to fit a narrow viewport.
  */
 .format-smartcards .sc-trail {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--sc-card-gap);
     max-width: min(100%, calc(var(--sc-card-size) * 3));
     margin-inline: auto;
 }
 
-.format-smartcards .sc-trail .sc-card:nth-child(4n+2) {
-    margin-inline-start: 12%;
+.format-smartcards .sc-trail .sc-card {
+    --sc-trail-wave: min(12%, max(0px, (100% - var(--sc-card-size)) / 2));
+
+    position: relative;
+}
+
+.format-smartcards .sc-trail .sc-card:nth-child(4n+1) {
+    inset-inline-start: calc(-1 * var(--sc-trail-wave));
 }
 
 .format-smartcards .sc-trail .sc-card:nth-child(4n+3) {
-    margin-inline-start: 24%;
-}
-
-.format-smartcards .sc-trail .sc-card:nth-child(4n) {
-    margin-inline-start: 12%;
+    inset-inline-start: var(--sc-trail-wave);
 }
 
 /*
