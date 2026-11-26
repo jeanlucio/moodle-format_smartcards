@@ -23,6 +23,11 @@
  */
 
 /*
+ * Scope: rules hang off .format-smartcards, the class core puts on the body of the pages of a course that uses
+ * this format (course pages carry no .path-* class of the format itself).
+ */
+
+/*
  * Curated labelfont palette (see appearance_palette.php). Only the Regular weight is
  * bundled for each family — the card title never renders bold, so a Bold file would be
  * dead weight. The browser only downloads the @font-face file that is actually used by
@@ -104,9 +109,11 @@
 
 /*
  * Without the card behind it, the default circle has the same colour as the page and disappears, so it gets a
- * ring. The ring takes the theme's text colour: dark on a light page, and still visible in dark mode.
+ * ring. The ring takes the theme's text colour: dark on a light page, and still visible in dark mode. Only the
+ * default: choosing "Transparent" or a colour puts a style attribute on the circle, and those stay without a ring
+ * (no circle at all, or a circle its own colour already shows).
  */
-.format-smartcards .sc-course.sc-noframe .sc-card-icon {
+.format-smartcards .sc-course.sc-noframe .sc-card-icon:not([style]) {
     border: 2px solid var(--bs-body-color, var(--dark, #212529));
 }
 
