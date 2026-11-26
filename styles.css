@@ -102,6 +102,14 @@
     padding-inline: 0;
 }
 
+/*
+ * Without the card behind it, the default circle has the same colour as the page and disappears, so it gets a
+ * ring. The ring takes the theme's text colour: dark on a light page, and still visible in dark mode.
+ */
+.format-smartcards .sc-course.sc-noframe .sc-card-icon {
+    border: 2px solid var(--bs-body-color, var(--dark, #212529));
+}
+
 .format-smartcards .sc-section {
     margin-block-end: 2rem;
 }
