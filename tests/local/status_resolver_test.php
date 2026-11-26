@@ -94,6 +94,35 @@ final class status_resolver_test extends \advanced_testcase {
     }
 
     /**
+     * With two or more unmet conditions core gives cm_info::$availableinfo as an object holding a list of
+     * messages, not as a string. Casting it threw and took the whole course page down.
+     */
+    public function test_two_unmet_conditions_give_a_text_reason(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $condition = tree::get_root_json([
+            condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+            condition::get_json(condition::DIRECTION_FROM, time() + 2 * DAYSECS),
+        ]);
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $page->cmid]);
+        rebuild_course_cache($course->id, true);
+        $this->setUser($student);
+
+        $cm = get_fast_modinfo($course, $student->id)->get_cm($page->cmid);
+        $this->assertIsNotString($cm->availableinfo, 'The case under test needs core to give an object.');
+
+        $status = status_resolver::resolve($cm);
+
+        $this->assertSame(status_resolver::BADGE_LOCKED, $status->badge);
+        $this->assertSame(2, substr_count($status->reason, '<li'), 'One list entry for each unmet condition.');
+        $this->assertStringNotContainsString('<AVAILABILITY_', $status->reason);
+    }
+
+    /**
      * An available activity with an expected completion date must surface the
      * 'timed' badge and the due date, without any restriction reason.
      */

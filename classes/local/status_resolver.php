@@ -17,6 +17,7 @@
 namespace format_smartcards\local;
 
 use cm_info;
+use core_availability\info;
 
 /**
  * Derives the SmartCards badge/visibility status of a course module from cm_info alone.
@@ -73,7 +74,9 @@ class status_resolver {
             return new cm_status(
                 isvisible: true,
                 badge: self::BADGE_LOCKED,
-                reason: (string)$cm->availableinfo,
+                // A string for one unmet condition, an object listing them for two or more: core's formatter
+                // takes both, and also resolves the placeholders core leaves in the text.
+                reason: info::format_info($cm->availableinfo, $cm->get_course()),
                 duedate: $duedate,
                 dimmed: $dimmed,
                 canaccess: $cm->uservisible,

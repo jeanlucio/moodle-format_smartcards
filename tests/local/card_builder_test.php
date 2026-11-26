@@ -427,6 +427,38 @@ final class card_builder_test extends \advanced_testcase {
     }
 
     /**
+     * The same teacher view with two hidden conditions: the full information is then a list object too, and
+     * casting it to a string threw while building the card.
+     */
+    public function test_teacher_sees_every_reason_when_two_hidden_conditions_are_unmet(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        [$course, $page] = $this->create_course_with_page();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+
+        $condition = tree::get_root_json(
+            [
+                condition::get_json(condition::DIRECTION_FROM, time() + DAYSECS),
+                condition::get_json(condition::DIRECTION_FROM, time() + 2 * DAYSECS),
+            ],
+            tree::OP_AND,
+            false
+        );
+        $DB->set_field('course_modules', 'availability', json_encode($condition), ['id' => $page->cmid]);
+        rebuild_course_cache($course->id, true);
+        $this->setUser($teacher);
+
+        $cm = get_fast_modinfo($course, $teacher->id)->get_cm($page->cmid);
+        $renderer = $PAGE->get_renderer('format_smartcards');
+
+        $card = card_builder::build($cm, $course, $renderer, null, [], (int)$teacher->id, '');
+
+        $this->assertSame(status_resolver::BADGE_LOCKED, $card['badge']);
+        $this->assertSame(2, substr_count($card['reason'], '<li'), 'One list entry for each unmet condition.');
+    }
+
+    /**
      * The same eye-off restriction must leave the card entirely unrendered (null) for a
      * plain student — core's cm_info::update_user_visible() only re-reveals
      * uservisibleoncoursepage when availableinfo is non-empty, so with the eye off and no

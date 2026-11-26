@@ -93,7 +93,8 @@ class card_builder {
             // conditional_availability_info(), which reveals the full reason via
             // info_module::get_full_information() instead. Mirrored here so a teacher sees
             // the same detail on a SmartCards course page as on any core-format one.
-            $rawreason = (string)(new info_module($cm))->get_full_information();
+            // Like availableinfo, the full information is an object when there is more than one condition.
+            $rawreason = info::format_info((new info_module($cm))->get_full_information(), $course);
         }
 
         $reason = $rawreason !== ''
